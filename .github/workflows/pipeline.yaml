@@ -1,0 +1,74 @@
+name: Dart Script Execution
+
+on: [push]
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Check for Flutter Project
+        run: |
+          if [ -f pubspec.yaml ] && grep -q "sdk: flutter" pubspec.yaml; then
+            echo "is_flutter=true" >> "$GITHUB_ENV"
+          else
+            echo "is_flutter=false" >> "$GITHUB_ENV"
+          fi
+
+      - name: Cache Flutter Dependencies
+        if: env.is_flutter == 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            **/pubspec.lock
+          key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-
+
+      - name: Cache Dart Dependencies
+        if: env.is_flutter == 'false'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            **/pubspec.lock
+          key: ${{ runner.os }}-dart-${{ hashFiles('**/pubspec.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-dart-
+
+      - name: Set up Flutter
+        if: env.is_flutter == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "master"
+
+      - name: Set up Dart SDK
+        if: env.is_flutter == 'false'
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: "dev"
+
+      - name: Install dependencies
+        run: |
+          if [ ${{ env.is_flutter }} == 'true' ]; then
+            flutter pub get
+          else
+            dart pub get
+          fi
+
+      - name: Make Script Executable
+        run: chmod +x ./check
+
+      - name: Run Script
+        run: ./check --verbose
