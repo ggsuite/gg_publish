@@ -6,6 +6,7 @@
 
 import 'package:args/command_runner.dart';
 import 'package:gg_publish/src/commands/is_published.dart';
+import 'package:gg_publish/src/commands/is_upgraded.dart';
 import 'package:gg_publish/src/commands/published_version.dart';
 
 /// The command line interface for GgPublish
@@ -14,6 +15,7 @@ class GgPublish extends Command<dynamic> {
   GgPublish({required this.log}) {
     addSubcommand(IsPublished(log: log));
     addSubcommand(PublishedVersion(log: log));
+    addSubcommand(IsUpgraded(log: log));
   }
 
   /// The log function
