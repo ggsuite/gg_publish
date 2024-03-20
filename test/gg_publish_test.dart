@@ -33,9 +33,14 @@ void main() {
         await capturePrint(
           log: messages.add,
           code: () async =>
-              await runner.run(['ggPublish', 'my-command', '--input', 'foo']),
+              await runner.run(['ggPublish', 'is-published', '--help']),
         );
-        expect(messages, contains('Running my-command with param foo'));
+        expect(
+          messages.last,
+          contains(
+            'Checks if the current application state is fully published.',
+          ),
+        );
       });
 
       // .......................................................................

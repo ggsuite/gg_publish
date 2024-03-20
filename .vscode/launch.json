@@ -10,7 +10,7 @@
       "type": "dart",
       "request": "launch",
       "program": "${workspaceFolder}/bin/gg_publish.dart",
-      "args": ["--param", "value"],
+      "args": ["published-version", "--input", "${workspaceFolder}"],
       "console": "debugConsole"
     },
     {

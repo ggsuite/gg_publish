@@ -5,13 +5,15 @@
 // found in the LICENSE file in the root of this package.
 
 import 'package:args/command_runner.dart';
-import './commands/my_command.dart';
+import 'package:gg_publish/src/commands/is_published.dart';
+import 'package:gg_publish/src/commands/published_version.dart';
 
 /// The command line interface for GgPublish
 class GgPublish extends Command<dynamic> {
   /// Constructor
   GgPublish({required this.log}) {
-    addSubcommand(MyCommand(log: log));
+    addSubcommand(IsPublished(log: log));
+    addSubcommand(PublishedVersion(log: log));
   }
 
   /// The log function

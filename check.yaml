@@ -1,4 +1,4 @@
-needsInternet: false
+needsInternet: true
 analyze:
   execute: true
 format:

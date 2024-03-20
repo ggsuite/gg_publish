@@ -7,8 +7,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:colorize/colorize.dart';
-import 'package:gg_capture_print/gg_capture_print.dart';
 import 'package:test/test.dart';
 
 import '../../bin/gg_publish.dart';
@@ -21,38 +19,30 @@ void main() {
       // Execute bin/gg_publish.dart and check if it prints help
       final result = await Process.run(
         './bin/gg_publish.dart',
-        ['my-command'],
+        ['is-published'],
         stdoutEncoding: utf8,
         stderrEncoding: utf8,
       );
 
-      final expectedMessages = [
-        'Invalid argument(s): Option',
-        Colorize('input').red().toString(),
-        'is mandatory.',
-      ];
-
       final stdout = result.stdout as String;
 
-      for (final msg in expectedMessages) {
-        expect(stdout, contains(msg));
-      }
+      expect(stdout, contains('Current state has no git version tag.'));
     });
   });
 
   // ###########################################################################
   group('run(args, log)', () {
-    group('with args=[--param, value]', () {
-      test('should print "value"', () async {
+    group('with args=[--input, xyz]', () {
+      test('should print "Invalid argument(s): Directory xyz does not exist."',
+          () async {
         // Execute bin/gg_publish.dart and check if it prints "value"
         final messages = <String>[];
-        await run(args: ['my-command', '--input', '5'], log: messages.add);
+        await run(args: ['is-published', '--input', 'xyz'], log: messages.add);
 
-        final expectedMessages = ['Running my-command with param 5'];
-
-        for (final msg in expectedMessages) {
-          expect(hasLog(messages, msg), isTrue);
-        }
+        expect(
+          messages.last,
+          'Invalid argument(s): Directory xyz does not exist.',
+        );
       });
     });
   });
