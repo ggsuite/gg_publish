@@ -10,6 +10,7 @@ import 'package:gg_args/gg_args.dart';
 import 'package:gg_process/gg_process.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:gg_is_flutter/gg_is_flutter.dart';
+import 'package:mocktail/mocktail.dart' as mocktail;
 
 // #############################################################################
 /// Base class for all ggGit commands
@@ -88,3 +89,7 @@ class IsUpgraded extends DirCommand<void> {
   /// The process wrapper used to run the 'pub outdated' command
   final GgProcessWrapper processWrapper;
 }
+
+// .............................................................................
+/// A Mock for the IsUpgraded class using Mocktail
+class MockIsUpgraded extends mocktail.Mock implements IsUpgraded {}

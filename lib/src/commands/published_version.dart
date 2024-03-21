@@ -8,13 +8,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:gg_args/gg_args.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:http/http.dart' as http;
-
-// .............................................................................
-/// A Mock for the http.Client class using Mocktail
-class MockClient extends Mock implements http.Client {}
+import 'package:mocktail/mocktail.dart' as mocktail;
 
 // .............................................................................
 /// Returns the version published to pub.dev of a given dart package
@@ -103,3 +99,11 @@ class PublishedVersion extends DirCommand<void> {
   // ######################
   final http.Client _httpClient;
 }
+
+// .............................................................................
+/// A Mock for the PublishedVersion class using Mocktail
+class MockPublishedVersion extends mocktail.Mock implements PublishedVersion {}
+
+// .............................................................................
+/// A Mock for the http.Client class using Mocktail
+class MockClient extends mocktail.Mock implements http.Client {}

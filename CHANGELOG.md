@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.0.4
+
+- Add mocktail mocks
+
 ## 1.0.3
 
 - Adapt directory structure
