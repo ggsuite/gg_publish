@@ -18,38 +18,37 @@ class MockClient extends Mock implements http.Client {}
 
 // .............................................................................
 /// Returns the version published to pub.dev of a given dart package
-class PublishedVersion extends GgDirCommand {
+class PublishedVersion extends DirCommand<void> {
   /// Constructor
   PublishedVersion({
     required super.log,
     http.Client? httpClient,
-    super.inputDir,
-  }) : _httpClient = httpClient ?? http.Client(); // coverage:ignore-line
-
-  /// Then name of the command
-  @override
-  final name = 'published-version';
-
-  /// The description of the command
-  @override
-  final description =
-      'Returns the version published to pub.dev of a given dart package.';
+  })  : _httpClient = httpClient ?? http.Client(), // coverage:ignore-line
+        super(
+          name: 'published-version',
+          description:
+              'Returns the version published to pub.dev of a given dart '
+              'package.',
+        );
 
   // ...........................................................................
   @override
-  Future<void> run() async {
-    await super.run();
-    final version = await get();
+  Future<void> run({Directory? directory}) async {
+    final inputDir = dir(directory);
+    final version = await get(directory: inputDir);
     log(version.toString());
   }
 
   // ...........................................................................
   /// Returns true if the current directory state is published to pub.dev
-  Future<Version> get({void Function(String)? log}) async {
+  Future<Version> get({
+    void Function(String)? log,
+    required Directory directory,
+  }) async {
     log ??= this.log; // coverage:ignore-line
 
     // Read pubspec.yaml
-    final pubspec = File('${inputDir.path}/pubspec.yaml');
+    final pubspec = File('${directory.path}/pubspec.yaml');
     if (!pubspec.existsSync()) {
       throw ArgumentError('pubspec.yaml not found');
     }

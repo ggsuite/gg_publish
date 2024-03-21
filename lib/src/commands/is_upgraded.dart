@@ -4,6 +4,8 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
+import 'dart:io';
+
 import 'package:gg_args/gg_args.dart';
 import 'package:gg_process/gg_process.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
@@ -11,27 +13,21 @@ import 'package:gg_is_flutter/gg_is_flutter.dart';
 
 // #############################################################################
 /// Base class for all ggGit commands
-class IsUpgraded extends GgDirCommand {
+class IsUpgraded extends DirCommand<void> {
   /// Constructor
   IsUpgraded({
     required super.log,
-    super.inputDir,
     this.processWrapper = const GgProcessWrapper(),
-  });
-
-  /// Then name of the command
-  @override
-  final name = 'is-upgraded';
-
-  /// The description of the command
-  @override
-  final description =
-      'Checks if all dependencies have upgraded to the latest state.';
+  }) : super(
+          name: 'is-upgraded',
+          description:
+              'Checks if all dependencies have upgraded to the latest state.',
+        );
 
   // ...........................................................................
   @override
-  Future<void> run() async {
-    await super.run();
+  Future<void> run({Directory? directory}) async {
+    final inputDir = dir(directory);
 
     final messages = <String>[];
 
@@ -41,19 +37,22 @@ class IsUpgraded extends GgDirCommand {
     );
 
     await printer.logTask(
-      task: () => get(log: messages.add),
+      task: () => get(log: messages.add, directory: inputDir),
       success: (success) => success,
     );
   }
 
   // ...........................................................................
   /// Returns true if the current directory state is published to pub.dev
-  Future<bool> get({void Function(String)? log}) async {
+  Future<bool> get({
+    void Function(String)? log,
+    required Directory directory,
+  }) async {
     log ??= this.log; // coverage:ignore-line
 
     // Check if the 'flutter' command is available, assuming Flutter projects
     // include Flutter dependencies
-    bool isFlutterProject = isFlutterDir(inputDir);
+    bool isFlutterProject = isFlutterDir(directory);
 
     // Execute the appropriate command based on the project type
     String command = isFlutterProject ? 'flutter' : 'dart';
@@ -64,7 +63,7 @@ class IsUpgraded extends GgDirCommand {
       command,
       arguments,
       runInShell: true,
-      workingDirectory: inputDir.path,
+      workingDirectory: directory.path,
     );
 
     if (result.exitCode == 0) {

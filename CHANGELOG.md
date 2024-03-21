@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.0.3
+
+- Adapt directory structure
+
 ## 1.0.2
 
 - Make commands public

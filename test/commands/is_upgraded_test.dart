@@ -60,12 +60,10 @@ void main() {
 
   // ...........................................................................
   void initCommand({
-    bool runViaCli = false,
     GgProcessWrapper? processWrapper,
   }) {
     isUpgraded = IsUpgraded(
       log: messages.add,
-      inputDir: runViaCli ? null : d,
       processWrapper: processWrapper ?? mockProcessWrapper,
     );
 
@@ -102,7 +100,7 @@ void main() {
     group('run()', () {
       group('should print »✅ Everything is upgraded«', () {
         test('when everything is upgraded', () async {
-          initCommand(runViaCli: true);
+          initCommand();
           await initPubSpecYaml(isFlutter: false);
           mockIsUpgraded(true);
           await runner.run(['is-upgraded', '--input', d.path]);
@@ -113,7 +111,7 @@ void main() {
 
       group('should print »❌ Everything is upgraded.«', () {
         test('when outdated packages are found', () async {
-          initCommand(runViaCli: true);
+          initCommand();
           await initPubSpecYaml(isFlutter: false);
           mockIsUpgraded(false);
           await runner.run(['is-upgraded', '--input', d.path]);
@@ -122,12 +120,12 @@ void main() {
         });
       });
     });
-    group('get()', () {
+    group('get(directory: d)', () {
       group('should throw', () {
         test('when directory does not contain a pubspec.yaml file', () async {
           initCommand();
           await expectLater(
-            isUpgraded.get(),
+            isUpgraded.get(directory: d),
             throwsA(
               isA<Exception>().having(
                 (e) => e.toString(),
@@ -147,7 +145,7 @@ void main() {
               mockDartPubOutdatedFails(system);
 
               await expectLater(
-                isUpgraded.get(),
+                isUpgraded.get(directory: d),
                 throwsA(
                   isA<Exception>().having(
                     (e) => e.toString(),
@@ -170,7 +168,7 @@ void main() {
           await initPubSpecYaml(isFlutter: false);
           initCommand(processWrapper: mockProcessWrapper);
           mockIsUpgraded(true);
-          expect(await isUpgraded.get(), isTrue);
+          expect(await isUpgraded.get(directory: d), isTrue);
         });
       });
 
@@ -179,7 +177,7 @@ void main() {
           await initPubSpecYaml(isFlutter: false);
           initCommand(processWrapper: mockProcessWrapper);
           mockIsUpgraded(false);
-          expect(await isUpgraded.get(), isFalse);
+          expect(await isUpgraded.get(directory: d), isFalse);
         });
       });
     });

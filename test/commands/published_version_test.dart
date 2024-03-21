@@ -24,11 +24,10 @@ void main() {
   final messages = <String>[];
 
   // ...........................................................................
-  void initCommand({Directory? inputDir}) {
+  void initCommand() {
     publishedVersion = PublishedVersion(
       log: messages.add,
       httpClient: client,
-      inputDir: inputDir,
     );
     runner = CommandRunner<void>('test', 'test')..addCommand(publishedVersion);
   }
@@ -53,7 +52,7 @@ void main() {
       group('should return the version ', () {
         group('of the published package', () {
           test('with a mocked response', () async {
-            initCommand(inputDir: d);
+            initCommand();
 
             // Create a smple package directory
             // Read published_version_sample_response.json
@@ -69,7 +68,7 @@ void main() {
             when(() => client.get(uri)).thenAnswer((_) async => response);
 
             // Call get
-            final version = await publishedVersion.get();
+            final version = await publishedVersion.get(directory: d);
 
             // Was the correct version returned?
             expect(version, Version(1, 0, 2));
@@ -78,12 +77,11 @@ void main() {
           test('with a real response', () async {
             final publishedVersion = PublishedVersion(
               log: messages.add,
-              inputDir: d,
             );
 
             try {
               // Call get
-              final version = await publishedVersion.get();
+              final version = await publishedVersion.get(directory: d);
 
               expect(version >= Version(1, 0, 0), true);
             }
@@ -104,11 +102,10 @@ void main() {
 
       group('should throw', () {
         test('when directory does not contain a pubspec.yaml', () {
-          initCommand(inputDir: tmp);
-
+          initCommand();
           // Call get
           expect(
-            () => publishedVersion.get(),
+            () => publishedVersion.get(directory: tmp),
             throwsA(
               isA<ArgumentError>().having(
                 (e) => e.message,
@@ -120,7 +117,7 @@ void main() {
         });
 
         test('when pubspec.yaml does not contain a name field', () {
-          initCommand(inputDir: tmp);
+          initCommand();
 
           // Create a smple package directory
           final pubspec = File('${tmp.path}/pubspec.yaml');
@@ -128,7 +125,7 @@ void main() {
 
           // Call get
           expect(
-            () => publishedVersion.get(),
+            () => publishedVersion.get(directory: tmp),
             throwsA(
               isA<ArgumentError>().having(
                 (e) => e.message,
@@ -140,7 +137,7 @@ void main() {
         });
 
         test('when the http request fails', () {
-          initCommand(inputDir: d);
+          initCommand();
 
           // Mock http client
           final uri = Uri.parse('https://pub.dev/api/packages/gg_check');
@@ -148,7 +145,7 @@ void main() {
 
           // Call get
           expect(
-            () => publishedVersion.get(),
+            () => publishedVersion.get(directory: d),
             throwsA(
               isA<Exception>().having(
                 (e) => e.toString(),
@@ -162,7 +159,7 @@ void main() {
         });
 
         test('when the http response status code is not 200', () {
-          initCommand(inputDir: d);
+          initCommand();
 
           // Mock http client
           final uri = Uri.parse('https://pub.dev/api/packages/gg_check');
@@ -171,7 +168,7 @@ void main() {
 
           // Call get
           expect(
-            () => publishedVersion.get(),
+            () => publishedVersion.get(directory: d),
             throwsA(
               isA<ArgumentError>().having(
                 (e) => e.message,
@@ -183,7 +180,7 @@ void main() {
         });
 
         test('when the package is not yet published', () {
-          initCommand(inputDir: d);
+          initCommand();
 
           // Mock http client
           final uri = Uri.parse('https://pub.dev/api/packages/gg_check');
@@ -192,7 +189,7 @@ void main() {
 
           // Call get
           expect(
-            () => publishedVersion.get(),
+            () => publishedVersion.get(directory: d),
             throwsA(
               isA<Exception>().having(
                 (e) => e.toString(),
@@ -205,7 +202,7 @@ void main() {
         });
 
         test('when the http response body does not contain "latest"', () {
-          initCommand(inputDir: d);
+          initCommand();
           // Mock http client
           final uri = Uri.parse('https://pub.dev/api/packages/gg_check');
           final response = http.Response('{"xyz":{}}', 200);
@@ -213,7 +210,7 @@ void main() {
 
           // Call get
           expect(
-            () => publishedVersion.get(),
+            () => publishedVersion.get(directory: d),
             throwsA(
               isA<ArgumentError>().having(
                 (e) => e.message,
@@ -225,7 +222,7 @@ void main() {
         });
 
         test('when the http response body does not contain "version"', () {
-          initCommand(inputDir: d);
+          initCommand();
 
           // Mock http client
           final uri = Uri.parse('https://pub.dev/api/packages/gg_check');
@@ -234,7 +231,7 @@ void main() {
 
           // Call get
           expect(
-            () => publishedVersion.get(),
+            () => publishedVersion.get(directory: d),
             throwsA(
               isA<ArgumentError>().having(
                 (e) => e.message,
@@ -249,7 +246,7 @@ void main() {
 
     group('run()', () {
       test('should log the version', () async {
-        initCommand(inputDir: null);
+        initCommand();
 
         // Mock http client
         final uri = Uri.parse('https://pub.dev/api/packages/gg_check');

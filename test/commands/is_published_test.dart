@@ -28,30 +28,28 @@ void main() {
   late http.Client httpClient;
 
   // ...........................................................................
+  void initIsPublished() {
+    isPublished = IsPublished(
+      log: messages.add,
+      publishedVersion: PublishedVersion(
+        log: messages.add,
+        httpClient: httpClient,
+      ),
+      consistentVersion: ConsistentVersion(
+        log: messages.add,
+      ),
+    );
+    runner.addCommand(isPublished);
+  }
+
+  // ...........................................................................
   setUp(() {
     d = initTestDir();
     messages.clear();
     runner = CommandRunner<void>('test', 'test');
     httpClient = MockClient();
+    initIsPublished();
   });
-
-  // ...........................................................................
-  void initIsPublished({Directory? inputDir}) {
-    isPublished = IsPublished(
-      log: messages.add,
-      inputDir: inputDir,
-      publishedVersion: PublishedVersion(
-        log: messages.add,
-        httpClient: httpClient,
-        inputDir: inputDir,
-      ),
-      consistentVersion: ConsistentVersion(
-        log: messages.add,
-        inputDir: inputDir,
-      ),
-    );
-    runner.addCommand(isPublished);
-  }
 
   // ...........................................................................
   tearDown(() {
@@ -71,9 +69,8 @@ void main() {
       group('should return false', () {
         group('and log the reason', () {
           test('when the directory is not a git repo', () async {
-            initIsPublished(inputDir: d);
             await expectLater(
-              isPublished.get(),
+              isPublished.get(directory: d),
               throwsA(
                 isA<ArgumentError>().having(
                   (e) => e.toString(),
@@ -86,7 +83,6 @@ void main() {
 
           group('when there is not a consistent version assigned', () {
             test('to pubspec.yaml, CHANGELOG.md and git', () async {
-              initIsPublished(inputDir: d);
               await initGit(d);
 
               await setupVersions(
@@ -97,7 +93,7 @@ void main() {
               );
 
               await expectLater(
-                isPublished.get(),
+                isPublished.get(directory: d),
                 throwsA(
                   isA<Exception>().having(
                     (e) => e.toString(),
@@ -113,8 +109,6 @@ void main() {
           });
 
           test('when the local version is behind published version', () async {
-            initIsPublished(inputDir: d);
-
             // Mock local version 1.0.0
             await initGit(d);
             final pubSpec = File('test/sample_package/pubspec.yaml');
@@ -138,7 +132,7 @@ void main() {
 
             // Call isPublished.get()
             await expectLater(
-              isPublished.get(),
+              isPublished.get(directory: d),
 
               // Should throw
               throwsA(
@@ -163,8 +157,6 @@ void main() {
       group('should print', () {
         group('a usage description', () {
           test('when called with --help', () async {
-            initIsPublished(inputDir: null);
-
             capturePrint(
               log: messages.add,
               code: () => runner.run(
@@ -180,7 +172,6 @@ void main() {
 
         group('the current version', () {
           test('when called without arguments', () async {
-            initIsPublished(inputDir: null);
             await initGit(d);
 
             await setupVersions(
@@ -212,7 +203,6 @@ void main() {
       group('should throw', () {
         group(' an error message', () {
           test('when called with an invalid argument', () async {
-            initIsPublished(inputDir: null);
             await expectLater(
               runner.run(
                 ['is-published', '--input', 'xyz'],
