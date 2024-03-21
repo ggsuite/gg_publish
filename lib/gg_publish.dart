@@ -7,3 +7,6 @@
 library;
 
 export 'src/gg_publish.dart';
+export 'src/commands/is_published.dart';
+export 'src/commands/is_upgraded.dart';
+export 'src/commands/published_version.dart';
