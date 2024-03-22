@@ -151,7 +151,33 @@ void main() {
         });
       });
 
-      group('should return true', () {});
+      group('should return true', () {
+        test('when the local version matches the published version', () async {
+          // Mock local version 1.0.2
+          await initGit(d);
+
+          await setupVersions(
+            d,
+            pubspec: '1.0.2',
+            changeLog: '1.0.2',
+            gitHead: '1.0.2',
+          );
+
+          // Mock published version 1.0.2
+          final responseContent =
+              File('test/sample_package/pub_dev_sample_response.json')
+                  .readAsStringSync();
+          final uri = Uri.parse('https://pub.dev/api/packages/test');
+          when(() => httpClient.get(uri)).thenAnswer(
+            (_) async => http.Response(responseContent, 200),
+          );
+
+          // Call isPublished.get()
+          final result = await isPublished.get(directory: d);
+
+          expect(result, isTrue);
+        });
+      });
     });
     group('run()', () {
       group('should print', () {
@@ -221,7 +247,5 @@ void main() {
         });
       });
     });
-
-    // HIER WEITER:
   });
 }
