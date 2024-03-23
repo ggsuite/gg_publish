@@ -11,7 +11,7 @@ library;
 
 import 'dart:io';
 
-import 'package:colorize/colorize.dart';
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 // #############################################################################
 void main() {
@@ -30,7 +30,7 @@ void main() {
   final result = Process.runSync('dart', ['compile', 'exe', src, '-o', dest]);
 
   if (result.stderr.toString().trim().isNotEmpty) {
-    print('❌ ${Colorize(result.stderr.toString()).red()}');
+    print(red('❌ ${result.stderr}'));
   }
-  print(Colorize('✅ Installed $exe in $dest').green());
+  print(green('✅ Installed $exe in $dest'));
 }
