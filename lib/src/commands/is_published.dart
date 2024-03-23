@@ -7,6 +7,7 @@
 import 'dart:io';
 
 import 'package:gg_args/gg_args.dart';
+import 'package:gg_log/gg_log.dart';
 import 'package:gg_publish/src/commands/published_version.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:gg_version/gg_version.dart';
@@ -17,16 +18,16 @@ import 'package:mocktail/mocktail.dart' as mocktail;
 class IsPublished extends DirCommand<void> {
   /// Constructor
   IsPublished({
-    required super.log,
+    required super.ggLog,
     PublishedVersion? publishedVersion,
     ConsistentVersion? consistentVersion,
   })  : _publishedVersion = publishedVersion ??
             PublishedVersion(
-              log: log,
+              ggLog: ggLog,
             ),
         _consistentVersion = consistentVersion ??
             ConsistentVersion(
-              log: log,
+              ggLog: ggLog,
             ),
         super(
           name: 'is-published',
@@ -36,18 +37,19 @@ class IsPublished extends DirCommand<void> {
 
   // ...........................................................................
   @override
-  Future<void> run({Directory? directory}) async {
-    final inputDir = dir(directory);
-
+  Future<void> exec({
+    required Directory directory,
+    required GgLog ggLog,
+  }) async {
     final messages = <String>[];
 
     final printer = GgStatusPrinter<bool>(
       message: 'Everything is published.',
-      log: log,
+      ggLog: ggLog,
     );
 
     await printer.logTask(
-      task: () => get(log: messages.add, directory: inputDir),
+      task: () => get(ggLog: messages.add, directory: directory),
       success: (success) => success,
     );
   }
@@ -55,20 +57,18 @@ class IsPublished extends DirCommand<void> {
   // ...........................................................................
   /// Returns true if the current directory state is published to pub.dev
   Future<bool> get({
-    void Function(String)? log,
+    required GgLog ggLog,
     required Directory directory,
   }) async {
-    log ??= this.log; // coverage:ignore-line
-
     // Check if the repo has a consistent version
     final localVersion = await _consistentVersion.get(
-      log: log,
+      ggLog: ggLog,
       directory: directory,
     );
 
     // Get the latest version from pub.dev
     final publishedVersion = await _publishedVersion.get(
-      log: log,
+      ggLog: ggLog,
       directory: directory,
     );
 

@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.0.5
+
+- Add GgLog
+
 ## 1.0.4
 
 - Add mocktail mocks

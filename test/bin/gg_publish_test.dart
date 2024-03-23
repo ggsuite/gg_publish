@@ -37,7 +37,10 @@ void main() {
           () async {
         // Execute bin/gg_publish.dart and check if it prints "value"
         final messages = <String>[];
-        await run(args: ['is-published', '--input', 'xyz'], log: messages.add);
+        await run(
+          args: ['is-published', '--input', 'xyz'],
+          ggLog: messages.add,
+        );
 
         expect(
           messages.last,

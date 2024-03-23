@@ -30,13 +30,13 @@ void main() {
   // ...........................................................................
   void initIsPublished() {
     isPublished = IsPublished(
-      log: messages.add,
+      ggLog: messages.add,
       publishedVersion: PublishedVersion(
-        log: messages.add,
+        ggLog: messages.add,
         httpClient: httpClient,
       ),
       consistentVersion: ConsistentVersion(
-        log: messages.add,
+        ggLog: messages.add,
       ),
     );
     runner.addCommand(isPublished);
@@ -60,7 +60,7 @@ void main() {
     group('constructor', () {
       test('should create instances of PublishedVersion and ConsistentVersion',
           () {
-        IsPublished(log: messages.add);
+        IsPublished(ggLog: messages.add);
       });
     });
 
@@ -70,7 +70,7 @@ void main() {
         group('and log the reason', () {
           test('when the directory is not a git repo', () async {
             await expectLater(
-              isPublished.get(directory: d),
+              isPublished.get(directory: d, ggLog: messages.add),
               throwsA(
                 isA<ArgumentError>().having(
                   (e) => e.toString(),
@@ -93,7 +93,7 @@ void main() {
               );
 
               await expectLater(
-                isPublished.get(directory: d),
+                isPublished.get(directory: d, ggLog: messages.add),
                 throwsA(
                   isA<Exception>().having(
                     (e) => e.toString(),
@@ -132,7 +132,7 @@ void main() {
 
             // Call isPublished.get()
             await expectLater(
-              isPublished.get(directory: d),
+              isPublished.get(directory: d, ggLog: messages.add),
 
               // Should throw
               throwsA(
@@ -173,7 +173,8 @@ void main() {
           );
 
           // Call isPublished.get()
-          final result = await isPublished.get(directory: d);
+          final result =
+              await isPublished.get(directory: d, ggLog: messages.add);
 
           expect(result, isTrue);
         });
@@ -184,7 +185,7 @@ void main() {
         group('a usage description', () {
           test('when called with --help', () async {
             capturePrint(
-              log: messages.add,
+              ggLog: messages.add,
               code: () => runner.run(
                 ['--help'],
               ),

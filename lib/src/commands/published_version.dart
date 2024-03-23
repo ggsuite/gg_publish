@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:gg_args/gg_args.dart';
+import 'package:gg_log/gg_log.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart' as mocktail;
@@ -17,7 +18,7 @@ import 'package:mocktail/mocktail.dart' as mocktail;
 class PublishedVersion extends DirCommand<void> {
   /// Constructor
   PublishedVersion({
-    required super.log,
+    required super.ggLog,
     http.Client? httpClient,
   })  : _httpClient = httpClient ?? http.Client(), // coverage:ignore-line
         super(
@@ -29,20 +30,20 @@ class PublishedVersion extends DirCommand<void> {
 
   // ...........................................................................
   @override
-  Future<void> run({Directory? directory}) async {
-    final inputDir = dir(directory);
-    final version = await get(directory: inputDir);
-    log(version.toString());
+  Future<void> exec({
+    required Directory directory,
+    required GgLog ggLog,
+  }) async {
+    final version = await get(directory: directory, ggLog: ggLog);
+    ggLog(version.toString());
   }
 
   // ...........................................................................
   /// Returns true if the current directory state is published to pub.dev
   Future<Version> get({
-    void Function(String)? log,
+    required GgLog ggLog,
     required Directory directory,
   }) async {
-    log ??= this.log; // coverage:ignore-line
-
     // Read pubspec.yaml
     final pubspec = File('${directory.path}/pubspec.yaml');
     if (!pubspec.existsSync()) {

@@ -22,7 +22,7 @@ void main() {
   group('GgPublish()', () {
     // #########################################################################
     group('GgPublish', () {
-      final ggPublish = GgPublish(log: (msg) => messages.add(msg));
+      final ggPublish = GgPublish(ggLog: (msg) => messages.add(msg));
 
       final CommandRunner<void> runner = CommandRunner<void>(
         'ggPublish',
@@ -31,7 +31,7 @@ void main() {
 
       test('should allow to run the code from command line', () async {
         await capturePrint(
-          log: messages.add,
+          ggLog: messages.add,
           code: () async =>
               await runner.run(['ggPublish', 'is-published', '--help']),
         );

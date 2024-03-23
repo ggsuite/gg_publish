@@ -63,7 +63,7 @@ void main() {
     GgProcessWrapper? processWrapper,
   }) {
     isUpgraded = IsUpgraded(
-      log: messages.add,
+      ggLog: messages.add,
       processWrapper: processWrapper ?? mockProcessWrapper,
     );
 
@@ -120,12 +120,12 @@ void main() {
         });
       });
     });
-    group('get(directory: d)', () {
+    group('get(directory: d, ggLog: messages.add)', () {
       group('should throw', () {
         test('when directory does not contain a pubspec.yaml file', () async {
           initCommand();
           await expectLater(
-            isUpgraded.get(directory: d),
+            isUpgraded.get(directory: d, ggLog: messages.add),
             throwsA(
               isA<Exception>().having(
                 (e) => e.toString(),
@@ -145,7 +145,7 @@ void main() {
               mockDartPubOutdatedFails(system);
 
               await expectLater(
-                isUpgraded.get(directory: d),
+                isUpgraded.get(directory: d, ggLog: messages.add),
                 throwsA(
                   isA<Exception>().having(
                     (e) => e.toString(),
@@ -168,7 +168,10 @@ void main() {
           await initPubSpecYaml(isFlutter: false);
           initCommand(processWrapper: mockProcessWrapper);
           mockIsUpgraded(true);
-          expect(await isUpgraded.get(directory: d), isTrue);
+          expect(
+            await isUpgraded.get(directory: d, ggLog: messages.add),
+            isTrue,
+          );
         });
       });
 
@@ -177,7 +180,10 @@ void main() {
           await initPubSpecYaml(isFlutter: false);
           initCommand(processWrapper: mockProcessWrapper);
           mockIsUpgraded(false);
-          expect(await isUpgraded.get(directory: d), isFalse);
+          expect(
+            await isUpgraded.get(directory: d, ggLog: messages.add),
+            isFalse,
+          );
         });
       });
     });

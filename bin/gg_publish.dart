@@ -6,22 +6,23 @@
 // found in the LICENSE file in the root of this package.
 
 import 'package:gg_args/gg_args.dart';
+import 'package:gg_log/gg_log.dart';
 import 'package:gg_publish/gg_publish.dart';
 
 // .............................................................................
 Future<void> run({
   required List<String> args,
-  required void Function(String msg) log,
+  required GgLog ggLog,
 }) =>
     GgCommandRunner(
-      log: log,
-      command: GgPublish(log: log),
+      ggLog: ggLog,
+      command: GgPublish(ggLog: ggLog),
     ).run(args: args);
 
 // .............................................................................
 Future<void> main(List<String> args) async {
   await run(
     args: args,
-    log: (msg) => print(msg),
+    ggLog: (msg) => print(msg),
   );
 }

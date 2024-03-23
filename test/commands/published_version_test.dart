@@ -26,7 +26,7 @@ void main() {
   // ...........................................................................
   void initCommand() {
     publishedVersion = PublishedVersion(
-      log: messages.add,
+      ggLog: messages.add,
       httpClient: client,
     );
     runner = CommandRunner<void>('test', 'test')..addCommand(publishedVersion);
@@ -68,7 +68,10 @@ void main() {
             when(() => client.get(uri)).thenAnswer((_) async => response);
 
             // Call get
-            final version = await publishedVersion.get(directory: d);
+            final version = await publishedVersion.get(
+              directory: d,
+              ggLog: messages.add,
+            );
 
             // Was the correct version returned?
             expect(version, Version(1, 0, 2));
@@ -76,12 +79,15 @@ void main() {
 
           test('with a real response', () async {
             final publishedVersion = PublishedVersion(
-              log: messages.add,
+              ggLog: messages.add,
             );
 
             try {
               // Call get
-              final version = await publishedVersion.get(directory: d);
+              final version = await publishedVersion.get(
+                directory: d,
+                ggLog: messages.add,
+              );
 
               expect(version >= Version(1, 0, 0), true);
             }
@@ -105,7 +111,7 @@ void main() {
           initCommand();
           // Call get
           expect(
-            () => publishedVersion.get(directory: tmp),
+            () => publishedVersion.get(directory: tmp, ggLog: messages.add),
             throwsA(
               isA<ArgumentError>().having(
                 (e) => e.message,
@@ -125,7 +131,7 @@ void main() {
 
           // Call get
           expect(
-            () => publishedVersion.get(directory: tmp),
+            () => publishedVersion.get(directory: tmp, ggLog: messages.add),
             throwsA(
               isA<ArgumentError>().having(
                 (e) => e.message,
@@ -145,7 +151,10 @@ void main() {
 
           // Call get
           expect(
-            () => publishedVersion.get(directory: d),
+            () => publishedVersion.get(
+              directory: d,
+              ggLog: messages.add,
+            ),
             throwsA(
               isA<Exception>().having(
                 (e) => e.toString(),
@@ -168,7 +177,10 @@ void main() {
 
           // Call get
           expect(
-            () => publishedVersion.get(directory: d),
+            () => publishedVersion.get(
+              directory: d,
+              ggLog: messages.add,
+            ),
             throwsA(
               isA<ArgumentError>().having(
                 (e) => e.message,
@@ -189,7 +201,10 @@ void main() {
 
           // Call get
           expect(
-            () => publishedVersion.get(directory: d),
+            () => publishedVersion.get(
+              directory: d,
+              ggLog: messages.add,
+            ),
             throwsA(
               isA<Exception>().having(
                 (e) => e.toString(),
@@ -210,7 +225,10 @@ void main() {
 
           // Call get
           expect(
-            () => publishedVersion.get(directory: d),
+            () => publishedVersion.get(
+              directory: d,
+              ggLog: messages.add,
+            ),
             throwsA(
               isA<ArgumentError>().having(
                 (e) => e.message,
@@ -231,7 +249,10 @@ void main() {
 
           // Call get
           expect(
-            () => publishedVersion.get(directory: d),
+            () => publishedVersion.get(
+              directory: d,
+              ggLog: messages.add,
+            ),
             throwsA(
               isA<ArgumentError>().having(
                 (e) => e.message,
