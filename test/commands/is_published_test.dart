@@ -24,11 +24,12 @@ void main() {
   final messages = <String>[];
   late CommandRunner<void> runner;
   late IsPublished isPublished;
+  late Directory tmp;
   late Directory d;
   late http.Client httpClient;
 
   // ...........................................................................
-  void initIsPublished() {
+  Future<void> initIsPublished() async {
     isPublished = IsPublished(
       ggLog: messages.add,
       publishedVersion: PublishedVersion(
@@ -43,17 +44,20 @@ void main() {
   }
 
   // ...........................................................................
-  setUp(() {
-    d = initTestDir();
+  setUp(() async {
+    tmp = await Directory.systemTemp.createTemp();
+    d = Directory('${tmp.path}/test');
+    await d.create();
+
     messages.clear();
     runner = CommandRunner<void>('test', 'test');
     httpClient = MockClient();
-    initIsPublished();
+    await initIsPublished();
   });
 
   // ...........................................................................
   tearDown(() {
-    d.deleteSync(recursive: true);
+    tmp.deleteSync(recursive: true);
   });
 
   group('IsPublisehd', () {
@@ -84,6 +88,7 @@ void main() {
           group('when there is not a consistent version assigned', () {
             test('to pubspec.yaml, CHANGELOG.md and git', () async {
               await initGit(d);
+              await addAndCommitSampleFile(d);
 
               await setupVersions(
                 d,

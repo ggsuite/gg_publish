@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.0.7
+
+- Update dependencies
+
 ## 1.0.6
 
 - Update GgConsoleColors
