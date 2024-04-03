@@ -1,5 +1,13 @@
 # Change Log
 
+## 1.2.0
+
+- Add `Publish` command
+
+## 1.1.3
+
+- Next Update
+
 ## 1.1.2
 
 - Add `IsVersionPrepared`
