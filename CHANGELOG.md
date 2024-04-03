@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.1.1
+
+- Add `IsVersionPrepared`
+
 ## 1.0.7
 
 - Update dependencies

@@ -90,7 +90,7 @@ void main() {
               await initGit(d);
               await addAndCommitSampleFile(d);
 
-              await setupVersions(
+              await addAndCommitVersions(
                 d,
                 pubspec: '1.0.0',
                 changeLog: '1.0.1',
@@ -119,7 +119,7 @@ void main() {
             final pubSpec = File('test/sample_package/pubspec.yaml');
             pubSpec.copySync('${d.path}/pubspec.yaml');
 
-            await setupVersions(
+            await addAndCommitVersions(
               d,
               pubspec: '1.0.0',
               changeLog: '1.0.0',
@@ -161,7 +161,7 @@ void main() {
           // Mock local version 1.0.2
           await initGit(d);
 
-          await setupVersions(
+          await addAndCommitVersions(
             d,
             pubspec: '1.0.2',
             changeLog: '1.0.2',
@@ -206,7 +206,7 @@ void main() {
           test('when called without arguments', () async {
             await initGit(d);
 
-            await setupVersions(
+            await addAndCommitVersions(
               d,
               pubspec: '1.0.2',
               changeLog: '1.0.2',
