@@ -1,6 +1,6 @@
 name: gg_publish
 description: Various tools and checks for publishing dart packages, e.g. versioning, checks etc.
-version: 1.1.1
+version: 1.1.2
 repository: https://github.com/inlavigo/gg_publish.git
 
 environment:

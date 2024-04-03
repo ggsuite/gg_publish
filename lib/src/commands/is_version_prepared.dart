@@ -119,5 +119,5 @@ class IsVersionPrepared extends DirCommand<void> {
 
 // .............................................................................
 /// A Mock for the HasPreparedVersions class using Mocktail
-class MockHasPreparedVersions extends mocktail.Mock
+class MockIsVersionPrepared extends mocktail.Mock
     implements IsVersionPrepared {}
