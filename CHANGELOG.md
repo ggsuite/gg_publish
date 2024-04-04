@@ -1,5 +1,9 @@
 # Change Log
 
+## 2.0.1
+
+- Breaking change: Move `IsVersionPrepared` and `PublishedVersion` to `gg_version`
+
 ## 1.2.0
 
 - Add `Publish` command

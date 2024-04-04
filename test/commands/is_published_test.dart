@@ -10,7 +10,6 @@ import 'package:args/command_runner.dart';
 import 'package:gg_capture_print/gg_capture_print.dart';
 import 'package:gg_git/gg_git_test_helpers.dart';
 import 'package:gg_publish/src/commands/is_published.dart';
-import 'package:gg_publish/src/commands/published_version.dart';
 import 'package:gg_version/gg_version.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
