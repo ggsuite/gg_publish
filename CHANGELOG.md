@@ -1,5 +1,9 @@
 # Change Log
 
+## 2.0.2
+
+- Update gg_version to 2.0.0
+
 ## 2.0.1
 
 - Breaking change: Move `IsVersionPrepared` and `PublishedVersion` to `gg_version`
