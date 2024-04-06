@@ -1,15 +1,18 @@
 # Changelog
 
-## [Unreleased]
+## [3.0.0] - 2024-04-06
+
+### Added
+
+- Increased version
 
 ### Changed
 
 - Rework changelog
 - 'Github Actions Pipeline'
 - 'Github Actions Pipeline: Add SDK file containing flutter into .github/workflows to make github installing flutter and not dart SDK'
-- BREAKING CHANGE:  is renamed into . Added a new  which returns true when the package is published at all
-
-## 2.0.3 - 2024-01-01
+- BREAKING CHANGE: `is-published` renamed into `is-latest state-published`
+- Added a new `is-published` which returns `true` when the package is published at all
 
 ## 2.0.2 - 2024-01-01
 
@@ -63,4 +66,4 @@
 
 - Initial version.
 
-[Unreleased]: https://github.com/inlavigo/gg_publish/compare/2.0.3...HEAD
+[3.0.0]: https://github.com/inlavigo/gg_publish/compare/2.0.2...3.0.0
