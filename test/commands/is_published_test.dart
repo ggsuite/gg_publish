@@ -35,9 +35,6 @@ void main() {
         ggLog: messages.add,
         httpClient: httpClient,
       ),
-      consistentVersion: ConsistentVersion(
-        ggLog: messages.add,
-      ),
     );
     runner.addCommand(isPublished);
   }
@@ -60,114 +57,43 @@ void main() {
   });
 
   group('IsPublisehd', () {
-    group('constructor', () {
-      test('should create instances of PublishedVersion and ConsistentVersion',
-          () {
-        IsPublished(ggLog: messages.add);
-      });
-    });
-
     group('get(...)', () {
       // .......................................................................
-      group('should return false', () {
-        group('and log the reason', () {
-          test('when the directory is not a git repo', () async {
-            await expectLater(
-              isPublished.get(directory: d, ggLog: messages.add),
-              throwsA(
-                isA<ArgumentError>().having(
-                  (e) => e.toString(),
-                  'toString()',
-                  contains('Directory "test" is not a git repository.'),
-                ),
-              ),
-            );
-          });
+      group('should return false ', () {
+        test('when the package cannot be found on pub.dev', () async {
+          // Mock a package with name test
+          final pubspecYamlFile = File('${d.path}/pubspec.yaml');
+          pubspecYamlFile.writeAsStringSync('name: test');
 
-          group('when there is not a consistent version assigned', () {
-            test('to pubspec.yaml, CHANGELOG.md and git', () async {
-              await initGit(d);
-              await addAndCommitSampleFile(d);
+          // Mock package test is not on pub.dev
+          final responseContent =
+              File('test/sample_package/pub_dev_404_response.json')
+                  .readAsStringSync();
+          final uri = Uri.parse('https://pub.dev/api/packages/test');
+          when(() => httpClient.get(uri)).thenAnswer(
+            (_) async => http.Response(responseContent, 404),
+          );
 
-              await addAndCommitVersions(
-                d,
-                pubspec: '1.0.0',
-                changeLog: '1.0.1',
-                gitHead: '1.0.0',
-              );
+          // Check if the package is published
+          final result = await isPublished.get(
+            directory: d,
+            ggLog: messages.add,
+          );
 
-              await expectLater(
-                isPublished.get(directory: d, ggLog: messages.add),
-                throwsA(
-                  isA<Exception>().having(
-                    (e) => e.toString(),
-                    'toString()',
-                    contains(
-                      'Versions are not consistent: '
-                      '- pubspec: 1.0.0, - changeLog: 1.0.1, - gitHead: 1.0.0',
-                    ),
-                  ),
-                ),
-              );
-            });
-          });
-
-          test('when the local version is behind published version', () async {
-            // Mock local version 1.0.0
-            await initGit(d);
-            final pubSpec = File('test/sample_package/pubspec.yaml');
-            pubSpec.copySync('${d.path}/pubspec.yaml');
-
-            await addAndCommitVersions(
-              d,
-              pubspec: '1.0.0',
-              changeLog: '1.0.0',
-              gitHead: '1.0.0',
-            );
-
-            // Mock published version 1.0.2
-            final responseContent =
-                File('test/sample_package/pub_dev_sample_response.json')
-                    .readAsStringSync();
-            final uri = Uri.parse('https://pub.dev/api/packages/gg_check');
-            when(() => httpClient.get(uri)).thenAnswer(
-              (_) async => http.Response(responseContent, 200),
-            );
-
-            // Call isPublished.get()
-            await expectLater(
-              isPublished.get(directory: d, ggLog: messages.add),
-
-              // Should throw
-              throwsA(
-                isA<Exception>().having(
-                  (e) => e.toString(),
-                  'toString()',
-                  contains(
-                    'The local version "1.0.0" '
-                    'is behind published version 1.0.2. '
-                    'Update and try again.',
-                  ),
-                ),
-              ),
-            );
-          });
+          // Package should not be published
+          expect(result, isFalse);
         });
       });
 
       group('should return true', () {
-        test('when the local version matches the published version', () async {
-          // Mock local version 1.0.2
+        test('when the package canbe found on pub.dev ', () async {
           await initGit(d);
 
-          await addAndCommitVersions(
-            d,
-            pubspec: '1.0.2',
-            changeLog: '1.0.2',
-            gitHead: '1.0.2',
-          );
+          // Mock a package with name test
+          final pubspecYamlFile = File('${d.path}/pubspec.yaml');
+          pubspecYamlFile.writeAsStringSync('name: test');
 
-          // Mock published version 1.0.2
+          // Mock a test is published on pub.dev
           final responseContent =
               File('test/sample_package/pub_dev_sample_response.json')
                   .readAsStringSync();
@@ -226,7 +152,10 @@ void main() {
               ['is-published', '--input', d.path],
             );
 
-            expect(messages.last, contains('✅ Everything is published.'));
+            expect(
+              messages.last,
+              contains('✅ Was published to pub.dev before.'),
+            );
           });
         });
       });
@@ -251,6 +180,10 @@ void main() {
           });
         });
       });
+    });
+
+    test('should have a coverage of 100%', () {
+      expect(IsPublished(ggLog: messages.add), isNotNull);
     });
   });
 }

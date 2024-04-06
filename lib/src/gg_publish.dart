@@ -6,6 +6,7 @@
 
 import 'package:args/command_runner.dart';
 import 'package:gg_log/gg_log.dart';
+import 'package:gg_publish/src/commands/is_latest_state_published.dart';
 import 'package:gg_publish/src/commands/is_published.dart';
 import 'package:gg_publish/src/commands/is_upgraded.dart';
 import 'package:gg_publish/src/commands/publish.dart';
@@ -16,6 +17,7 @@ class GgPublish extends Command<dynamic> {
   /// Constructor
   GgPublish({required this.ggLog}) {
     addSubcommand(IsPublished(ggLog: ggLog));
+    addSubcommand(IsLatestStatePublished(ggLog: ggLog));
     addSubcommand(PublishedVersion(ggLog: ggLog));
     addSubcommand(IsUpgraded(ggLog: ggLog));
     addSubcommand(IsVersionPrepared(ggLog: ggLog));

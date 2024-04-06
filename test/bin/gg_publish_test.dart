@@ -19,7 +19,7 @@ void main() {
       // Execute bin/gg_publish.dart and check if it prints help
       final result = await Process.run(
         './bin/gg_publish.dart',
-        ['is-published'],
+        ['is-latest-state-published'],
         stdoutEncoding: utf8,
         stderrEncoding: utf8,
       );

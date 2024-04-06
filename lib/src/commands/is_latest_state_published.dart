@@ -13,17 +13,24 @@ import 'package:gg_version/gg_version.dart';
 import 'package:mocktail/mocktail.dart' as mocktail;
 
 // #############################################################################
-/// Checks if a package was published to pub.dev before.
-class IsPublished extends DirCommand<void> {
+/// Checks if the latest state is published
+class IsLatestStatePublished extends DirCommand<void> {
   /// Constructor
-  IsPublished({
+  IsLatestStatePublished({
     required super.ggLog,
     PublishedVersion? publishedVersion,
-  })  : _publishedVersion = publishedVersion ?? PublishedVersion(ggLog: ggLog),
+    ConsistentVersion? consistentVersion,
+  })  : _publishedVersion = publishedVersion ??
+            PublishedVersion(
+              ggLog: ggLog,
+            ),
+        _consistentVersion = consistentVersion ??
+            ConsistentVersion(
+              ggLog: ggLog,
+            ),
         super(
-          name: 'is-published',
-          description: 'Checks if the current directory has been published to '
-              'pub.dev before.',
+          name: 'is-latest-state-published',
+          description: 'Checks if the latest state is published.',
         );
 
   // ...........................................................................
@@ -32,11 +39,10 @@ class IsPublished extends DirCommand<void> {
     required Directory directory,
     required GgLog ggLog,
   }) async {
-    await check(directory: directory);
     final messages = <String>[];
 
     final printer = GgStatusPrinter<bool>(
-      message: 'Was published to pub.dev before.',
+      message: 'Latest state is on pub.dev.',
       ggLog: ggLog,
     );
 
@@ -52,21 +58,29 @@ class IsPublished extends DirCommand<void> {
     required GgLog ggLog,
     required Directory directory,
   }) async {
-    try {
-      // Get the latest version from pub.dev
-      await _publishedVersion.get(
-        ggLog: ggLog,
-        directory: directory,
-      );
+    // Check if the repo has a consistent version
+    final localVersion = await _consistentVersion.get(
+      ggLog: ggLog,
+      directory: directory,
+    );
 
-      return true;
-    } catch (e) {
-      if (e.toString().contains('404')) {
-        return false;
-      } else {
-        rethrow;
-      }
+    // Get the latest version from pub.dev
+    final publishedVersion = await _publishedVersion.get(
+      ggLog: ggLog,
+      directory: directory,
+    );
+
+    // Throw if latest version is bigger than the current version
+    if (publishedVersion > localVersion) {
+      throw Exception(
+        'The local version "$localVersion" '
+        'is behind published version $publishedVersion. '
+        'Update and try again.',
+      );
     }
+
+    // Return true if the current version matches the published version
+    return publishedVersion == localVersion;
   }
 
   // ######################
@@ -74,8 +88,10 @@ class IsPublished extends DirCommand<void> {
   // ######################
 
   final PublishedVersion _publishedVersion;
+  final ConsistentVersion _consistentVersion;
 }
 
 // .............................................................................
-/// A Mock for the IsPublished class using Mocktail
-class MockIsPublished extends mocktail.Mock implements IsPublished {}
+/// A Mock for the IsLatestStatePublished class using Mocktail
+class MockIsLatestStatePublished extends mocktail.Mock
+    implements IsLatestStatePublished {}

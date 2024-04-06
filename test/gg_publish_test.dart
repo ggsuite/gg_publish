@@ -38,7 +38,8 @@ void main() {
         expect(
           messages.last,
           contains(
-            'Checks if the current application state is fully published.',
+            'Checks if the current directory has been published '
+            'to pub.dev before.',
           ),
         );
       });
