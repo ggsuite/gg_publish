@@ -11,3 +11,4 @@ export 'src/commands/is_published.dart';
 export 'src/commands/is_latest_state_published.dart';
 export 'src/commands/is_upgraded.dart';
 export 'src/commands/publish.dart';
+export 'src/commands/publish_to.dart';
