@@ -50,8 +50,8 @@ void main() async {
   // ...........................................................................
   group('IsVersionPrepared', () {
     group('get(directory, ggLog)', () {
-      group('should return false', () {
-        group('and log »versions must be the same«', () {
+      group('should succeed', () {
+        group('and return false', () {
           test(
             'when pubspec.yaml and CHANGELOG have different versions',
             () async {
@@ -70,131 +70,262 @@ void main() async {
               expect(messages.last, darkGray('$versions must be the same.'));
             },
           );
-        });
-        group('and log the required versions', () {
-          test('when versions are not the next increment', () async {
-            // Assume the published version is 2.0.0
-            when(() => publishedVersion.get(ggLog: ggLog, directory: d))
-                .thenAnswer((_) async => Version(2, 0, 0));
 
-            // Assume the locally configured version is 3.0.0
-            await addAndCommitVersions(
-              d,
-              pubspec: '4.0.0',
-              changeLog: '4.0.0',
-              gitHead: '4.0.0',
-            );
+          group('when versions are not the next increment', () {
+            test('for packages published to pub.dev', () async {
+              // Assume the published version is 2.0.0
+              when(() => publishedVersion.get(ggLog: ggLog, directory: d))
+                  .thenAnswer((_) async => Version(2, 0, 0));
 
-            // The next version must be 3.0.0, 2.1.0 or 2.0.1
-            final result = await isVersionPrepared.get(
-              ggLog: ggLog,
-              directory: d,
-            );
-            expect(result, isFalse);
-            expect(
-              messages.last,
-              darkGray('$versions must be one of the following:'
-                  '\n- 2.0.1'
-                  '\n- 2.1.0'
-                  '\n- 3.0.0'),
-            );
-          });
-        });
-      });
-
-      group('should return true', () {
-        group('when CHANGELOg.md and pubspec.yaml have the same version', () {
-          test('and the version is the next increment', () async {
-            // Assume the published version is 2.0.0
-            when(() => publishedVersion.get(ggLog: ggLog, directory: d))
-                .thenAnswer((_) async => Version(2, 0, 0));
-
-            for (final version in ['2.0.1', '2.1.0', '3.0.0']) {
+              // Assume the locally configured version is 3.0.0
               await addAndCommitVersions(
                 d,
-                pubspec: version,
-                changeLog: version,
-                gitHead: version,
+                pubspec: '4.0.0',
+                changeLog: '4.0.0',
+                gitHead: '4.0.0',
               );
 
+              // The next version must be 3.0.0, 2.1.0 or 2.0.1
               final result = await isVersionPrepared.get(
                 ggLog: ggLog,
                 directory: d,
               );
-              expect(result, isTrue);
-              expect(messages.isEmpty, isTrue);
-            }
+              expect(result, isFalse);
+              expect(
+                messages.last,
+                darkGray('$versions must be one of the following:'
+                    '\n- 2.0.1'
+                    '\n- 2.1.0'
+                    '\n- 3.0.0'),
+              );
+            });
+
+            test('for packages published to git', () async {
+              // Assume the locally configured version is 3.0.1
+              // an the last published version published to git is 3.0.0
+              await addAndCommitVersions(
+                d,
+                pubspec: '3.0.1',
+                changeLog: '3.0.1',
+                gitHead: null,
+              );
+
+              // Insert 'publish_to: none' into pubspec.yaml.
+              // This will simulate a package that is published to git.
+              final pubspec = File(join(d.path, 'pubspec.yaml'));
+              final content = await pubspec.readAsString();
+              await pubspec.writeAsString('$content\npublish_to: none');
+              await commitFile(d, 'pubspec.yaml', ammend: true);
+              await addTag(d, '3.0.2'); // Last version published to git
+
+              // The next version must be 3.0.0, 2.1.0 or 2.0.1
+              final result = await isVersionPrepared.get(
+                ggLog: ggLog,
+                directory: d,
+              );
+              expect(result, isFalse);
+              expect(
+                messages.last,
+                darkGray('$versions must be one of the following:'
+                    '\n- 3.0.3'
+                    '\n- 3.1.0'
+                    '\n- 4.0.0'),
+              );
+            });
           });
         });
 
-        group('when CHANGELOg.md and pubspec.yaml have not the same version',
-            () {
-          group('but CHANGELOG.md has an ## "Unreleased" headline', () {
-            group('and treatUnpublishedAsOk is true', () {
-              test('via function param', () async {
+        group('and return true', () {
+          group('when CHANGELOG.md and pubspec.yaml have the same version', () {
+            group('and the version is the next increment', () {
+              test('for published packages', () async {
                 // Assume the published version is 2.0.0
                 when(() => publishedVersion.get(ggLog: ggLog, directory: d))
                     .thenAnswer((_) async => Version(2, 0, 0));
 
-                // Assume the locally configured version is 3.0.0
-                await addAndCommitVersions(
-                  d,
-                  pubspec: '2.1.0',
-                  changeLog: '2.0.0',
-                  gitHead: '2.0.0',
-                );
+                for (final version in ['2.0.1', '2.1.0', '3.0.0']) {
+                  await addAndCommitVersions(
+                    d,
+                    pubspec: version,
+                    changeLog: version,
+                    gitHead: version,
+                  );
 
-                // Prepare CHANGELOG.md
-                File(join(d.path, 'CHANGELOG.md')).writeAsStringSync(
-                  '# Changelog\n\n'
-                  '## Unreleased\n\n- Message 1\n\n'
-                  '## 3.0.0\n\n- Message 2\n',
-                );
-
-                final result = await isVersionPrepared.get(
-                  ggLog: ggLog,
-                  directory: d,
-                  treatUnpublishedAsOk: true,
-                );
-                expect(result, isTrue);
-                expect(messages.isEmpty, isTrue);
+                  final result = await isVersionPrepared.get(
+                    ggLog: ggLog,
+                    directory: d,
+                  );
+                  expect(result, isTrue);
+                  expect(messages.isEmpty, isTrue);
+                }
               });
 
-              test('via Constructor param', () async {
-                // Assume the published version is 2.0.0
-                when(() => publishedVersion.get(ggLog: ggLog, directory: d))
-                    .thenAnswer((_) async => Version(2, 0, 0));
+              group('for unpublished packages', () {
+                test('published to pub.dev', () async {
+                  // Assume the published version throws an 404 error,
+                  // which means the package is not yet published
+                  when(() => publishedVersion.get(ggLog: ggLog, directory: d))
+                      .thenThrow(
+                    Exception(
+                      'Error 404: The package is not yet published.',
+                    ),
+                  );
 
-                // Assume the locally configured version is 3.0.0
-                await addAndCommitVersions(
-                  d,
-                  pubspec: '2.1.0',
-                  changeLog: '2.0.0',
-                  gitHead: '2.0.0',
-                );
+                  // The published package is assumed to have the version 0.0.0.
+                  // The next possible versions are 0.0.1, 0.1.0 or 1.0.0
 
-                // Prepare CHANGELOG.md
-                File(join(d.path, 'CHANGELOG.md')).writeAsStringSync(
-                  '# Changelog\n\n'
-                  '## Unreleased\n\n- Message 1\n\n'
-                  '## 3.0.0\n\n- Message 2\n',
-                );
+                  for (final version in ['1.0.0', '0.1.0', '0.0.1']) {
+                    await addAndCommitVersions(
+                      d,
+                      pubspec: version,
+                      changeLog: version,
+                      gitHead: version,
+                    );
 
-                isVersionPrepared = IsVersionPrepared(
-                  ggLog: ggLog,
-                  publishedVersion: publishedVersion,
-                  treatUnpublishedAsOk: true,
-                );
+                    final result = await isVersionPrepared.get(
+                      ggLog: ggLog,
+                      directory: d,
+                    );
+                    expect(result, isTrue);
+                    expect(messages.isEmpty, isTrue);
+                  }
+                });
 
-                final result = await isVersionPrepared.get(
-                  ggLog: ggLog,
-                  directory: d,
-                );
-                expect(result, isTrue);
-                expect(messages.isEmpty, isTrue);
+                test('published to git', () async {
+                  // The published package is assumed to have the version 0.0.0.
+                  // The next possible versions are 0.0.1, 0.1.0 or 1.0.0
+
+                  bool isFirst = true;
+
+                  for (final version in ['1.0.0', '0.1.0', '0.0.1']) {
+                    await addAndCommitVersions(
+                      d,
+                      pubspec: version,
+                      changeLog: version,
+                      gitHead: null, // Not published to git
+                      appendToPubspec: isFirst ? '\npublish_to: none' : null,
+                    );
+
+                    isFirst = false;
+
+                    final result = await isVersionPrepared.get(
+                      ggLog: ggLog,
+                      directory: d,
+                    );
+                    expect(result, isTrue);
+                    expect(messages.isEmpty, isTrue);
+                  }
+                });
               });
             });
           });
+
+          group('when CHANGELOG.md and pubspec.yaml have not the same version',
+              () {
+            group('but CHANGELOG.md has an ## "Unreleased" headline', () {
+              group('and treatUnpublishedAsOk is true', () {
+                test('via function param', () async {
+                  // Assume the published version is 2.0.0
+                  when(() => publishedVersion.get(ggLog: ggLog, directory: d))
+                      .thenAnswer((_) async => Version(2, 0, 0));
+
+                  // Assume the locally configured version is 3.0.0
+                  await addAndCommitVersions(
+                    d,
+                    pubspec: '2.1.0',
+                    changeLog: '2.0.0',
+                    gitHead: '2.0.0',
+                  );
+
+                  // Prepare CHANGELOG.md
+                  File(join(d.path, 'CHANGELOG.md')).writeAsStringSync(
+                    '# Changelog\n\n'
+                    '## Unreleased\n\n- Message 1\n\n'
+                    '## 3.0.0\n\n- Message 2\n',
+                  );
+
+                  final result = await isVersionPrepared.get(
+                    ggLog: ggLog,
+                    directory: d,
+                    treatUnpublishedAsOk: true,
+                  );
+                  expect(result, isTrue);
+                  expect(messages.isEmpty, isTrue);
+                });
+
+                test('via Constructor param', () async {
+                  // Assume the published version is 2.0.0
+                  when(() => publishedVersion.get(ggLog: ggLog, directory: d))
+                      .thenAnswer((_) async => Version(2, 0, 0));
+
+                  // Assume the locally configured version is 3.0.0
+                  await addAndCommitVersions(
+                    d,
+                    pubspec: '2.1.0',
+                    changeLog: '2.0.0',
+                    gitHead: '2.0.0',
+                  );
+
+                  // Prepare CHANGELOG.md
+                  File(join(d.path, 'CHANGELOG.md')).writeAsStringSync(
+                    '# Changelog\n\n'
+                    '## Unreleased\n\n- Message 1\n\n'
+                    '## 3.0.0\n\n- Message 2\n',
+                  );
+
+                  isVersionPrepared = IsVersionPrepared(
+                    ggLog: ggLog,
+                    publishedVersion: publishedVersion,
+                    treatUnpublishedAsOk: true,
+                  );
+
+                  final result = await isVersionPrepared.get(
+                    ggLog: ggLog,
+                    directory: d,
+                  );
+                  expect(result, isTrue);
+                  expect(messages.isEmpty, isTrue);
+                });
+              });
+            });
+          });
+        });
+      });
+
+      group('should throw', () {
+        test('when pubspec.yaml contains an unsupported publish_to: value',
+            () async {
+          // Setup a version in pubspec.yaml and CHANGELOG.md
+          await addAndCommitVersions(
+            d,
+            pubspec: '1.0.0',
+            changeLog: '1.0.0',
+            gitHead: '1.0.0',
+          );
+
+          // Write a publishTo: https://xyz into pubspec.yaml
+          final pubspec = File(join(d.path, 'pubspec.yaml'));
+          pubspec.writeAsStringSync(
+            'name: gg_publish\nversion: 1.0.0\npublish_to: https://xyz',
+          );
+
+          // Publishing to https://xyz should not be supported
+          String exceptionMessage = '';
+          try {
+            await isVersionPrepared.get(
+              ggLog: ggLog,
+              directory: d,
+            );
+          } catch (e) {
+            exceptionMessage = e.toString();
+          }
+
+          expect(
+            exceptionMessage,
+            contains(
+              'UnimplementedError: Publishing to https://xyz is not supported.',
+            ),
+          );
         });
       });
     });

@@ -81,8 +81,8 @@ class IsVersionPrepared extends DirCommand<void> {
 
     // Version in CHANGELOG.md must either be "Unreleased"
     // or it must match the version in pubspect.yaml
-    final isUnpublished = await _isUnpublished(directory);
-    final changeLogIsOk = treatUnpublishedAsOk && isUnpublished;
+    final isUnreleased = await _isUnreleased(directory);
+    final changeLogIsOk = treatUnpublishedAsOk && isUnreleased;
 
     if (!changeLogIsOk && allVersions.pubspec != allVersions.changeLog) {
       ggLog(
@@ -91,11 +91,44 @@ class IsVersionPrepared extends DirCommand<void> {
       return false;
     }
 
-    // Get the latest version from pub.dev
-    final publishedVersion = await _publishedVersion.get(
-      ggLog: ggLog,
-      directory: directory,
-    );
+    // Where is the package published to?
+    final publishTo = await PublishTo(ggLog: ggLog).fromDirectory(directory);
+    final publishToPubDev = publishTo == 'pub.dev';
+    final publishToGit = publishTo == 'none';
+    if (!publishToPubDev && !publishToGit) {
+      throw UnimplementedError('Publishing to $publishTo is not supported.');
+    }
+
+    // Publish to pub.dev?
+    // Get publishedVersion from pub.dev
+    late Version publishedVersion;
+
+    if (publishToPubDev) {
+      try {
+        publishedVersion = await _publishedVersion.get(
+          ggLog: ggLog,
+          directory: directory,
+        );
+      } catch (e) {
+        // Package is not yet published?
+        // Take 0.0.0 as published version
+        bool isNotYetPublished = e.toString().contains('404');
+        if (isNotYetPublished) {
+          publishedVersion = Version(0, 0, 0);
+        }
+
+        // Rethrow all other errors
+        else {
+          rethrow;
+        }
+      }
+    }
+
+    // Publish to git?
+    // Get publishedVersion from git
+    if ((publishToGit)) {
+      publishedVersion = allVersions.gitHead ?? Version(0, 0, 0);
+    }
 
     // Version in pubspec.yaml must be one step bigger than the published one
     final l = allVersions.pubspec;
@@ -127,7 +160,7 @@ class IsVersionPrepared extends DirCommand<void> {
   final bool? _treatUnpublishedAsOk;
 
   // ...........................................................................
-  Future<bool> _isUnpublished(Directory directory) async {
+  Future<bool> _isUnreleased(Directory directory) async {
     final changeLog = File('${directory.path}/CHANGELOG.md');
     final lines = await changeLog.readAsLines();
     for (final line in lines) {

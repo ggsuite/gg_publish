@@ -5,6 +5,7 @@
 ### Added
 
 - Take over IsVersionPrepared, PrepareNextVersion and PublishedVersion from gg\_version
+- IsVersionPrepared: Does also work for packages not published to git
 
 ## [3.0.1] - 2024-04-08
 
