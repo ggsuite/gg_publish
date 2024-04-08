@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.0.1] - 2024-04-08
+
+### Added
+
+- publish-to command to get the publish target
+
 ## [3.0.0] - 2024-04-06
 
 ### Added
@@ -66,4 +72,5 @@
 
 - Initial version.
 
+[3.0.1]: https://github.com/inlavigo/gg_publish/compare/3.0.0...3.0.1
 [3.0.0]: https://github.com/inlavigo/gg_publish/compare/2.0.2...3.0.0
