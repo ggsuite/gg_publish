@@ -7,7 +7,6 @@
 import 'package:args/command_runner.dart';
 import 'package:gg_log/gg_log.dart';
 import 'package:gg_publish/gg_publish.dart';
-import 'package:gg_version/gg_version.dart';
 
 /// The command line interface for GgPublish
 class GgPublish extends Command<dynamic> {
@@ -15,11 +14,12 @@ class GgPublish extends Command<dynamic> {
   GgPublish({required this.ggLog}) {
     addSubcommand(IsPublished(ggLog: ggLog));
     addSubcommand(IsLatestStatePublished(ggLog: ggLog));
-    addSubcommand(PublishedVersion(ggLog: ggLog));
     addSubcommand(IsUpgraded(ggLog: ggLog));
-    addSubcommand(IsVersionPrepared(ggLog: ggLog));
     addSubcommand(Publish(ggLog: ggLog));
     addSubcommand(PublishTo(ggLog: ggLog));
+    addSubcommand(IsVersionPrepared(ggLog: ggLog));
+    addSubcommand(PublishedVersion(ggLog: ggLog));
+    addSubcommand(PrepareNextVersion(ggLog: ggLog));
   }
 
   /// The log function

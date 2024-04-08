@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Take over IsVersionPrepared, PrepareNextVersion and PublishedVersion from gg\_version
+
 ## [3.0.1] - 2024-04-08
 
 ### Added
@@ -72,5 +78,6 @@
 
 - Initial version.
 
+[Unreleased]: https://github.com/inlavigo/gg_publish/compare/3.0.1...HEAD
 [3.0.1]: https://github.com/inlavigo/gg_publish/compare/3.0.0...3.0.1
 [3.0.0]: https://github.com/inlavigo/gg_publish/compare/2.0.2...3.0.0

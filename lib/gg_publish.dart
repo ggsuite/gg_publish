@@ -12,3 +12,6 @@ export 'src/commands/is_latest_state_published.dart';
 export 'src/commands/is_upgraded.dart';
 export 'src/commands/publish.dart';
 export 'src/commands/publish_to.dart';
+export 'src/commands/is_version_prepared.dart';
+export 'src/commands/prepare_next_version.dart';
+export 'src/commands/published_version.dart';
