@@ -133,6 +133,27 @@ void main() {
             );
             expect(result, Version(2, 0, 0));
           });
+
+          test('when pubspec.yaml contains publish_to: none', () async {
+            initCommand();
+            await initGit(d);
+
+            // Set a git version
+            await addAndCommitVersions(
+              d,
+              pubspec: '1.2.3',
+              changeLog: '1.2.3',
+              gitHead: '2.0.0', // This version should be returned
+              appendToPubspec: '\npublish_to: none',
+            );
+
+            // Request the result
+            final result = await publishedVersion.get(
+              directory: d,
+              ggLog: messages.add,
+            );
+            expect(result, Version(2, 0, 0));
+          });
         });
 
         group('0.0.0', () {

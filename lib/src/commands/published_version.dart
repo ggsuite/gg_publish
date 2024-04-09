@@ -50,14 +50,19 @@ class PublishedVersion extends DirCommand<void> {
     required Directory directory,
   }) async {
     // Read pubspec.yaml
-    final pubspec = File('${directory.path}/pubspec.yaml');
-    if (!pubspec.existsSync()) {
+    final pubspecFile = File('${directory.path}/pubspec.yaml');
+    if (!pubspecFile.existsSync()) {
       throw ArgumentError('pubspec.yaml not found');
+    }
+    final pubspec = pubspecFile.readAsStringSync();
+
+    // Is published to none? Return verson from tag
+    if (pubspec.contains(RegExp(r'publish_to:\s*none'))) {
+      return await _versionFromGitTag(directory, ggLog);
     }
 
     // Read the name from pubspec.yaml
-    final content = pubspec.readAsStringSync();
-    final name = RegExp(r'name: (.*)').firstMatch(content)?.group(1);
+    final name = RegExp(r'name: (.*)').firstMatch(pubspec)?.group(1);
     if (name == null) {
       throw ArgumentError('name not found in pubspec.yaml');
     }
@@ -76,11 +81,7 @@ class PublishedVersion extends DirCommand<void> {
 
     final statusCode = response.statusCode;
     if (statusCode == 404) {
-      return await _versionFromGit.fromHead(
-            directory: directory,
-            ggLog: ggLog,
-          ) ??
-          Version(0, 0, 0);
+      return await _versionFromGitTag(directory, ggLog);
     }
 
     if (statusCode != 200) {
@@ -100,6 +101,15 @@ class PublishedVersion extends DirCommand<void> {
     }
 
     return Version.parse(latest['version'] as String);
+  }
+
+  // ...........................................................................
+  Future<Version> _versionFromGitTag(Directory directory, GgLog ggLog) async {
+    return await _versionFromGit.fromHead(
+          directory: directory,
+          ggLog: ggLog,
+        ) ??
+        Version(0, 0, 0);
   }
 
   // ######################
