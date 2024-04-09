@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.0.8] - 2024-04-09
+
+### Fixed
+
+- Fixed an error on IsVersionPrepared
+
 ## [3.0.7] - 2024-04-09
 
 ### Changed
@@ -109,6 +115,7 @@
 
 - Initial version.
 
+[3.0.8]: https://github.com/inlavigo/gg_publish/compare/3.0.7...3.0.8
 [3.0.7]: https://github.com/inlavigo/gg_publish/compare/3.0.6...3.0.7
 [3.0.6]: https://github.com/inlavigo/gg_publish/compare/3.0.5...3.0.6
 [3.0.5]: https://github.com/inlavigo/gg_publish/compare/3.0.4...3.0.5
