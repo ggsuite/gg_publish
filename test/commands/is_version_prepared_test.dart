@@ -117,6 +117,7 @@ void main() async {
               await pubspec.writeAsString('$content\npublish_to: none');
               await commitFile(d, 'pubspec.yaml', ammend: true);
               await addTag(d, '3.0.2'); // Last version published to git
+              await updateAndCommitSampleFile(d);
 
               // The next version must be 3.0.0, 2.1.0 or 2.0.1
               final result = await isVersionPrepared.get(

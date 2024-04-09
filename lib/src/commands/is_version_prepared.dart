@@ -128,7 +128,7 @@ class IsVersionPrepared extends DirCommand<void> {
     // Publish to git?
     // Get publishedVersion from git
     if ((publishToGit)) {
-      publishedVersion = allVersions.gitHead ?? Version(0, 0, 0);
+      publishedVersion = allVersions.gitLatest ?? Version(0, 0, 0);
     }
 
     // Version in pubspec.yaml must be one step bigger than the published one
