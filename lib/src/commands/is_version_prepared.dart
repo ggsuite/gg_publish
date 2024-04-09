@@ -77,6 +77,7 @@ class IsVersionPrepared extends DirCommand<void> {
     final allVersions = await _allVersions.get(
       ggLog: ggLog,
       directory: directory,
+      ignoreUncommitted: true,
     );
 
     // Version in CHANGELOG.md must either be "Unreleased"

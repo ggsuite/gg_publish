@@ -138,26 +138,83 @@ void main() async {
         group('and return true', () {
           group('when CHANGELOG.md and pubspec.yaml have the same version', () {
             group('and the version is the next increment', () {
-              test('for published packages', () async {
-                // Assume the published version is 2.0.0
-                when(() => publishedVersion.get(ggLog: ggLog, directory: d))
-                    .thenAnswer((_) async => Version(2, 0, 0));
+              group('for published packages', () {
+                test('published to pub.dev', () async {
+                  // Assume the published version is 2.0.0
+                  when(() => publishedVersion.get(ggLog: ggLog, directory: d))
+                      .thenAnswer((_) async => Version(2, 0, 0));
 
-                for (final version in ['2.0.1', '2.1.0', '3.0.0']) {
-                  await addAndCommitVersions(
-                    d,
-                    pubspec: version,
-                    changeLog: version,
-                    gitHead: version,
-                  );
+                  for (final version in ['2.0.1', '2.1.0', '3.0.0']) {
+                    await addAndCommitVersions(
+                      d,
+                      pubspec: version,
+                      changeLog: version,
+                      gitHead: version,
+                    );
 
-                  final result = await isVersionPrepared.get(
-                    ggLog: ggLog,
-                    directory: d,
-                  );
-                  expect(result, isTrue);
-                  expect(messages.isEmpty, isTrue);
-                }
+                    final result = await isVersionPrepared.get(
+                      ggLog: ggLog,
+                      directory: d,
+                    );
+                    expect(result, isTrue);
+                    expect(messages.isEmpty, isTrue);
+                  }
+                });
+
+                group('not published to a package repo (publish_to: none)', () {
+                  test('without local uncomitted change', () async {
+                    // The git tag will have the version 1.0.0
+                    // Thus the next version needs to be either
+                    // - 1.0.1
+                    // - 1.1.0
+                    // - 2.0.0
+                    const nextVersion = '2.0.0';
+                    await addAndCommitVersions(
+                      d,
+                      pubspec: nextVersion, // new version
+                      changeLog: nextVersion, // new version
+                      gitHead: '1.0.0', // current version
+
+                      // Packge is not published to pub.dev or any other repo
+                      appendToPubspec: '\npublish_to: none',
+                    );
+
+                    final result = await isVersionPrepared.get(
+                      ggLog: ggLog,
+                      directory: d,
+                    );
+                    expect(result, isTrue);
+                    expect(messages.isEmpty, isTrue);
+                  });
+
+                  test('with local uncommitted changes', () async {
+                    // The git tag will have the version 1.0.0
+                    // Thus the next version needs to be either
+                    // - 1.0.1
+                    // - 1.1.0
+                    // - 2.0.0
+                    const nextVersion = '2.0.0';
+                    const currentVersion = '1.0.0';
+                    await addAndCommitVersions(
+                      d,
+                      pubspec: nextVersion, // new version
+                      changeLog: nextVersion, // new version
+                      gitHead: currentVersion, // current version
+
+                      // Packge is not published to pub.dev or any other repo
+                      appendToPubspec: '\npublish_to: none',
+                    );
+
+                    await updateSampleFileWithoutCommitting(d);
+
+                    final result = await isVersionPrepared.get(
+                      ggLog: ggLog,
+                      directory: d,
+                    );
+                    expect(result, isTrue);
+                    expect(messages.isEmpty, isTrue);
+                  });
+                });
               });
 
               group('for unpublished packages', () {
@@ -191,10 +248,9 @@ void main() async {
                   }
                 });
 
-                test('published to git', () async {
-                  // The published package is assumed to have the version 0.0.0.
+                test('published to git (publish_to: none)', () async {
+                  // The published package is assumed to have version 0.0.0.
                   // The next possible versions are 0.0.1, 0.1.0 or 1.0.0
-
                   bool isFirst = true;
 
                   for (final version in ['1.0.0', '0.1.0', '0.0.1']) {
