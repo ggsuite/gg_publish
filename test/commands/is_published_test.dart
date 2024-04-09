@@ -48,6 +48,7 @@ void main() {
     runner = CommandRunner<void>('test', 'test');
     httpClient = MockClient();
     await initIsPublished();
+    await initGit(d);
   });
 
   // ...........................................................................

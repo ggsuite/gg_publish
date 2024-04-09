@@ -11,6 +11,7 @@ import 'package:gg_log/gg_log.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:mocktail/mocktail.dart' as mocktail;
+import 'package:pub_semver/pub_semver.dart';
 
 // #############################################################################
 /// Checks if a package was published to pub.dev before.
@@ -52,21 +53,17 @@ class IsPublished extends DirCommand<void> {
     required GgLog ggLog,
     required Directory directory,
   }) async {
-    try {
-      // Get the latest version from pub.dev
-      await _publishedVersion.get(
-        ggLog: ggLog,
-        directory: directory,
-      );
+    // Get the latest version from pub.dev
+    final version = await _publishedVersion.get(
+      ggLog: ggLog,
+      directory: directory,
+    );
 
-      return true;
-    } catch (e) {
-      if (e.toString().contains('404')) {
-        return false;
-      } else {
-        rethrow;
-      }
+    if (version == Version(0, 0, 0)) {
+      return false;
     }
+
+    return true;
   }
 
   // ######################

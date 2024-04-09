@@ -95,6 +95,8 @@ class PrepareNextVersion extends DirCommand<void> {
     required GgLog ggLog,
     required VersionIncrement increment,
   }) async {
+    // Package is not published? Treat the git version tag as published version.
+
     // Get the published version
     final publishedVersion = await _publishedVersion.get(
       directory: directory,

@@ -9,6 +9,7 @@ import 'dart:io';
 
 import 'package:gg_args/gg_args.dart';
 import 'package:gg_log/gg_log.dart';
+import 'package:gg_version/gg_version.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart' as mocktail;
@@ -19,8 +20,10 @@ class PublishedVersion extends DirCommand<void> {
   /// Constructor
   PublishedVersion({
     required super.ggLog,
+    FromGit? versionFromGit,
     http.Client? httpClient,
   })  : _httpClient = httpClient ?? http.Client(), // coverage:ignore-line
+        _versionFromGit = versionFromGit ?? FromGit(ggLog: ggLog),
         super(
           name: 'published-version',
           description:
@@ -40,6 +43,8 @@ class PublishedVersion extends DirCommand<void> {
 
   // ...........................................................................
   /// Returns true if the current directory state is published to pub.dev
+  /// If the package cannot be found on pub.dev, the version
+  /// from the git tags is treated as published version.
   Future<Version> get({
     required GgLog ggLog,
     required Directory directory,
@@ -71,9 +76,11 @@ class PublishedVersion extends DirCommand<void> {
 
     final statusCode = response.statusCode;
     if (statusCode == 404) {
-      throw Exception(
-        'Error 404: The package $name is not yet published.',
-      );
+      return await _versionFromGit.fromHead(
+            directory: directory,
+            ggLog: ggLog,
+          ) ??
+          Version(0, 0, 0);
     }
 
     if (statusCode != 200) {
@@ -99,6 +106,7 @@ class PublishedVersion extends DirCommand<void> {
   // Private
   // ######################
   final http.Client _httpClient;
+  final FromGit _versionFromGit;
 }
 
 // .............................................................................

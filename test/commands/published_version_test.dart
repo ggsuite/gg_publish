@@ -7,8 +7,10 @@
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
+import 'package:gg_git/gg_git_test_helpers.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 import 'package:http/http.dart' as http;
@@ -17,7 +19,6 @@ class MockClient extends Mock implements http.Client {}
 
 void main() {
   late Directory d;
-  late Directory tmp;
   late MockClient client;
   late CommandRunner<void> runner;
   late PublishedVersion publishedVersion;
@@ -33,17 +34,19 @@ void main() {
   }
 
   // ...........................................................................
-  setUp(() {
+  setUp(() async {
     messages.clear();
-    d = Directory('test/sample_package');
-    tmp = Directory.systemTemp.createTempSync();
+    final samplePackage = Directory('test/sample_package');
+    final tmp = await initTestDir();
+    await Process.run('cp', ['-r', samplePackage.path, tmp.path]);
+    d = Directory('${tmp.path}/sample_package');
 
     client = MockClient();
   });
 
   // ...........................................................................
   tearDown(() {
-    tmp.deleteSync(recursive: true);
+    d.parent.deleteSync(recursive: true);
   });
 
   // ...........................................................................
@@ -104,14 +107,72 @@ void main() {
             }
           });
         });
+
+        group('of the git tag', () {
+          test('when the package is not yet published', () async {
+            initCommand();
+            await initGit(d);
+
+            // Mock http client: Package does not exist
+            final uri = Uri.parse('https://pub.dev/api/packages/gg_check');
+            final response = http.Response('', 404);
+            when(() => client.get(uri)).thenAnswer((_) async => response);
+
+            // Set a git version
+            await addAndCommitVersions(
+              d,
+              pubspec: '1.2.3',
+              changeLog: '1.2.3',
+              gitHead: '2.0.0', // This version should be returned
+            );
+
+            // Request the result
+            final result = await publishedVersion.get(
+              directory: d,
+              ggLog: messages.add,
+            );
+            expect(result, Version(2, 0, 0));
+          });
+        });
+
+        group('0.0.0', () {
+          test(
+              'when the package is neither published on pub.dev '
+              'nor has a git tag', () async {
+            initCommand();
+            await initGit(d);
+
+            // Mock http client: Package does not exist
+            final uri = Uri.parse('https://pub.dev/api/packages/gg_check');
+            final response = http.Response('', 404);
+            when(() => client.get(uri)).thenAnswer((_) async => response);
+
+            // Set a git version
+            await addAndCommitVersions(
+              d,
+              pubspec: '1.2.3',
+              changeLog: '1.2.3',
+              gitHead: null, // No git tag
+            );
+
+            // Request the result
+            final result = await publishedVersion.get(
+              directory: d,
+              ggLog: messages.add,
+            );
+            expect(result, Version(0, 0, 0));
+          });
+        });
       });
 
       group('should throw', () {
-        test('when directory does not contain a pubspec.yaml', () {
+        test('when directory does not contain a pubspec.yaml', () async {
           initCommand();
+          await File(join(d.path, 'pubspec.yaml')).delete();
           // Call get
           expect(
-            () => publishedVersion.get(directory: tmp, ggLog: messages.add),
+            () async =>
+                await publishedVersion.get(directory: d, ggLog: messages.add),
             throwsA(
               isA<ArgumentError>().having(
                 (e) => e.message,
@@ -121,17 +182,16 @@ void main() {
             ),
           );
         });
-
         test('when pubspec.yaml does not contain a name field', () {
           initCommand();
 
           // Create a smple package directory
-          final pubspec = File('${tmp.path}/pubspec.yaml');
+          final pubspec = File('${d.path}/pubspec.yaml');
           pubspec.writeAsStringSync('name:');
 
           // Call get
           expect(
-            () => publishedVersion.get(directory: tmp, ggLog: messages.add),
+            () => publishedVersion.get(directory: d, ggLog: messages.add),
             throwsA(
               isA<ArgumentError>().having(
                 (e) => e.message,
@@ -186,31 +246,6 @@ void main() {
                 (e) => e.message,
                 'message',
                 'Error 406 while getting the latest version from pub.dev',
-              ),
-            ),
-          );
-        });
-
-        test('when the package is not yet published', () {
-          initCommand();
-
-          // Mock http client
-          final uri = Uri.parse('https://pub.dev/api/packages/gg_check');
-          final response = http.Response('', 404);
-          when(() => client.get(uri)).thenAnswer((_) async => response);
-
-          // Call get
-          expect(
-            () => publishedVersion.get(
-              directory: d,
-              ggLog: messages.add,
-            ),
-            throwsA(
-              isA<Exception>().having(
-                (e) => e.toString(),
-                'message',
-                'Exception: '
-                    'Error 404: The package gg_check is not yet published.',
               ),
             ),
           );
@@ -275,11 +310,11 @@ void main() {
         when(() => client.get(uri)).thenAnswer((_) async => response);
 
         // Create a smple package directory
-        final pubspec = File('${tmp.path}/pubspec.yaml');
+        final pubspec = File('${d.path}/pubspec.yaml');
         pubspec.writeAsStringSync('name: gg_check');
 
         // Call run
-        await runner.run(['published-version', '--input', tmp.path]);
+        await runner.run(['published-version', '--input', d.path]);
 
         // Was the correct version logged?
         expect(messages.last, '1.0.2');
