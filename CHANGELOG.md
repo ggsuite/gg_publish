@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.0.7] - 2024-04-09
+
+### Changed
+
+- Update dependency gg\_version to 4.0.0
+
 ## [3.0.6] - 2024-04-09
 
 ### Added
@@ -103,6 +109,7 @@
 
 - Initial version.
 
+[3.0.7]: https://github.com/inlavigo/gg_publish/compare/3.0.6...3.0.7
 [3.0.6]: https://github.com/inlavigo/gg_publish/compare/3.0.5...3.0.6
 [3.0.5]: https://github.com/inlavigo/gg_publish/compare/3.0.4...3.0.5
 [3.0.4]: https://github.com/inlavigo/gg_publish/compare/3.0.3...3.0.4

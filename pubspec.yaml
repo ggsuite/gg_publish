@@ -14,7 +14,7 @@ dependencies:
   gg_log: ^1.0.0
   gg_process: ^1.0.7
   gg_status_printer: ^1.0.7
-  gg_version: ^3.0.0
+  gg_version: ^4.0.0
   http: ^1.2.1
   mocktail: ^1.0.3
   path: ^1.8.0
