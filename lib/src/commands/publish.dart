@@ -29,13 +29,16 @@ class Publish extends DirCommand<void> {
   })  : _isVersionPrepared =
             isVersionPrepared ?? IsVersionPrepared(ggLog: ggLog),
         _processWrapper = processWrapper,
-        _readLineFromStdIn = readLineFromStdIn ?? stdin.readLineSync;
+        _readLineFromStdIn = readLineFromStdIn ?? stdin.readLineSync {
+    _addArgs();
+  }
 
   // ...........................................................................
   @override
   Future<void> exec({
     required Directory directory,
     required GgLog ggLog,
+    bool? askBeforePublishing,
   }) async {
     // final messages = <String>[];
 
@@ -46,7 +49,11 @@ class Publish extends DirCommand<void> {
     );
 
     await printer.logTask(
-      task: () => _exec(ggLog: ggLog, directory: directory),
+      task: () => _exec(
+        ggLog: ggLog,
+        directory: directory,
+        askBeforePublishing: askBeforePublishing ?? _askBeforePublishing,
+      ),
       success: (success) => true,
     );
   }
@@ -63,6 +70,7 @@ class Publish extends DirCommand<void> {
   Future<void> _exec({
     required Directory directory,
     required GgLog ggLog,
+    required bool askBeforePublishing,
   }) async {
     // Is version prepared?
     final isVersionPrepared = await _isVersionPrepared.get(
@@ -74,16 +82,24 @@ class Publish extends DirCommand<void> {
     }
 
     // Publish
-    await _publish(directory, ggLog);
+    await _publish(directory, ggLog, askBeforePublishing);
   }
 
   // ...........................................................................
-  Future<void> _publish(Directory directory, GgLog ggLog) async {
+  Future<void> _publish(
+    Directory directory,
+    GgLog ggLog,
+    bool askBeforePublishing,
+  ) async {
     final errors = <String>[];
 
     final process = await _processWrapper.start(
       'dart',
-      ['pub', 'publish'],
+      [
+        'pub',
+        'publish',
+        if (!askBeforePublishing) '--force',
+      ],
       workingDirectory: directory.path,
     );
 
@@ -112,6 +128,21 @@ class Publish extends DirCommand<void> {
         "»dart pub publish« was not successful: ${errors.join('\n')}",
       );
     }
+  }
+
+  // ...........................................................................
+  bool get _askBeforePublishing =>
+      argResults?['ask-before-publishing'] as bool? ?? true;
+
+  // ...........................................................................
+  void _addArgs() {
+    argParser.addFlag(
+      'ask-before-publishing',
+      abbr: 'a',
+      help: 'Ask for confirmation before publishing to pub.dev.',
+      defaultsTo: true,
+      negatable: true,
+    );
   }
 }
 

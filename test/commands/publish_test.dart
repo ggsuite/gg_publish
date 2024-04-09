@@ -37,14 +37,11 @@ void main() {
   }
 
   // ...........................................................................
-  void mockProcess({int result = 0}) {
-    // Mock the process
-    processWrapper = MockGgProcessWrapper();
-
+  void mockProcess({required int result, required bool force}) {
     when(
       () => processWrapper.start(
         'dart',
-        ['pub', 'publish'],
+        ['pub', 'publish', if (force) '--force'],
         workingDirectory: d.path,
       ),
     ).thenAnswer(
@@ -59,8 +56,8 @@ void main() {
     await initGit(d);
     await addAndCommitSampleFile(d);
     process = GgFakeProcess();
-    mockProcess();
     isVersionPrepared = MockIsVersionPrepared();
+    processWrapper = MockGgProcessWrapper();
     publish = Publish(
       ggLog: ggLog,
       processWrapper: processWrapper,
@@ -81,6 +78,7 @@ void main() {
         test('and log the ongoing process live', () async {
           // Setup consistent versions
           mockIsVersionPrepared(true);
+          mockProcess(result: 0, force: false);
 
           // Start the process
           bool isDone = false;
@@ -103,33 +101,48 @@ void main() {
           expect(isDone, isTrue);
         });
 
-        test('and ask the user for confirmation', () async {
-          // Setup consistent versions
-          mockIsVersionPrepared(true);
+        group('and ask (not) the user for confirmation', () {
+          for (final ask in [null, false, true]) {
+            test('when askBeforePublishing is $ask', () async {
+              final shouldAsk = ask == true || ask == null;
 
-          // Start the process
-          bool isDone = false;
-          publish.exec(directory: d, ggLog: ggLog).then(
-                (value) => isDone = true,
-              );
-          await Future<void>.delayed(Duration.zero);
+              // Setup consistent versions
+              mockIsVersionPrepared(true);
+              mockProcess(result: 0, force: !shouldAsk);
 
-          // Answer the next question with y
-          stdInValue = 'y';
+              // Start the process
+              bool isDone = false;
+              publish
+                  .exec(
+                    directory: d,
+                    ggLog: ggLog,
+                    askBeforePublishing: ask,
+                  )
+                  .then(
+                    (value) => isDone = true,
+                  );
+              await Future<void>.delayed(Duration.zero);
 
-          // Let the process output some message
-          process.pushToStdout.add('Do you want to publish');
+              if (shouldAsk) {
+                // Answer the next question with y
+                stdInValue = 'y';
 
-          await Future<void>.delayed(Duration.zero);
+                // Let the process output some message
+                process.pushToStdout.add('Do you want to publish');
 
-          // It should be logged
-          expect(messages.last, contains('Do you want to publish'));
+                await Future<void>.delayed(Duration.zero);
 
-          // Let the process not fail
-          process.exit(0);
-          await Future<void>.delayed(Duration.zero);
+                // It should be logged
+                expect(messages.last, contains('Do you want to publish'));
+              }
 
-          expect(isDone, isTrue);
+              // Let the process not fail
+              process.exit(0);
+              await Future<void>.delayed(Duration.zero);
+
+              expect(isDone, isTrue);
+            });
+          }
         });
       });
       group('should throw', () {
@@ -137,6 +150,7 @@ void main() {
           late String exceptionMessage;
 
           mockIsVersionPrepared(false);
+          mockProcess(result: 0, force: false);
 
           try {
             await publish.exec(directory: d, ggLog: ggLog);
@@ -153,6 +167,7 @@ void main() {
         test('if »dart pub publish« has exit code != 0', () async {
           // Setup consistent versions
           mockIsVersionPrepared(true);
+          mockProcess(result: 0, force: false);
 
           // Start the process
           late String exceptionMessage;
@@ -174,6 +189,7 @@ void main() {
         test('if »dart pub publish« returns errors', () async {
           // Setup consistent versions
           mockIsVersionPrepared(true);
+          mockProcess(result: 0, force: false);
 
           // Start the process
           late String exceptionMessage;
