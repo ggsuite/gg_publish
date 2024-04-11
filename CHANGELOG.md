@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- MockIsUpgraded reuses code from MockDirCommand
+
 ## [3.0.10] - 2024-04-11
 
 ### Added
@@ -127,6 +133,7 @@
 
 - Initial version.
 
+[Unreleased]: https://github.com/inlavigo/gg_publish/compare/3.0.10...HEAD
 [3.0.10]: https://github.com/inlavigo/gg_publish/compare/3.0.9...3.0.10
 [3.0.9]: https://github.com/inlavigo/gg_publish/compare/3.0.8...3.0.9
 [3.0.8]: https://github.com/inlavigo/gg_publish/compare/3.0.7...3.0.8
