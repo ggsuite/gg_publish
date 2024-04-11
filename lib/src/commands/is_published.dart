@@ -14,7 +14,7 @@ import 'package:pub_semver/pub_semver.dart';
 
 // #############################################################################
 /// Checks if a package was published to pub.dev before.
-class IsPublished extends DirCommand<dynamic> {
+class IsPublished extends DirCommand<bool> {
   /// Constructor
   IsPublished({
     required super.ggLog,
@@ -75,4 +75,4 @@ class IsPublished extends DirCommand<dynamic> {
 
 // .............................................................................
 /// A Mock for the IsPublished class using Mocktail
-class MockIsPublished extends MockDirCommand<dynamic> implements IsPublished {}
+class MockIsPublished extends MockDirCommand<bool> implements IsPublished {}

@@ -16,7 +16,7 @@ import 'package:pub_semver/pub_semver.dart';
 
 // #############################################################################
 /// Is the version in pubspec.yaml an increment of the version at pub.dev?
-class IsVersionPrepared extends DirCommand<dynamic> {
+class IsVersionPrepared extends DirCommand<bool> {
   /// Constructor
   IsVersionPrepared({
     required super.ggLog,
@@ -178,5 +178,5 @@ class IsVersionPrepared extends DirCommand<dynamic> {
 
 // .............................................................................
 /// A Mock for the HasPreparedVersions class using Mocktail
-class MockIsVersionPrepared extends MockDirCommand<dynamic>
+class MockIsVersionPrepared extends MockDirCommand<bool>
     implements IsVersionPrepared {}

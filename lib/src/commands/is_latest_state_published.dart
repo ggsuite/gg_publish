@@ -14,7 +14,7 @@ import 'package:gg_version/gg_version.dart';
 
 // #############################################################################
 /// Checks if the latest state is published
-class IsLatestStatePublished extends DirCommand<dynamic> {
+class IsLatestStatePublished extends DirCommand<bool> {
   /// Constructor
   IsLatestStatePublished({
     required super.ggLog,
@@ -94,5 +94,5 @@ class IsLatestStatePublished extends DirCommand<dynamic> {
 
 // .............................................................................
 /// A Mock for the IsLatestStatePublished class using Mocktail
-class MockIsLatestStatePublished extends MockDirCommand<dynamic>
+class MockIsLatestStatePublished extends MockDirCommand<bool>
     implements IsLatestStatePublished {}

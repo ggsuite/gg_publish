@@ -16,7 +16,7 @@ import 'package:mocktail/mocktail.dart' as mocktail;
 
 // .............................................................................
 /// Returns the version published to pub.dev of a given dart package
-class PublishedVersion extends DirCommand<dynamic> {
+class PublishedVersion extends DirCommand<Version> {
   /// Constructor
   PublishedVersion({
     required super.ggLog,
@@ -123,7 +123,7 @@ class PublishedVersion extends DirCommand<dynamic> {
 
 // .............................................................................
 /// A Mock for the PublishedVersion class using Mocktail
-class MockPublishedVersion extends MockDirCommand<dynamic>
+class MockPublishedVersion extends MockDirCommand<Version>
     implements PublishedVersion {}
 
 // .............................................................................

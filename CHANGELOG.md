@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.0.13] - 2024-04-11
+
+### Changed
+
+- Fix mocks
+
 ## [3.0.12] - 2024-04-11
 
 ### Added
@@ -141,6 +147,7 @@
 
 - Initial version.
 
+[3.0.13]: https://github.com/inlavigo/gg_publish/compare/3.0.12...3.0.13
 [3.0.12]: https://github.com/inlavigo/gg_publish/compare/3.0.11...3.0.12
 [3.0.11]: https://github.com/inlavigo/gg_publish/compare/3.0.10...3.0.11
 [3.0.10]: https://github.com/inlavigo/gg_publish/compare/3.0.9...3.0.10

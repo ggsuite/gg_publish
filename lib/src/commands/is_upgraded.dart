@@ -14,7 +14,7 @@ import 'package:gg_is_flutter/gg_is_flutter.dart';
 
 // #############################################################################
 /// Base class for all ggGit commands
-class IsUpgraded extends DirCommand<dynamic> {
+class IsUpgraded extends DirCommand<bool> {
   /// Constructor
   IsUpgraded({
     required super.ggLog,
@@ -92,4 +92,4 @@ class IsUpgraded extends DirCommand<dynamic> {
 
 // .............................................................................
 /// A Mock for the IsUpgraded class using Mocktail
-class MockIsUpgraded extends MockDirCommand<dynamic> implements IsUpgraded {}
+class MockIsUpgraded extends MockDirCommand<bool> implements IsUpgraded {}
