@@ -13,7 +13,6 @@ import 'package:gg_log/gg_log.dart';
 import 'package:gg_process/gg_process.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
-import 'package:mocktail/mocktail.dart' as mocktail;
 
 // #############################################################################
 /// Base class for all ggGit commands
@@ -148,4 +147,4 @@ class Publish extends DirCommand<void> {
 
 // .............................................................................
 /// A Mock for the Publish class using Mocktail
-class MockPublish extends mocktail.Mock implements Publish {}
+class MockPublish extends MockDirCommand implements Publish {}

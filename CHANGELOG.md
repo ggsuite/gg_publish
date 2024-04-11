@@ -5,6 +5,7 @@
 ### Changed
 
 - MockIsUpgraded reuses code from MockDirCommand
+- derive all mocks from MockDirCommand
 
 ## [3.0.10] - 2024-04-11
 

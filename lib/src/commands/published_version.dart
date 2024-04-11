@@ -121,7 +121,7 @@ class PublishedVersion extends DirCommand<void> {
 
 // .............................................................................
 /// A Mock for the PublishedVersion class using Mocktail
-class MockPublishedVersion extends mocktail.Mock implements PublishedVersion {}
+class MockPublishedVersion extends MockDirCommand implements PublishedVersion {}
 
 // .............................................................................
 /// A Mock for the http.Client class using Mocktail

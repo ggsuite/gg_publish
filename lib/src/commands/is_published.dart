@@ -10,7 +10,6 @@ import 'package:gg_args/gg_args.dart';
 import 'package:gg_log/gg_log.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
-import 'package:mocktail/mocktail.dart' as mocktail;
 import 'package:pub_semver/pub_semver.dart';
 
 // #############################################################################
@@ -75,4 +74,4 @@ class IsPublished extends DirCommand<void> {
 
 // .............................................................................
 /// A Mock for the IsPublished class using Mocktail
-class MockIsPublished extends mocktail.Mock implements IsPublished {}
+class MockIsPublished extends MockDirCommand implements IsPublished {}

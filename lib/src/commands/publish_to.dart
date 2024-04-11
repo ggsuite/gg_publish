@@ -55,3 +55,6 @@ class PublishTo extends DirCommand<void> {
     return match?.group(1) ?? 'pub.dev';
   }
 }
+
+/// Mock implementation of PublishTo
+class MockPublishTo extends MockDirCommand implements PublishTo {}

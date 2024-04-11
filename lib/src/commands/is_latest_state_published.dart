@@ -11,7 +11,6 @@ import 'package:gg_log/gg_log.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:gg_version/gg_version.dart';
-import 'package:mocktail/mocktail.dart' as mocktail;
 
 // #############################################################################
 /// Checks if the latest state is published
@@ -94,5 +93,5 @@ class IsLatestStatePublished extends DirCommand<void> {
 
 // .............................................................................
 /// A Mock for the IsLatestStatePublished class using Mocktail
-class MockIsLatestStatePublished extends mocktail.Mock
+class MockIsLatestStatePublished extends MockDirCommand
     implements IsLatestStatePublished {}
