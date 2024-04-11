@@ -190,6 +190,22 @@ void main() async {
           }
         });
       });
+
+      test('should allow to define the published version ', () async {
+        await prepareNextVersion.exec(
+          directory: d,
+          ggLog: ggLog,
+          publishedVersion: Version(1, 3, 6),
+          increment: VersionIncrement.patch,
+        );
+
+        // Check pubspec.yaml
+        final content = await File('${d.path}/pubspec.yaml').readAsString();
+        expect(
+          content,
+          contains('version: 1.3.7'),
+        );
+      });
     });
 
     group('calculateNextVersion(publishedVersion, increment)', () {

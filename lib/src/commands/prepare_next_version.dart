@@ -47,6 +47,7 @@ class PrepareNextVersion extends DirCommand<void> {
     required Directory directory,
     required GgLog ggLog,
     VersionIncrement? increment,
+    Version? publishedVersion,
   }) async {
     await GgStatusPrinter<void>(
       message: 'Increase version',
@@ -56,6 +57,7 @@ class PrepareNextVersion extends DirCommand<void> {
         ggLog: ggLog,
         directory: directory,
         increment: increment ?? _incrementFromArgs,
+        publishedVersion: publishedVersion,
       ),
       success: (success) => true,
     );
@@ -67,6 +69,7 @@ class PrepareNextVersion extends DirCommand<void> {
     required Directory directory,
     required GgLog ggLog,
     required VersionIncrement increment,
+    Version? publishedVersion,
   }) async {
     // Checks
     await check(directory: directory);
@@ -77,6 +80,7 @@ class PrepareNextVersion extends DirCommand<void> {
       directory: directory,
       ggLog: ggLog,
       increment: increment,
+      publishedVersion: publishedVersion,
     );
 
     // Write the next version into pubspec.yaml
@@ -93,11 +97,12 @@ class PrepareNextVersion extends DirCommand<void> {
     required Directory directory,
     required GgLog ggLog,
     required VersionIncrement increment,
+    Version? publishedVersion,
   }) async {
     // Package is not published? Treat the git version tag as published version.
 
     // Get the published version
-    final publishedVersion = await _publishedVersion.get(
+    publishedVersion ??= await _publishedVersion.get(
       directory: directory,
       ggLog: ggLog,
     );
