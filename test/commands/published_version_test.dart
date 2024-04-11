@@ -20,7 +20,7 @@ class MockClient extends Mock implements http.Client {}
 void main() {
   late Directory d;
   late MockClient client;
-  late CommandRunner<void> runner;
+  late CommandRunner<dynamic> runner;
   late PublishedVersion publishedVersion;
   final messages = <String>[];
 
@@ -30,7 +30,8 @@ void main() {
       ggLog: messages.add,
       httpClient: client,
     );
-    runner = CommandRunner<void>('test', 'test')..addCommand(publishedVersion);
+    runner = CommandRunner<dynamic>('test', 'test')
+      ..addCommand(publishedVersion);
   }
 
   // ...........................................................................

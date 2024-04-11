@@ -14,7 +14,7 @@ import 'package:pub_semver/pub_semver.dart';
 
 // #############################################################################
 /// Checks if a package was published to pub.dev before.
-class IsPublished extends DirCommand<void> {
+class IsPublished extends DirCommand<dynamic> {
   /// Constructor
   IsPublished({
     required super.ggLog,
@@ -28,7 +28,7 @@ class IsPublished extends DirCommand<void> {
 
   // ...........................................................................
   @override
-  Future<void> exec({
+  Future<bool> exec({
     required Directory directory,
     required GgLog ggLog,
   }) async {
@@ -40,7 +40,7 @@ class IsPublished extends DirCommand<void> {
       ggLog: ggLog,
     );
 
-    await printer.logTask(
+    return await printer.logTask(
       task: () => get(ggLog: messages.add, directory: directory),
       success: (success) => success,
     );
@@ -48,6 +48,7 @@ class IsPublished extends DirCommand<void> {
 
   // ...........................................................................
   /// Returns true if the current directory state is published to pub.dev
+  @override
   Future<bool> get({
     required GgLog ggLog,
     required Directory directory,
@@ -74,4 +75,4 @@ class IsPublished extends DirCommand<void> {
 
 // .............................................................................
 /// A Mock for the IsPublished class using Mocktail
-class MockIsPublished extends MockDirCommand implements IsPublished {}
+class MockIsPublished extends MockDirCommand<dynamic> implements IsPublished {}

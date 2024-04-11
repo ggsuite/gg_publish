@@ -14,7 +14,7 @@ import 'package:gg_version/gg_version.dart';
 
 // #############################################################################
 /// Checks if the latest state is published
-class IsLatestStatePublished extends DirCommand<void> {
+class IsLatestStatePublished extends DirCommand<dynamic> {
   /// Constructor
   IsLatestStatePublished({
     required super.ggLog,
@@ -35,7 +35,7 @@ class IsLatestStatePublished extends DirCommand<void> {
 
   // ...........................................................................
   @override
-  Future<void> exec({
+  Future<bool> exec({
     required Directory directory,
     required GgLog ggLog,
   }) async {
@@ -46,7 +46,7 @@ class IsLatestStatePublished extends DirCommand<void> {
       ggLog: ggLog,
     );
 
-    await printer.logTask(
+    return await printer.logTask(
       task: () => get(ggLog: messages.add, directory: directory),
       success: (success) => success,
     );
@@ -54,6 +54,7 @@ class IsLatestStatePublished extends DirCommand<void> {
 
   // ...........................................................................
   /// Returns true if the current directory state is published to pub.dev
+  @override
   Future<bool> get({
     required GgLog ggLog,
     required Directory directory,
@@ -93,5 +94,5 @@ class IsLatestStatePublished extends DirCommand<void> {
 
 // .............................................................................
 /// A Mock for the IsLatestStatePublished class using Mocktail
-class MockIsLatestStatePublished extends MockDirCommand
+class MockIsLatestStatePublished extends MockDirCommand<dynamic>
     implements IsLatestStatePublished {}

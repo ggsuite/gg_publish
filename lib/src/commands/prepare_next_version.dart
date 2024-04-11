@@ -186,5 +186,5 @@ class PrepareNextVersion extends DirCommand<void> {
 
 // .............................................................................
 /// Mock class for PrepareNextVersion
-class MockPrepareNextVersion extends MockDirCommand
+class MockPrepareNextVersion extends MockDirCommand<void>
     implements PrepareNextVersion {}

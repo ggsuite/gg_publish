@@ -12,7 +12,7 @@ import 'package:gg_publish/gg_publish.dart';
 class GgPublish extends Command<dynamic> {
   /// Constructor
   GgPublish({required this.ggLog}) {
-    addSubcommand(IsPublished(ggLog: ggLog));
+    addSubcommand(IsPublished(ggLog: ggLog) as Command<dynamic>);
     addSubcommand(IsLatestStatePublished(ggLog: ggLog));
     addSubcommand(IsUpgraded(ggLog: ggLog));
     addSubcommand(Publish(ggLog: ggLog));

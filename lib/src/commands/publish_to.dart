@@ -57,4 +57,4 @@ class PublishTo extends DirCommand<void> {
 }
 
 /// Mock implementation of PublishTo
-class MockPublishTo extends MockDirCommand implements PublishTo {}
+class MockPublishTo extends MockDirCommand<void> implements PublishTo {}

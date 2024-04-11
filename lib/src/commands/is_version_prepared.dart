@@ -16,7 +16,7 @@ import 'package:pub_semver/pub_semver.dart';
 
 // #############################################################################
 /// Is the version in pubspec.yaml an increment of the version at pub.dev?
-class IsVersionPrepared extends DirCommand<void> {
+class IsVersionPrepared extends DirCommand<dynamic> {
   /// Constructor
   IsVersionPrepared({
     required super.ggLog,
@@ -39,7 +39,7 @@ class IsVersionPrepared extends DirCommand<void> {
 
   // ...........................................................................
   @override
-  Future<void> exec({
+  Future<bool> exec({
     required Directory directory,
     required GgLog ggLog,
   }) async {
@@ -58,6 +58,8 @@ class IsVersionPrepared extends DirCommand<void> {
     if (!ok) {
       throw Exception(messages.join('\n'));
     }
+
+    return ok;
   }
 
   /// The prefix appended to many messages
@@ -65,6 +67,7 @@ class IsVersionPrepared extends DirCommand<void> {
 
   // ...........................................................................
   /// Returns true if the current directory state is published to pub.dev
+  @override
   Future<bool> get({
     required Directory directory,
     required GgLog ggLog,
@@ -175,5 +178,5 @@ class IsVersionPrepared extends DirCommand<void> {
 
 // .............................................................................
 /// A Mock for the HasPreparedVersions class using Mocktail
-class MockIsVersionPrepared extends MockDirCommand
+class MockIsVersionPrepared extends MockDirCommand<dynamic>
     implements IsVersionPrepared {}

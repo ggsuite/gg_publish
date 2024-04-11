@@ -17,7 +17,7 @@ void main() {
   late Directory d;
   late IsUpgraded isUpgraded;
   late MockGgProcessWrapper mockProcessWrapper;
-  late CommandRunner<void> runner;
+  late CommandRunner<dynamic> runner;
   final messages = <String>[];
 
   // ...........................................................................
@@ -74,7 +74,7 @@ void main() {
   setUp(() {
     mockProcessWrapper = MockGgProcessWrapper();
     messages.clear();
-    runner = CommandRunner<void>('test', 'test');
+    runner = CommandRunner<dynamic>('test', 'test');
     d = Directory.systemTemp.createTempSync();
     registerFallbackValue(d);
   });

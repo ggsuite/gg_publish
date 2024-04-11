@@ -24,7 +24,7 @@ void main() async {
   late IsVersionPrepared isVersionPrepared;
   final versions = IsVersionPrepared.messagePrefix;
   late PublishedVersion publishedVersion;
-  late CommandRunner<void> runner;
+  late CommandRunner<dynamic> runner;
 
   // ...........................................................................
   setUp(() async {
@@ -38,7 +38,7 @@ void main() async {
       ggLog: ggLog,
       publishedVersion: publishedVersion,
     );
-    runner = CommandRunner<void>('test', 'test');
+    runner = CommandRunner<dynamic>('test', 'test');
     runner.addCommand(isVersionPrepared);
   });
 

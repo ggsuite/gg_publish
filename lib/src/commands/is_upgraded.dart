@@ -14,7 +14,7 @@ import 'package:gg_is_flutter/gg_is_flutter.dart';
 
 // #############################################################################
 /// Base class for all ggGit commands
-class IsUpgraded extends DirCommand<void> {
+class IsUpgraded extends DirCommand<dynamic> {
   /// Constructor
   IsUpgraded({
     required super.ggLog,
@@ -27,7 +27,7 @@ class IsUpgraded extends DirCommand<void> {
 
   // ...........................................................................
   @override
-  Future<void> exec({
+  Future<bool> exec({
     required Directory directory,
     required GgLog ggLog,
   }) async {
@@ -38,7 +38,7 @@ class IsUpgraded extends DirCommand<void> {
       ggLog: ggLog,
     );
 
-    await printer.logTask(
+    return await printer.logTask(
       task: () => get(ggLog: messages.add, directory: directory),
       success: (success) => success,
     );
@@ -46,6 +46,7 @@ class IsUpgraded extends DirCommand<void> {
 
   // ...........................................................................
   /// Returns true if the current directory state is published to pub.dev
+  @override
   Future<bool> get({
     required GgLog ggLog,
     required Directory directory,
@@ -91,4 +92,4 @@ class IsUpgraded extends DirCommand<void> {
 
 // .............................................................................
 /// A Mock for the IsUpgraded class using Mocktail
-class MockIsUpgraded extends MockDirCommand implements IsUpgraded {}
+class MockIsUpgraded extends MockDirCommand<dynamic> implements IsUpgraded {}

@@ -16,7 +16,7 @@ import 'package:mocktail/mocktail.dart' as mocktail;
 
 // .............................................................................
 /// Returns the version published to pub.dev of a given dart package
-class PublishedVersion extends DirCommand<void> {
+class PublishedVersion extends DirCommand<dynamic> {
   /// Constructor
   PublishedVersion({
     required super.ggLog,
@@ -33,18 +33,20 @@ class PublishedVersion extends DirCommand<void> {
 
   // ...........................................................................
   @override
-  Future<void> exec({
+  Future<Version> exec({
     required Directory directory,
     required GgLog ggLog,
   }) async {
     final version = await get(directory: directory, ggLog: ggLog);
     ggLog(version.toString());
+    return version;
   }
 
   // ...........................................................................
   /// Returns true if the current directory state is published to pub.dev
   /// If the package cannot be found on pub.dev, the version
   /// from the git tags is treated as published version.
+  @override
   Future<Version> get({
     required GgLog ggLog,
     required Directory directory,
@@ -121,7 +123,8 @@ class PublishedVersion extends DirCommand<void> {
 
 // .............................................................................
 /// A Mock for the PublishedVersion class using Mocktail
-class MockPublishedVersion extends MockDirCommand implements PublishedVersion {}
+class MockPublishedVersion extends MockDirCommand<dynamic>
+    implements PublishedVersion {}
 
 // .............................................................................
 /// A Mock for the http.Client class using Mocktail

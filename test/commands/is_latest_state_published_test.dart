@@ -21,7 +21,7 @@ class MockClient extends Mock implements http.Client {}
 
 void main() {
   final messages = <String>[];
-  late CommandRunner<void> runner;
+  late CommandRunner<dynamic> runner;
   late IsLatestStatePublished isLatestStatePublished;
   late Directory tmp;
   late Directory d;
@@ -49,7 +49,7 @@ void main() {
     await d.create();
 
     messages.clear();
-    runner = CommandRunner<void>('test', 'test');
+    runner = CommandRunner<dynamic>('test', 'test');
     httpClient = MockClient();
     await initIsLatestStatePublished();
   });

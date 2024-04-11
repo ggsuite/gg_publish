@@ -147,4 +147,4 @@ class Publish extends DirCommand<void> {
 
 // .............................................................................
 /// A Mock for the Publish class using Mocktail
-class MockPublish extends MockDirCommand implements Publish {}
+class MockPublish extends MockDirCommand<void> implements Publish {}
