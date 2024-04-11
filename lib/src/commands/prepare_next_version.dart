@@ -42,8 +42,24 @@ class PrepareNextVersion extends DirCommand<void> {
   }
 
   // ...........................................................................
+  // ...........................................................................
   @override
   Future<void> exec({
+    required Directory directory,
+    required GgLog ggLog,
+    VersionIncrement? increment,
+    Version? publishedVersion,
+  }) =>
+      get(
+        directory: directory,
+        ggLog: ggLog,
+        increment: increment,
+        publishedVersion: publishedVersion,
+      );
+
+  // ...........................................................................
+  @override
+  Future<void> get({
     required Directory directory,
     required GgLog ggLog,
     VersionIncrement? increment,

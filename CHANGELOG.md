@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.0.14] - 2024-04-11
+
+### Changed
+
+- upgrade dependencies
+
 ## [3.0.13] - 2024-04-11
 
 ### Changed
@@ -147,6 +153,7 @@
 
 - Initial version.
 
+[3.0.14]: https://github.com/inlavigo/gg_publish/compare/3.0.13...3.0.14
 [3.0.13]: https://github.com/inlavigo/gg_publish/compare/3.0.12...3.0.13
 [3.0.12]: https://github.com/inlavigo/gg_publish/compare/3.0.11...3.0.12
 [3.0.11]: https://github.com/inlavigo/gg_publish/compare/3.0.10...3.0.11

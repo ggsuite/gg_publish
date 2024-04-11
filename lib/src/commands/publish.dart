@@ -38,6 +38,19 @@ class Publish extends DirCommand<void> {
     required Directory directory,
     required GgLog ggLog,
     bool? askBeforePublishing,
+  }) async =>
+      get(
+        directory: directory,
+        ggLog: ggLog,
+        askBeforePublishing: askBeforePublishing,
+      );
+
+  // ...........................................................................
+  @override
+  Future<void> get({
+    required Directory directory,
+    required GgLog ggLog,
+    bool? askBeforePublishing,
   }) async {
     // final messages = <String>[];
 
