@@ -11,7 +11,8 @@ import 'package:gg_log/gg_log.dart';
 import 'package:gg_process/gg_process.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:gg_is_flutter/gg_is_flutter.dart';
-import 'package:mocktail/mocktail.dart' as mocktail;
+import 'package:matcher/expect.dart';
+import 'package:mocktail/mocktail.dart';
 
 // #############################################################################
 /// Base class for all ggGit commands
@@ -92,4 +93,31 @@ class IsUpgraded extends DirCommand<void> {
 
 // .............................................................................
 /// A Mock for the IsUpgraded class using Mocktail
-class MockIsUpgraded extends mocktail.Mock implements IsUpgraded {}
+class MockIsUpgraded extends Mock implements IsUpgraded {
+  /// Makes [exec] successful or not
+  void mockSuccess({
+    required bool success,
+    required GgLog ggLog,
+    required Directory directory,
+  }) {
+    when(
+      () => exec(
+        directory: any(
+          named: 'directory',
+          that: predicate<Directory>(
+            (d) => d.path == directory.path,
+          ),
+        ),
+        ggLog: any(named: 'ggLog'),
+      ),
+    ).thenAnswer((invocation) async {
+      if (!success) {
+        throw Exception('❌ Upgraded');
+      } else {
+        final ggLog = invocation.namedArguments[const Symbol('ggLog')];
+        ggLog('✅ Upgraded');
+      }
+      return;
+    });
+  }
+}

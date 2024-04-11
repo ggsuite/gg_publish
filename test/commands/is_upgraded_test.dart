@@ -76,6 +76,7 @@ void main() {
     messages.clear();
     runner = CommandRunner<void>('test', 'test');
     d = Directory.systemTemp.createTempSync();
+    registerFallbackValue(d);
   });
 
   // ...........................................................................
@@ -184,6 +185,38 @@ void main() {
             await isUpgraded.get(directory: d, ggLog: messages.add),
             isFalse,
           );
+        });
+      });
+    });
+  });
+
+  group('MockIsUpgraded', () {
+    group('mockSuccess', () {
+      group('should return »✅ Upgraded«', () {
+        group('when called with', () {
+          test('success: true', () async {
+            final mock = MockIsUpgraded();
+            mock.mockSuccess(success: true, directory: d, ggLog: messages.add);
+            await mock.exec(directory: d, ggLog: messages.add);
+            expect(messages.first, contains('✅ Upgraded'));
+          });
+        });
+      });
+
+      group('should throw »❌ Upgraded«', () {
+        group('when called with', () {
+          test('success: false', () async {
+            final mock = MockIsUpgraded();
+            mock.mockSuccess(success: false, directory: d, ggLog: messages.add);
+
+            late String exception;
+            try {
+              await mock.exec(directory: d, ggLog: messages.add);
+            } catch (e) {
+              exception = e.toString();
+            }
+            expect(exception, contains('❌ Upgraded'));
+          });
         });
       });
     });
