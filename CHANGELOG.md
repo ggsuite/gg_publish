@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Removed
+
+- dependency to gg\_install\_gg, remove ./check script
+
 ## [3.0.14] - 2024-04-11
 
 ### Changed
@@ -153,6 +159,7 @@
 
 - Initial version.
 
+[Unreleased]: https://github.com/inlavigo/gg_publish/compare/3.0.14...HEAD
 [3.0.14]: https://github.com/inlavigo/gg_publish/compare/3.0.13...3.0.14
 [3.0.13]: https://github.com/inlavigo/gg_publish/compare/3.0.12...3.0.13
 [3.0.12]: https://github.com/inlavigo/gg_publish/compare/3.0.11...3.0.12
