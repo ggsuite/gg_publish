@@ -1,6 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## [3.0.15] - 2024-04-12
+
+### Added
+
+- use dart pub outdated json response
 
 ### Removed
 
@@ -159,7 +163,7 @@
 
 - Initial version.
 
-[Unreleased]: https://github.com/inlavigo/gg_publish/compare/3.0.14...HEAD
+[3.0.15]: https://github.com/inlavigo/gg_publish/compare/3.0.14...3.0.15
 [3.0.14]: https://github.com/inlavigo/gg_publish/compare/3.0.13...3.0.14
 [3.0.13]: https://github.com/inlavigo/gg_publish/compare/3.0.12...3.0.13
 [3.0.12]: https://github.com/inlavigo/gg_publish/compare/3.0.11...3.0.12

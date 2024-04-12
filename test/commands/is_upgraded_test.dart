@@ -19,13 +19,24 @@ void main() {
   late MockGgProcessWrapper mockProcessWrapper;
   late CommandRunner<dynamic> runner;
   final messages = <String>[];
+  const sampleDir = 'test/sample_package/';
+
+  String read(String file) => File('$sampleDir/$file').readAsStringSync();
+
+  final responseNotUpgradedAndNotResolved =
+      read('upgrade_not_upgraded_and_not_resolved.json');
+  final responseUpgradedAndResolved =
+      read('upgrade_upgraded_and_resolved.json');
+  final responseUpgradedButNotResolved =
+      read('upgrade_upgraded_but_not_resolved.json');
+  final responseUptodate = read('upgrade_uptodate.json');
 
   // ...........................................................................
-  void mockIsUpgraded(bool isUpgraded, {String system = 'dart'}) {
+  void mockDartPubOutdated(String response, {String system = 'dart'}) {
     when(
       () => mockProcessWrapper.run(
         system,
-        ['pub', 'outdated'],
+        ['pub', 'outdated', '--json'],
         runInShell: true,
         workingDirectory: d.path,
       ),
@@ -33,7 +44,7 @@ void main() {
       (_) async => ProcessResult(
         0,
         0,
-        isUpgraded ? 'Found no outdated packages' : 'Found outdated packages',
+        response,
         '',
       ),
     );
@@ -44,7 +55,7 @@ void main() {
     when(
       () => mockProcessWrapper.run(
         system,
-        ['pub', 'outdated'],
+        ['pub', 'outdated', '--json'],
         runInShell: true,
         workingDirectory: d.path,
       ),
@@ -71,20 +82,6 @@ void main() {
   }
 
   // ...........................................................................
-  setUp(() {
-    mockProcessWrapper = MockGgProcessWrapper();
-    messages.clear();
-    runner = CommandRunner<dynamic>('test', 'test');
-    d = Directory.systemTemp.createTempSync();
-    registerFallbackValue(d);
-  });
-
-  // ...........................................................................
-  tearDown(() {
-    d.deleteSync(recursive: true);
-  });
-
-  // ...........................................................................
   Future<void> initPubSpecYaml({required bool isFlutter}) async {
     final pubspec = File('${d.path}/pubspec.yaml');
     var content = '';
@@ -97,93 +94,205 @@ void main() {
   }
 
   // ...........................................................................
-  group('IsUpgraded', () {
-    group('run()', () {
-      group('should print »✅ Everything is upgraded«', () {
-        test('when everything is upgraded', () async {
-          initCommand();
-          await initPubSpecYaml(isFlutter: false);
-          mockIsUpgraded(true);
-          await runner.run(['is-upgraded', '--input', d.path]);
-          expect(messages.first, contains('⌛️ Everything is upgraded.'));
-          expect(messages.last, contains('✅ Everything is upgraded.'));
-        });
-      });
+  setUp(() async {
+    mockProcessWrapper = MockGgProcessWrapper();
+    messages.clear();
+    runner = CommandRunner<dynamic>('test', 'test');
+    d = Directory.systemTemp.createTempSync();
+    registerFallbackValue(d);
+    initCommand();
+    await initPubSpecYaml(isFlutter: false);
+  });
 
-      group('should print »❌ Everything is upgraded.«', () {
-        test('when outdated packages are found', () async {
-          initCommand();
-          await initPubSpecYaml(isFlutter: false);
-          mockIsUpgraded(false);
-          await runner.run(['is-upgraded', '--input', d.path]);
-          expect(messages.first, contains('⌛️ Everything is upgraded.'));
-          expect(messages.last, contains('❌ Everything is upgraded.'));
+  // ...........................................................................
+  tearDown(() {
+    d.deleteSync(recursive: true);
+  });
+
+  // ...........................................................................
+  void expectSuccess() {
+    expect(messages.first, contains('⌛️ Everything is upgraded.'));
+    expect(messages.last, contains('✅ Everything is upgraded.'));
+  }
+
+  // ...........................................................................
+  void expectFail() {
+    expect(messages.first, contains('⌛️ Everything is upgraded.'));
+    expect(messages.last, contains('❌ Everything is upgraded.'));
+  }
+
+  // ...........................................................................
+  Future<void> viaCli({bool majorVersions = false}) async {
+    await runner.run(
+      [
+        'is-upgraded',
+        '--input',
+        d.path,
+        if (majorVersions) '--major-versions',
+      ],
+    );
+  }
+
+  // ...........................................................................
+  Future<void> viaExec({bool? majorVersions}) async {
+    await isUpgraded.exec(
+      directory: d,
+      ggLog: messages.add,
+      majorVersions: majorVersions,
+    );
+  }
+
+  // ...........................................................................
+  group('IsUpgraded', () {
+    group('- standard case', () {
+      group('- up to date? ', () {
+        setUp(() async {
+          mockDartPubOutdated(responseUptodate);
+        });
+
+        group('with --major-versions', () {
+          group('should print ✅', () {
+            test('- with CLI', () async {
+              await viaCli(majorVersions: true);
+              expectSuccess();
+            });
+            test('- programmatically', () async {
+              await viaExec(majorVersions: true);
+            });
+          });
+        });
+
+        group('without --major-versions', () {
+          group('should print ✅', () {
+            test('- with CLI', () async {
+              await viaCli();
+              expectSuccess();
+            });
+            test('- programmatically', () async {
+              await viaExec();
+            });
+          });
+        });
+
+        group('- upgraded but not resolved? ', () {
+          setUp(() async {
+            mockDartPubOutdated(responseUpgradedButNotResolved);
+          });
+
+          group('with --major-versions', () {
+            group('should print ❌', () {
+              test('- with CLI', () async {
+                await viaCli(majorVersions: true);
+                expectFail();
+              });
+              test('- programmatically', () async {
+                await viaExec(majorVersions: true);
+                expectFail();
+              });
+            });
+          });
+          group('without --major-versions', () {
+            group('should print ✅', () {
+              test('- with CLI', () async {
+                await viaCli(majorVersions: false);
+                expectSuccess();
+              });
+              test('- programmatically', () async {
+                await viaExec(majorVersions: false);
+                expectSuccess();
+              });
+            });
+          });
+        });
+
+        group('- not upgraded and not resolved? ', () {
+          setUp(() async {
+            mockDartPubOutdated(responseNotUpgradedAndNotResolved);
+          });
+
+          group('with --major-versions', () {
+            group('should print ❌', () {
+              test('- with CLI', () async {
+                await viaCli(majorVersions: true);
+                expectFail();
+              });
+              test('- programmatically', () async {
+                await viaExec(majorVersions: true);
+                expectFail();
+              });
+            });
+          });
+          group('without --major-versions', () {
+            group('should print ❌', () {
+              test('- with CLI', () async {
+                await viaCli(majorVersions: false);
+                expectFail();
+              });
+              test('- programmatically', () async {
+                await viaExec(majorVersions: false);
+                expectFail();
+              });
+            });
+          });
+        });
+
+        group('- upgraded and resolved? ', () {
+          setUp(() async {
+            mockDartPubOutdated(responseUpgradedAndResolved);
+          });
+
+          group('with --major-versions', () {
+            group('should print ✅', () {
+              test('- with CLI', () async {
+                await viaCli(majorVersions: true);
+                expectSuccess();
+              });
+              test('- programmatically', () async {
+                await viaExec(majorVersions: true);
+                expectSuccess();
+              });
+            });
+          });
+          group('without --major-versions', () {
+            group('should print ✅', () {
+              test('- with CLI', () async {
+                await viaCli(majorVersions: false);
+                expectSuccess();
+              });
+              test('- programmatically', () async {
+                await viaExec(majorVersions: false);
+                expectSuccess();
+              });
+            });
+          });
         });
       });
     });
-    group('get(directory: d, ggLog: messages.add)', () {
+
+    group('- special cases', () {
       group('should throw', () {
-        test('when directory does not contain a pubspec.yaml file', () async {
-          initCommand();
-          await expectLater(
-            isUpgraded.get(directory: d, ggLog: messages.add),
-            throwsA(
-              isA<Exception>().having(
-                (e) => e.toString(),
-                'message',
-                contains('Exception: pubspec.yaml not found'),
-              ),
-            ),
-          );
-        });
-
-        group('when dart pub outdated fails', () {
-          for (final system in ['dart', 'flutter']) {
-            test('for $system', () async {
-              bool isFlutter = system == 'flutter';
-              await initPubSpecYaml(isFlutter: isFlutter);
-              initCommand(processWrapper: mockProcessWrapper);
-              mockDartPubOutdatedFails(system);
-
-              await expectLater(
-                isUpgraded.get(directory: d, ggLog: messages.add),
-                throwsA(
-                  isA<Exception>().having(
-                    (e) => e.toString(),
-                    'message',
-                    contains(
-                      'Exception: Error while checking for outdated packages: '
-                      'Error message.',
-                    ),
-                  ),
-                ),
-              );
-            });
+        test('if the json cannot be parsed', () async {
+          mockDartPubOutdated('djfkd089034 afädf');
+          late String exception;
+          try {
+            await viaExec(majorVersions: false);
+          } catch (e) {
+            exception = e.toString();
           }
+          expect(exception, contains('Error while parsing the response'));
         });
-      });
 
-      group('should return true', () {
-        test('when »dart pub outdated« returns »Found no outdated packages«',
-            () async {
-          await initPubSpecYaml(isFlutter: false);
-          initCommand(processWrapper: mockProcessWrapper);
-          mockIsUpgraded(true);
+        test('if the process fails', () async {
+          mockDartPubOutdatedFails('dart');
+          late String exception;
+          try {
+            await viaExec(majorVersions: false);
+          } catch (e) {
+            exception = e.toString();
+          }
           expect(
-            await isUpgraded.get(directory: d, ggLog: messages.add),
-            isTrue,
-          );
-        });
-      });
-
-      group('should return false', () {
-        test('when »dart pub outdated« returns another message', () async {
-          await initPubSpecYaml(isFlutter: false);
-          initCommand(processWrapper: mockProcessWrapper);
-          mockIsUpgraded(false);
-          expect(
-            await isUpgraded.get(directory: d, ggLog: messages.add),
-            isFalse,
+            exception,
+            contains('Error while checking for outdated packages'),
           );
         });
       });
