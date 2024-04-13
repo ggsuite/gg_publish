@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.0.16] - 2024-04-13
+
+### Removed
+
+- dependency pana
+
 ## [3.0.15] - 2024-04-12
 
 ### Added
@@ -163,6 +169,7 @@
 
 - Initial version.
 
+[3.0.16]: https://github.com/inlavigo/gg_publish/compare/3.0.15...3.0.16
 [3.0.15]: https://github.com/inlavigo/gg_publish/compare/3.0.14...3.0.15
 [3.0.14]: https://github.com/inlavigo/gg_publish/compare/3.0.13...3.0.14
 [3.0.13]: https://github.com/inlavigo/gg_publish/compare/3.0.12...3.0.13
