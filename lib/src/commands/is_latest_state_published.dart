@@ -20,18 +20,13 @@ class IsLatestStatePublished extends DirCommand<bool> {
     required super.ggLog,
     PublishedVersion? publishedVersion,
     ConsistentVersion? consistentVersion,
-  })  : _publishedVersion = publishedVersion ??
-            PublishedVersion(
-              ggLog: ggLog,
-            ),
-        _consistentVersion = consistentVersion ??
-            ConsistentVersion(
-              ggLog: ggLog,
-            ),
-        super(
-          name: 'is-latest-state-published',
-          description: 'Checks if the latest state is published.',
-        );
+  }) : _publishedVersion = publishedVersion ?? PublishedVersion(ggLog: ggLog),
+       _consistentVersion =
+           consistentVersion ?? ConsistentVersion(ggLog: ggLog),
+       super(
+         name: 'is-latest-state-published',
+         description: 'Checks if the latest state is published.',
+       );
 
   // ...........................................................................
   @override
@@ -55,10 +50,7 @@ class IsLatestStatePublished extends DirCommand<bool> {
   // ...........................................................................
   /// Returns true if the current directory state is published to pub.dev
   @override
-  Future<bool> get({
-    required GgLog ggLog,
-    required Directory directory,
-  }) async {
+  Future<bool> get({required GgLog ggLog, required Directory directory}) async {
     // Check if the repo has a consistent version
     final localVersion = await _consistentVersion.get(
       ggLog: ggLog,

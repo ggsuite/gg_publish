@@ -60,9 +60,9 @@ void main() {
 
             // Create a smple package directory
             // Read published_version_sample_response.json
-            final sampleResponse =
-                await File('test/sample_package/pub_dev_sample_response.json')
-                    .readAsString();
+            final sampleResponse = await File(
+              'test/sample_package/pub_dev_sample_response.json',
+            ).readAsString();
 
             // http.Response with sampleResponse as body
             final response = http.Response(sampleResponse, 200);
@@ -82,9 +82,7 @@ void main() {
           });
 
           test('with a real response', () async {
-            final publishedVersion = PublishedVersion(
-              ggLog: messages.add,
-            );
+            final publishedVersion = PublishedVersion(ggLog: messages.add);
 
             try {
               // Call get
@@ -99,8 +97,8 @@ void main() {
             catch (e) {
               expect(
                 e.toString().contains(
-                      'Exception while getting the latest version from pub.dev',
-                    ),
+                  'Exception while getting the latest version from pub.dev',
+                ),
                 true,
               );
 
@@ -158,8 +156,7 @@ void main() {
         });
 
         group('0.0.0', () {
-          test(
-              'when the package is neither published on pub.dev '
+          test('when the package is neither published on pub.dev '
               'nor has a git tag', () async {
             initCommand();
             await initGit(d);
@@ -233,10 +230,7 @@ void main() {
 
           // Call get
           expect(
-            () => publishedVersion.get(
-              directory: d,
-              ggLog: messages.add,
-            ),
+            () => publishedVersion.get(directory: d, ggLog: messages.add),
             throwsA(
               isA<Exception>().having(
                 (e) => e.toString(),
@@ -259,10 +253,7 @@ void main() {
 
           // Call get
           expect(
-            () => publishedVersion.get(
-              directory: d,
-              ggLog: messages.add,
-            ),
+            () => publishedVersion.get(directory: d, ggLog: messages.add),
             throwsA(
               isA<ArgumentError>().having(
                 (e) => e.message,
@@ -282,10 +273,7 @@ void main() {
 
           // Call get
           expect(
-            () => publishedVersion.get(
-              directory: d,
-              ggLog: messages.add,
-            ),
+            () => publishedVersion.get(directory: d, ggLog: messages.add),
             throwsA(
               isA<ArgumentError>().having(
                 (e) => e.message,
@@ -306,10 +294,7 @@ void main() {
 
           // Call get
           expect(
-            () => publishedVersion.get(
-              directory: d,
-              ggLog: messages.add,
-            ),
+            () => publishedVersion.get(directory: d, ggLog: messages.add),
             throwsA(
               isA<ArgumentError>().having(
                 (e) => e.message,

@@ -20,10 +20,7 @@ class PublishTo extends DirCommand<void> {
 
   // ...........................................................................
   @override
-  Future<void> get({
-    required Directory directory,
-    required GgLog ggLog,
-  }) async {
+  Future<void> get({required Directory directory, required GgLog ggLog}) async {
     final result = await fromDirectory(directory);
     ggLog(result);
   }

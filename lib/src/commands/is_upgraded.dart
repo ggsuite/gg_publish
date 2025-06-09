@@ -22,10 +22,10 @@ class IsUpgraded extends DirCommand<bool> {
     required super.ggLog,
     this.processWrapper = const GgProcessWrapper(),
   }) : super(
-          name: 'is-upgraded',
-          description:
-              'Checks if all dependencies have upgraded to the latest state.',
-        ) {
+         name: 'is-upgraded',
+         description:
+             'Checks if all dependencies have upgraded to the latest state.',
+       ) {
     _addArgs();
   }
 
@@ -114,11 +114,13 @@ class IsUpgraded extends DirCommand<bool> {
         // Is there a resolvable version available?
         final current = Version.parse(package['current']['version'] as String);
 
-        final resolvable =
-            Version.parse(package['resolvable']['version'] as String);
+        final resolvable = Version.parse(
+          package['resolvable']['version'] as String,
+        );
 
-        final upgradable =
-            Version.parse(package['upgradable']['version'] as String);
+        final upgradable = Version.parse(
+          package['upgradable']['version'] as String,
+        );
 
         final targetVersion = majorVersions ? resolvable : upgradable;
 

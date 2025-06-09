@@ -35,9 +35,7 @@ void main() {
         ggLog: messages.add,
         httpClient: httpClient,
       ),
-      consistentVersion: ConsistentVersion(
-        ggLog: messages.add,
-      ),
+      consistentVersion: ConsistentVersion(ggLog: messages.add),
     );
     runner.addCommand(isLatestStatePublished);
   }
@@ -61,10 +59,12 @@ void main() {
 
   group('IsLatestStatePublished', () {
     group('constructor', () {
-      test('should create instances of PublishedVersion and ConsistentVersion',
-          () {
-        IsLatestStatePublished(ggLog: messages.add);
-      });
+      test(
+        'should create instances of PublishedVersion and ConsistentVersion',
+        () {
+          IsLatestStatePublished(ggLog: messages.add);
+        },
+      );
     });
 
     group('get(...)', () {
@@ -126,13 +126,13 @@ void main() {
             );
 
             // Mock published version 1.0.2
-            final responseContent =
-                File('test/sample_package/pub_dev_sample_response.json')
-                    .readAsStringSync();
+            final responseContent = File(
+              'test/sample_package/pub_dev_sample_response.json',
+            ).readAsStringSync();
             final uri = Uri.parse('https://pub.dev/api/packages/gg_check');
-            when(() => httpClient.get(uri)).thenAnswer(
-              (_) async => http.Response(responseContent, 200),
-            );
+            when(
+              () => httpClient.get(uri),
+            ).thenAnswer((_) async => http.Response(responseContent, 200));
 
             // Call isPublished.get()
             await expectLater(
@@ -168,13 +168,13 @@ void main() {
           );
 
           // Mock published version 1.0.2
-          final responseContent =
-              File('test/sample_package/pub_dev_sample_response.json')
-                  .readAsStringSync();
+          final responseContent = File(
+            'test/sample_package/pub_dev_sample_response.json',
+          ).readAsStringSync();
           final uri = Uri.parse('https://pub.dev/api/packages/test');
-          when(() => httpClient.get(uri)).thenAnswer(
-            (_) async => http.Response(responseContent, 200),
-          );
+          when(
+            () => httpClient.get(uri),
+          ).thenAnswer((_) async => http.Response(responseContent, 200));
 
           // Call isPublished.get()
           final result = await isLatestStatePublished.get(
@@ -192,9 +192,7 @@ void main() {
           test('when called with --help', () async {
             capturePrint(
               ggLog: messages.add,
-              code: () => runner.run(
-                ['--help'],
-              ),
+              code: () => runner.run(['--help']),
             );
 
             expect(messages.last, contains('Available commands:'));
@@ -215,18 +213,16 @@ void main() {
             );
 
             // Mock published version 1.0.2
-            final responseContent =
-                File('test/sample_package/pub_dev_sample_response.json')
-                    .readAsStringSync();
+            final responseContent = File(
+              'test/sample_package/pub_dev_sample_response.json',
+            ).readAsStringSync();
             final uri = Uri.parse('https://pub.dev/api/packages/test');
-            when(() => httpClient.get(uri)).thenAnswer(
-              (_) async => http.Response(responseContent, 200),
-            );
+            when(
+              () => httpClient.get(uri),
+            ).thenAnswer((_) async => http.Response(responseContent, 200));
 
             // Call isPublished.run()
-            await runner.run(
-              ['is-latest-state-published', '--input', d.path],
-            );
+            await runner.run(['is-latest-state-published', '--input', d.path]);
 
             expect(messages.last, contains('✅ Latest state is on pub.dev.'));
           });
@@ -237,9 +233,7 @@ void main() {
         group(' an error message', () {
           test('when called with an invalid argument', () async {
             await expectLater(
-              runner.run(
-                ['is-latest-state-published', '--input', 'xyz'],
-              ),
+              runner.run(['is-latest-state-published', '--input', 'xyz']),
               throwsA(
                 isA<ArgumentError>().having(
                   (e) => e.toString(),

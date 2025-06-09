@@ -23,12 +23,15 @@ void main() {
 
   String read(String file) => File('$sampleDir/$file').readAsStringSync();
 
-  final responseNotUpgradedAndNotResolved =
-      read('upgrade_not_upgraded_and_not_resolved.json');
-  final responseUpgradedAndResolved =
-      read('upgrade_upgraded_and_resolved.json');
-  final responseUpgradedButNotResolved =
-      read('upgrade_upgraded_but_not_resolved.json');
+  final responseNotUpgradedAndNotResolved = read(
+    'upgrade_not_upgraded_and_not_resolved.json',
+  );
+  final responseUpgradedAndResolved = read(
+    'upgrade_upgraded_and_resolved.json',
+  );
+  final responseUpgradedButNotResolved = read(
+    'upgrade_upgraded_but_not_resolved.json',
+  );
   final responseUptodate = read('upgrade_uptodate.json');
 
   // ...........................................................................
@@ -40,14 +43,7 @@ void main() {
         runInShell: true,
         workingDirectory: d.path,
       ),
-    ).thenAnswer(
-      (_) async => ProcessResult(
-        0,
-        0,
-        response,
-        '',
-      ),
-    );
+    ).thenAnswer((_) async => ProcessResult(0, 0, response, ''));
   }
 
   // ...........................................................................
@@ -59,20 +55,11 @@ void main() {
         runInShell: true,
         workingDirectory: d.path,
       ),
-    ).thenAnswer(
-      (_) async => ProcessResult(
-        1,
-        1,
-        '',
-        'Error message.',
-      ),
-    );
+    ).thenAnswer((_) async => ProcessResult(1, 1, '', 'Error message.'));
   }
 
   // ...........................................................................
-  void initCommand({
-    GgProcessWrapper? processWrapper,
-  }) {
+  void initCommand({GgProcessWrapper? processWrapper}) {
     isUpgraded = IsUpgraded(
       ggLog: messages.add,
       processWrapper: processWrapper ?? mockProcessWrapper,
@@ -123,14 +110,12 @@ void main() {
 
   // ...........................................................................
   Future<void> viaCli({bool majorVersions = false}) async {
-    await runner.run(
-      [
-        'is-upgraded',
-        '--input',
-        d.path,
-        if (majorVersions) '--major-versions',
-      ],
-    );
+    await runner.run([
+      'is-upgraded',
+      '--input',
+      d.path,
+      if (majorVersions) '--major-versions',
+    ]);
   }
 
   // ...........................................................................

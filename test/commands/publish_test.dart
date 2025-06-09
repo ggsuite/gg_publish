@@ -28,10 +28,7 @@ void main() {
   void mockIsVersionPrepared(bool value) {
     when(() {
       when(
-        () => isVersionPrepared.get(
-          ggLog: ggLog,
-          directory: d,
-        ),
+        () => isVersionPrepared.get(ggLog: ggLog, directory: d),
       ).thenAnswer((_) => Future.value(value));
     });
   }
@@ -39,14 +36,12 @@ void main() {
   // ...........................................................................
   void mockProcess({required int result, required bool force}) {
     when(
-      () => processWrapper.start(
-        'dart',
-        ['pub', 'publish', if (force) '--force'],
-        workingDirectory: d.path,
-      ),
-    ).thenAnswer(
-      (_) => Future.value(process),
-    );
+      () => processWrapper.start('dart', [
+        'pub',
+        'publish',
+        if (force) '--force',
+      ], workingDirectory: d.path),
+    ).thenAnswer((_) => Future.value(process));
   }
 
   // ...........................................................................
@@ -82,9 +77,9 @@ void main() {
 
           // Start the process
           bool isDone = false;
-          publish.exec(directory: d, ggLog: ggLog).then(
-                (value) => isDone = true,
-              );
+          publish
+              .exec(directory: d, ggLog: ggLog)
+              .then((value) => isDone = true);
           await Future<void>.delayed(Duration.zero);
 
           // Let the process output some message
@@ -113,14 +108,8 @@ void main() {
               // Start the process
               bool isDone = false;
               publish
-                  .exec(
-                    directory: d,
-                    ggLog: ggLog,
-                    askBeforePublishing: ask,
-                  )
-                  .then(
-                    (value) => isDone = true,
-                  );
+                  .exec(directory: d, ggLog: ggLog, askBeforePublishing: ask)
+                  .then((value) => isDone = true);
               await Future<void>.delayed(Duration.zero);
 
               if (shouldAsk) {
@@ -212,10 +201,7 @@ void main() {
             contains('Exception: »dart pub publish« was not successful:'),
           );
 
-          expect(
-            exceptionMessage,
-            contains('Error: Something went wrong'),
-          );
+          expect(exceptionMessage, contains('Error: Something went wrong'));
         });
       });
     });

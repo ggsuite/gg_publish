@@ -29,15 +29,12 @@ enum VersionIncrement {
 /// Creates a new version and writes it into pubspec.yaml
 class PrepareNextVersion extends DirCommand<void> {
   /// Constructor
-  PrepareNextVersion({
-    required super.ggLog,
-    PublishedVersion? publishedVersion,
-  })  : _publishedVersion = publishedVersion ?? PublishedVersion(ggLog: ggLog),
-        super(
-          name: 'prepare-next-version',
-          description:
-              'Creates a new version in pubspec.yaml and CHANGELOG.md.',
-        ) {
+  PrepareNextVersion({required super.ggLog, PublishedVersion? publishedVersion})
+    : _publishedVersion = publishedVersion ?? PublishedVersion(ggLog: ggLog),
+      super(
+        name: 'prepare-next-version',
+        description: 'Creates a new version in pubspec.yaml and CHANGELOG.md.',
+      ) {
     _addArgs();
   }
 
@@ -49,13 +46,12 @@ class PrepareNextVersion extends DirCommand<void> {
     required GgLog ggLog,
     VersionIncrement? increment,
     Version? publishedVersion,
-  }) =>
-      get(
-        directory: directory,
-        ggLog: ggLog,
-        increment: increment,
-        publishedVersion: publishedVersion,
-      );
+  }) => get(
+    directory: directory,
+    ggLog: ggLog,
+    increment: increment,
+    publishedVersion: publishedVersion,
+  );
 
   // ...........................................................................
   @override

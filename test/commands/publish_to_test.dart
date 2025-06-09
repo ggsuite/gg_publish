@@ -63,13 +63,15 @@ void main() {
           expect(messages.last, 'pub.dev');
         });
 
-        test('when called with fromDirectory(), fromFile() or fromString()',
-            () async {
-          await initPubspec(publishTo: null);
-          expect(await publishTo.fromDirectory(d), 'pub.dev');
-          await initPubspec(publishTo: 'xyz');
-          expect(await publishTo.fromDirectory(d), 'xyz');
-        });
+        test(
+          'when called with fromDirectory(), fromFile() or fromString()',
+          () async {
+            await initPubspec(publishTo: null);
+            expect(await publishTo.fromDirectory(d), 'pub.dev');
+            await initPubspec(publishTo: 'xyz');
+            expect(await publishTo.fromDirectory(d), 'xyz');
+          },
+        );
       });
     });
   });

@@ -33,9 +33,7 @@ void main() async {
           }),
         ),
       ),
-    ).thenAnswer(
-      (_) async => Version(1, 2, 3),
-    );
+    ).thenAnswer((_) async => Version(1, 2, 3));
   }
 
   // ...........................................................................
@@ -83,10 +81,7 @@ void main() async {
             }
 
             // Check exception
-            expect(
-              exception,
-              'Exception: pubspec.yaml not found',
-            );
+            expect(exception, 'Exception: pubspec.yaml not found');
           });
 
           test('is not containing a version', () async {
@@ -128,10 +123,7 @@ void main() async {
 
           // Check pubspec.yaml
           final content = await File('${d.path}/pubspec.yaml').readAsString();
-          expect(
-            content,
-            contains('version: 1.2.4'),
-          );
+          expect(content, contains('version: 1.2.4'));
         });
       });
     });
@@ -173,19 +165,17 @@ void main() async {
               ]);
 
               // Expected next version
-              final expectedNextVersion =
-                  prepareNextVersion.calculateNextVersion(
-                publishedVersion: Version(1, 2, 3),
-                increment: increment,
-              );
+              final expectedNextVersion = prepareNextVersion
+                  .calculateNextVersion(
+                    publishedVersion: Version(1, 2, 3),
+                    increment: increment,
+                  );
 
               // Check pubspec.yaml
-              final content =
-                  await File('${d.path}/pubspec.yaml').readAsString();
-              expect(
-                content,
-                contains('version: $expectedNextVersion'),
-              );
+              final content = await File(
+                '${d.path}/pubspec.yaml',
+              ).readAsString();
+              expect(content, contains('version: $expectedNextVersion'));
             });
           }
         });
@@ -201,10 +191,7 @@ void main() async {
 
         // Check pubspec.yaml
         final content = await File('${d.path}/pubspec.yaml').readAsString();
-        expect(
-          content,
-          contains('version: 1.3.7'),
-        );
+        expect(content, contains('version: 1.3.7'));
       });
     });
 

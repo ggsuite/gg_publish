@@ -22,14 +22,14 @@ class PublishedVersion extends DirCommand<Version> {
     required super.ggLog,
     FromGit? versionFromGit,
     http.Client? httpClient,
-  })  : _httpClient = httpClient ?? http.Client(), // coverage:ignore-line
-        _versionFromGit = versionFromGit ?? FromGit(ggLog: ggLog),
-        super(
-          name: 'published-version',
-          description:
-              'Returns the version published to pub.dev of a given dart '
-              'package.',
-        );
+  }) : _httpClient = httpClient ?? http.Client(), // coverage:ignore-line
+       _versionFromGit = versionFromGit ?? FromGit(ggLog: ggLog),
+       super(
+         name: 'published-version',
+         description:
+             'Returns the version published to pub.dev of a given dart '
+             'package.',
+       );
 
   // ...........................................................................
   @override
@@ -77,7 +77,8 @@ class PublishedVersion extends DirCommand<Version> {
       _httpClient.close();
     } catch (e) {
       throw Exception(
-        'Exception while getting the latest version from pub.dev:\n' '$e',
+        'Exception while getting the latest version from pub.dev:\n'
+        '$e',
       );
     }
 
@@ -107,10 +108,7 @@ class PublishedVersion extends DirCommand<Version> {
 
   // ...........................................................................
   Future<Version> _versionFromGitTag(Directory directory, GgLog ggLog) async {
-    return await _versionFromGit.fromHead(
-          directory: directory,
-          ggLog: ggLog,
-        ) ??
+    return await _versionFromGit.fromHead(directory: directory, ggLog: ggLog) ??
         Version(0, 0, 0);
   }
 

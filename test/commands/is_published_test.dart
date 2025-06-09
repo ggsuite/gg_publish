@@ -66,13 +66,13 @@ void main() {
           pubspecYamlFile.writeAsStringSync('name: test');
 
           // Mock package test is not on pub.dev
-          final responseContent =
-              File('test/sample_package/pub_dev_404_response.json')
-                  .readAsStringSync();
+          final responseContent = File(
+            'test/sample_package/pub_dev_404_response.json',
+          ).readAsStringSync();
           final uri = Uri.parse('https://pub.dev/api/packages/test');
-          when(() => httpClient.get(uri)).thenAnswer(
-            (_) async => http.Response(responseContent, 404),
-          );
+          when(
+            () => httpClient.get(uri),
+          ).thenAnswer((_) async => http.Response(responseContent, 404));
 
           // Check if the package is published
           final result = await isPublished.get(
@@ -94,17 +94,19 @@ void main() {
           pubspecYamlFile.writeAsStringSync('name: test');
 
           // Mock a test is published on pub.dev
-          final responseContent =
-              File('test/sample_package/pub_dev_sample_response.json')
-                  .readAsStringSync();
+          final responseContent = File(
+            'test/sample_package/pub_dev_sample_response.json',
+          ).readAsStringSync();
           final uri = Uri.parse('https://pub.dev/api/packages/test');
-          when(() => httpClient.get(uri)).thenAnswer(
-            (_) async => http.Response(responseContent, 200),
-          );
+          when(
+            () => httpClient.get(uri),
+          ).thenAnswer((_) async => http.Response(responseContent, 200));
 
           // Call isPublished.get()
-          final result =
-              await isPublished.get(directory: d, ggLog: messages.add);
+          final result = await isPublished.get(
+            directory: d,
+            ggLog: messages.add,
+          );
 
           expect(result, isTrue);
         });
@@ -116,9 +118,7 @@ void main() {
           test('when called with --help', () async {
             capturePrint(
               ggLog: messages.add,
-              code: () => runner.run(
-                ['--help'],
-              ),
+              code: () => runner.run(['--help']),
             );
 
             expect(messages.last, contains('Available commands:'));
@@ -139,18 +139,16 @@ void main() {
             );
 
             // Mock published version 1.0.2
-            final responseContent =
-                File('test/sample_package/pub_dev_sample_response.json')
-                    .readAsStringSync();
+            final responseContent = File(
+              'test/sample_package/pub_dev_sample_response.json',
+            ).readAsStringSync();
             final uri = Uri.parse('https://pub.dev/api/packages/test');
-            when(() => httpClient.get(uri)).thenAnswer(
-              (_) async => http.Response(responseContent, 200),
-            );
+            when(
+              () => httpClient.get(uri),
+            ).thenAnswer((_) async => http.Response(responseContent, 200));
 
             // Call isPublished.run()
-            await runner.run(
-              ['is-published', '--input', d.path],
-            );
+            await runner.run(['is-published', '--input', d.path]);
 
             expect(
               messages.last,
@@ -164,9 +162,7 @@ void main() {
         group(' an error message', () {
           test('when called with an invalid argument', () async {
             await expectLater(
-              runner.run(
-                ['is-published', '--input', 'xyz'],
-              ),
+              runner.run(['is-published', '--input', 'xyz']),
               throwsA(
                 isA<ArgumentError>().having(
                   (e) => e.toString(),

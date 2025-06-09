@@ -23,19 +23,13 @@ class IsVersionPrepared extends DirCommand<bool> {
     PublishedVersion? publishedVersion,
     AllVersions? allVersions,
     bool? treatUnpublishedAsOk,
-  })  : _treatUnpublishedAsOk = treatUnpublishedAsOk,
-        _publishedVersion = publishedVersion ??
-            PublishedVersion(
-              ggLog: ggLog,
-            ),
-        _allVersions = allVersions ??
-            AllVersions(
-              ggLog: ggLog,
-            ),
-        super(
-          name: 'is-version-prepared',
-          description: 'pubspec.yaml and CHANGELOG have same new version?',
-        );
+  }) : _treatUnpublishedAsOk = treatUnpublishedAsOk,
+       _publishedVersion = publishedVersion ?? PublishedVersion(ggLog: ggLog),
+       _allVersions = allVersions ?? AllVersions(ggLog: ggLog),
+       super(
+         name: 'is-version-prepared',
+         description: 'pubspec.yaml and CHANGELOG have same new version?',
+       );
 
   // ...........................................................................
   @override
@@ -89,7 +83,13 @@ class IsVersionPrepared extends DirCommand<bool> {
 
     if (!changeLogIsOk && allVersions.pubspec != allVersions.changeLog) {
       ggLog(
-        darkGray('$messagePrefix must be the same.'),
+        darkGray(
+          [
+            'Version in ${blue('./CHANGELOG.md')} must either',
+            'be ${green("[Unreleased]")}',
+            'or it must match the version in ${blue('./pubspec.yaml')}.',
+          ].join(' '),
+        ),
       );
       return false;
     }
@@ -119,7 +119,6 @@ class IsVersionPrepared extends DirCommand<bool> {
         if (isNotYetPublished) {
           publishedVersion = Version(0, 0, 0);
         }
-
         // Rethrow all other errors
         else {
           rethrow;
@@ -143,10 +142,12 @@ class IsVersionPrepared extends DirCommand<bool> {
 
     if (l != nextPatch && l != nextMinor && l != nextMajor) {
       ggLog(
-        darkGray('$messagePrefix must be one of the following:'
-            '\n- $nextPatch'
-            '\n- $nextMinor'
-            '\n- $nextMajor'),
+        darkGray(
+          '$messagePrefix must be one of the following:'
+          '\n- $nextPatch'
+          '\n- $nextMinor'
+          '\n- $nextMajor',
+        ),
       );
       return false;
     }

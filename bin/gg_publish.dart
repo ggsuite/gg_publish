@@ -10,10 +10,7 @@ import 'package:gg_log/gg_log.dart';
 import 'package:gg_publish/gg_publish.dart';
 
 // .............................................................................
-Future<void> run({
-  required List<String> args,
-  required GgLog ggLog,
-}) =>
+Future<void> run({required List<String> args, required GgLog ggLog}) =>
     GgCommandRunner(
       ggLog: ggLog,
       command: GgPublish(ggLog: ggLog),
@@ -21,8 +18,5 @@ Future<void> run({
 
 // .............................................................................
 Future<void> main(List<String> args) async {
-  await run(
-    args: args,
-    ggLog: (msg) => print(msg),
-  );
+  await run(args: args, ggLog: (msg) => print(msg));
 }

@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.0.17] - 2025-06-09
+
+### Changed
+
+- Improve version mismatch error message
+
 ## [3.0.16] - 2024-04-13
 
 ### Removed
@@ -169,6 +175,7 @@
 
 - Initial version.
 
+[3.0.17]: https://github.com/inlavigo/gg_publish/compare/3.0.16...3.0.17
 [3.0.16]: https://github.com/inlavigo/gg_publish/compare/3.0.15...3.0.16
 [3.0.15]: https://github.com/inlavigo/gg_publish/compare/3.0.14...3.0.15
 [3.0.14]: https://github.com/inlavigo/gg_publish/compare/3.0.13...3.0.14

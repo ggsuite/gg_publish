@@ -25,10 +25,10 @@ class Publish extends DirCommand<void> {
     IsVersionPrepared? isVersionPrepared,
     GgProcessWrapper processWrapper = const GgProcessWrapper(),
     String? Function()? readLineFromStdIn,
-  })  : _isVersionPrepared =
-            isVersionPrepared ?? IsVersionPrepared(ggLog: ggLog),
-        _processWrapper = processWrapper,
-        _readLineFromStdIn = readLineFromStdIn ?? stdin.readLineSync {
+  }) : _isVersionPrepared =
+           isVersionPrepared ?? IsVersionPrepared(ggLog: ggLog),
+       _processWrapper = processWrapper,
+       _readLineFromStdIn = readLineFromStdIn ?? stdin.readLineSync {
     _addArgs();
   }
 
@@ -38,12 +38,11 @@ class Publish extends DirCommand<void> {
     required Directory directory,
     required GgLog ggLog,
     bool? askBeforePublishing,
-  }) async =>
-      get(
-        directory: directory,
-        ggLog: ggLog,
-        askBeforePublishing: askBeforePublishing,
-      );
+  }) async => get(
+    directory: directory,
+    ggLog: ggLog,
+    askBeforePublishing: askBeforePublishing,
+  );
 
   // ...........................................................................
   @override
@@ -105,15 +104,11 @@ class Publish extends DirCommand<void> {
   ) async {
     final errors = <String>[];
 
-    final process = await _processWrapper.start(
-      'dart',
-      [
-        'pub',
-        'publish',
-        if (!askBeforePublishing) '--force',
-      ],
-      workingDirectory: directory.path,
-    );
+    final process = await _processWrapper.start('dart', [
+      'pub',
+      'publish',
+      if (!askBeforePublishing) '--force',
+    ], workingDirectory: directory.path);
 
     // Log the output
     final s0 = process.stdout.transform(utf8.decoder).listen((s) {

@@ -16,15 +16,14 @@ import 'package:pub_semver/pub_semver.dart';
 /// Checks if a package was published to pub.dev before.
 class IsPublished extends DirCommand<bool> {
   /// Constructor
-  IsPublished({
-    required super.ggLog,
-    PublishedVersion? publishedVersion,
-  })  : _publishedVersion = publishedVersion ?? PublishedVersion(ggLog: ggLog),
-        super(
-          name: 'is-published',
-          description: 'Checks if the current directory has been published to '
-              'pub.dev before.',
-        );
+  IsPublished({required super.ggLog, PublishedVersion? publishedVersion})
+    : _publishedVersion = publishedVersion ?? PublishedVersion(ggLog: ggLog),
+      super(
+        name: 'is-published',
+        description:
+            'Checks if the current directory has been published to '
+            'pub.dev before.',
+      );
 
   // ...........................................................................
   @override
@@ -49,10 +48,7 @@ class IsPublished extends DirCommand<bool> {
   // ...........................................................................
   /// Returns true if the current directory state is published to pub.dev
   @override
-  Future<bool> get({
-    required GgLog ggLog,
-    required Directory directory,
-  }) async {
+  Future<bool> get({required GgLog ggLog, required Directory directory}) async {
     // Get the latest version from pub.dev
     final version = await _publishedVersion.get(
       ggLog: ggLog,

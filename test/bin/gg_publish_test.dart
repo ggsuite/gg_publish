@@ -33,20 +33,22 @@ void main() {
   // ###########################################################################
   group('run(args, log)', () {
     group('with args=[--input, xyz]', () {
-      test('should print "Invalid argument(s): Directory xyz does not exist."',
-          () async {
-        // Execute bin/gg_publish.dart and check if it prints "value"
-        final messages = <String>[];
-        await run(
-          args: ['is-published', '--input', 'xyz'],
-          ggLog: messages.add,
-        );
+      test(
+        'should print "Invalid argument(s): Directory xyz does not exist."',
+        () async {
+          // Execute bin/gg_publish.dart and check if it prints "value"
+          final messages = <String>[];
+          await run(
+            args: ['is-published', '--input', 'xyz'],
+            ggLog: messages.add,
+          );
 
-        expect(
-          messages.last,
-          'Invalid argument(s): Directory xyz does not exist.',
-        );
-      });
+          expect(
+            messages.last,
+            'Invalid argument(s): Directory xyz does not exist.',
+          );
+        },
+      );
     });
   });
 }
