@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.0.18] - 2025-08-11
+
+### Changed
+
+- Update to gg\_git 3.0.0
+
 ## [3.0.17] - 2025-06-09
 
 ### Changed
@@ -175,6 +181,7 @@
 
 - Initial version.
 
+[3.0.18]: https://github.com/inlavigo/gg_publish/compare/3.0.17...3.0.18
 [3.0.17]: https://github.com/inlavigo/gg_publish/compare/3.0.16...3.0.17
 [3.0.16]: https://github.com/inlavigo/gg_publish/compare/3.0.15...3.0.16
 [3.0.15]: https://github.com/inlavigo/gg_publish/compare/3.0.14...3.0.15
