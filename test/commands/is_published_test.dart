@@ -48,7 +48,7 @@ void main() {
     runner = CommandRunner<dynamic>('test', 'test');
     httpClient = MockClient();
     await initIsPublished();
-    await initGit(d);
+    await initGit(d, isEolLfEnabled: false);
   });
 
   // ...........................................................................
@@ -87,7 +87,7 @@ void main() {
 
       group('should return true', () {
         test('when the package canbe found on pub.dev ', () async {
-          await initGit(d);
+          await initGit(d, isEolLfEnabled: false);
 
           // Mock a package with name test
           final pubspecYamlFile = File('${d.path}/pubspec.yaml');

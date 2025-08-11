@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- Update latest dependencies, Add .gitattributes file
+
 ## [3.0.18] - 2025-08-11
 
 ### Changed
@@ -181,6 +187,7 @@
 
 - Initial version.
 
+[Unreleased]: https://github.com/inlavigo/gg_publish/compare/3.0.18...HEAD
 [3.0.18]: https://github.com/inlavigo/gg_publish/compare/3.0.17...3.0.18
 [3.0.17]: https://github.com/inlavigo/gg_publish/compare/3.0.16...3.0.17
 [3.0.16]: https://github.com/inlavigo/gg_publish/compare/3.0.15...3.0.16
