@@ -5,6 +5,7 @@
 ### Changed
 
 - Update latest dependencies, Add .gitattributes file
+- kidney: changed references to git
 
 ## [3.0.18] - 2025-08-11
 
