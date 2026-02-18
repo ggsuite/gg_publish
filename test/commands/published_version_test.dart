@@ -42,12 +42,6 @@ void main() {
     final samplePackage = Directory('test/sample_package');
     final tmp = await initTestDir();
     d = Directory('${tmp.path}/sample_package');
-    print(Directory.current.path);
-    /*await Process.run('cp', [
-      '-r',
-      samplePackage.path,
-      tmp.path,
-    ], workingDirectory: Directory.current.path);*/
     await copyDirectory(samplePackage, tmp);
 
     client = MockClient();

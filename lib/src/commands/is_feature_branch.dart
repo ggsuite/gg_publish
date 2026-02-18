@@ -40,15 +40,12 @@ class IsFeatureBranch extends DirCommand<bool> {
     final messages = <String>[];
 
     final printer = GgStatusPrinter<bool>(
-      message: 'Current branch is a feature branch.',
+      message: 'Current branch is feature branch',
       ggLog: ggLog,
     );
 
     final isFeatureBranch = await printer.logTask(
-      task: () => get(
-        ggLog: messages.add,
-        directory: directory,
-      ),
+      task: () => get(ggLog: messages.add, directory: directory),
       success: (success) => success,
     );
 
@@ -62,13 +59,7 @@ class IsFeatureBranch extends DirCommand<bool> {
   // ...........................................................................
   /// Returns `true` if [directory] currently points to a git feature branch.
   @override
-  Future<bool> get({
-    required GgLog ggLog,
-    required Directory directory,
-  }) async {
-    return _isFeatureBranch.get(
-      ggLog: ggLog,
-      directory: directory,
-    );
+  Future<bool> get({required GgLog ggLog, required Directory directory}) async {
+    return _isFeatureBranch.get(ggLog: ggLog, directory: directory);
   }
 }
