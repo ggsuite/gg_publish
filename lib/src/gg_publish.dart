@@ -20,6 +20,7 @@ class GgPublish extends Command<dynamic> {
     addSubcommand(IsVersionPrepared(ggLog: ggLog));
     addSubcommand(PublishedVersion(ggLog: ggLog));
     addSubcommand(PrepareNextVersion(ggLog: ggLog));
+    addSubcommand(IsFeatureBranch(ggLog: ggLog));
   }
 
   /// The log function

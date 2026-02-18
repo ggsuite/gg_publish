@@ -15,3 +15,4 @@ export 'src/commands/publish_to.dart';
 export 'src/commands/is_version_prepared.dart';
 export 'src/commands/prepare_next_version.dart';
 export 'src/commands/published_version.dart';
+export 'src/commands/is_feature_branch.dart';

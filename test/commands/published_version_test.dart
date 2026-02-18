@@ -15,6 +15,8 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 import 'package:http/http.dart' as http;
 
+import '../test_helpers.dart';
+
 class MockClient extends Mock implements http.Client {}
 
 void main() {
@@ -39,8 +41,14 @@ void main() {
     messages.clear();
     final samplePackage = Directory('test/sample_package');
     final tmp = await initTestDir();
-    await Process.run('cp', ['-r', samplePackage.path, tmp.path]);
     d = Directory('${tmp.path}/sample_package');
+    print(Directory.current.path);
+    /*await Process.run('cp', [
+      '-r',
+      samplePackage.path,
+      tmp.path,
+    ], workingDirectory: Directory.current.path);*/
+    await copyDirectory(samplePackage, tmp);
 
     client = MockClient();
   });
