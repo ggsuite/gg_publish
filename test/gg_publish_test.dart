@@ -1,5 +1,5 @@
 // @license
-// Copyright (c) 2019 - 2024 Dr. Gabriel Gatzsche. All Rights Reserved.
+// Copyright (c) 2025 Göran Hegenberg. All Rights Reserved.
 //
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
@@ -7,10 +7,10 @@
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
+import 'package:gg_args/gg_args.dart';
 import 'package:gg_capture_print/gg_capture_print.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:test/test.dart';
-import 'package:gg_args/gg_args.dart';
 
 void main() {
   final messages = <String>[];
@@ -20,7 +20,6 @@ void main() {
   });
 
   group('GgPublish()', () {
-    // #########################################################################
     group('GgPublish', () {
       final ggPublish = GgPublish(ggLog: (msg) => messages.add(msg));
 
@@ -44,7 +43,6 @@ void main() {
         );
       });
 
-      // .......................................................................
       test('should show all sub commands', () async {
         final (subCommands, errorMessage) = await missingSubCommands(
           directory: Directory('lib/src/commands'),
