@@ -11,6 +11,7 @@
 ### Changed
 
 - Improve error message for non-feature branches in is\_feature\_branch
+- Update dependencies: gg\_console\_colors, gg\_git, gg\_capture\_print
 
 ## [3.0.18] - 2025-08-11
 
