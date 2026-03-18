@@ -42,7 +42,10 @@ void main() {
     final samplePackage = Directory('test/sample_package');
     final tmp = await initTestDir();
     d = Directory('${tmp.path}/sample_package');
-    await copyDirectory(samplePackage, tmp);
+    if (!d.existsSync()) {
+      d.createSync(recursive: true);
+    }
+    await copyDirectory(samplePackage, d);
 
     client = MockClient();
   });

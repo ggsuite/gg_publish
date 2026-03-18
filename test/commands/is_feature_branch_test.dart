@@ -7,19 +7,15 @@
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
-import 'package:gg_git/gg_git.dart' as gg_git;
 import 'package:gg_git/gg_git_test_helpers.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
-
-/// Mock for gg_git.IsFeatureBranch
-class MockGgGitIsFeatureBranch extends Mock implements gg_git.IsFeatureBranch {}
+import 'package:gg_git/gg_git.dart' as gg_git;
 
 void main() {
   late Directory d;
   late IsFeatureBranch isFeatureBranchCommand;
-  late gg_git.IsFeatureBranch ggGitIsFeatureBranch;
   late CommandRunner<dynamic> runner;
   final messages = <String>[];
 
@@ -28,11 +24,7 @@ void main() {
     d = await initTestDir();
     await initGit(d);
 
-    ggGitIsFeatureBranch = MockGgGitIsFeatureBranch();
-    isFeatureBranchCommand = IsFeatureBranch(
-      ggLog: messages.add,
-      isFeatureBranch: ggGitIsFeatureBranch,
-    );
+    isFeatureBranchCommand = IsFeatureBranch(ggLog: messages.add);
 
     runner = CommandRunner<dynamic>('test', 'test')
       ..addCommand(isFeatureBranchCommand);
@@ -45,14 +37,15 @@ void main() {
   });
 
   group('IsFeatureBranch', () {
+    group('constructor', () {
+      test('should create wrapped gg_git command by default', () {
+        expect(() => IsFeatureBranch(ggLog: messages.add), returnsNormally);
+      });
+    });
+
     group('get(directory, ggLog)', () {
-      test('should delegate to gg_git.IsFeatureBranch', () async {
-        when(
-          () => ggGitIsFeatureBranch.get(
-            ggLog: any(named: 'ggLog'),
-            directory: any(named: 'directory'),
-          ),
-        ).thenAnswer((_) async => true);
+      test('should return true for a real feature branch', () async {
+        await createBranch(d, 'feature/test-branch');
 
         final result = await isFeatureBranchCommand.get(
           directory: d,
@@ -60,11 +53,38 @@ void main() {
         );
 
         expect(result, isTrue);
+      });
 
-        verify(
-          () => ggGitIsFeatureBranch.get(
+      test('should return false for a real non-feature branch', () async {
+        final result = await isFeatureBranchCommand.get(
+          directory: d,
+          ggLog: messages.add,
+        );
+
+        expect(result, isFalse);
+      });
+
+      test('should use injected gg_git.IsFeatureBranch', () async {
+        final mock = MockGgGitIsFeatureBranch();
+        when(
+          () => mock.get(
             ggLog: any(named: 'ggLog'),
             directory: any(named: 'directory'),
+          ),
+        ).thenAnswer((_) async => true);
+
+        final command = IsFeatureBranch(
+          ggLog: messages.add,
+          isFeatureBranch: mock,
+        );
+
+        final result = await command.get(directory: d, ggLog: messages.add);
+
+        expect(result, isTrue);
+        verify(
+          () => mock.get(
+            ggLog: any(named: 'ggLog'),
+            directory: d,
           ),
         ).called(1);
       });
@@ -72,12 +92,7 @@ void main() {
 
     group('exec(directory, ggLog)', () {
       test('should print when branch is a feature branch', () async {
-        when(
-          () => ggGitIsFeatureBranch.get(
-            ggLog: any(named: 'ggLog'),
-            directory: any(named: 'directory'),
-          ),
-        ).thenAnswer((_) async => true);
+        await createBranch(d, 'feature/test-branch');
 
         final result = await isFeatureBranchCommand.exec(
           directory: d,
@@ -85,26 +100,13 @@ void main() {
         );
 
         expect(result, isTrue);
-        expect(
-          messages.first,
-          contains('⌛️ Current branch is a feature branch.'),
-        );
-        expect(
-          messages.last,
-          contains('✅ Current branch is a feature branch.'),
-        );
+        expect(messages.first, contains('⌛️ Current branch is feature branch'));
+        expect(messages.last, contains('✅ Current branch is feature branch'));
       });
 
       test(
         'should print ❌ and throw when branch is not a feature branch',
         () async {
-          when(
-            () => ggGitIsFeatureBranch.get(
-              ggLog: any(named: 'ggLog'),
-              directory: any(named: 'directory'),
-            ),
-          ).thenAnswer((_) async => false);
-
           late String exceptionMessage;
 
           try {
@@ -118,37 +120,45 @@ void main() {
 
           expect(
             messages.first,
-            contains('⌛️ Current branch is a feature branch.'),
+            contains('⌛️ Current branch is feature branch'),
           );
-          expect(
-            messages.last,
-            contains('❌ Current branch is a feature branch.'),
-          );
+          expect(messages.last, contains('❌ Current branch is feature branch'));
+          print(exceptionMessage);
           expect(exceptionMessage, isNotEmpty);
+          expect(
+            exceptionMessage,
+            contains('Current branch is not a feature branch'),
+          );
         },
       );
     });
 
     group('run()', () {
       test('should allow to run command from CLI', () async {
-        when(
-          () => ggGitIsFeatureBranch.get(
-            ggLog: any(named: 'ggLog'),
-            directory: any(named: 'directory'),
-          ),
-        ).thenAnswer((_) async => true);
+        await createBranch(d, 'feature/test-branch');
 
         await runner.run(['is-feature-branch', '--input', d.path]);
 
-        expect(
-          messages.last,
-          contains('✅ Current branch is a feature branch.'),
-        );
+        expect(messages.last, contains('✅ Current branch is feature branch'));
       });
-    });
 
-    test('should have a code coverage of 100%', () {
-      expect(IsFeatureBranch(ggLog: messages.add), isNotNull);
+      test(
+        'should call exec() when run from CLI and fail for non-feature branch',
+        () async {
+          await expectLater(
+            runner.run(['is-feature-branch', '--input', d.path]),
+            throwsA(isA<Exception>()),
+          );
+
+          expect(
+            messages.first,
+            contains('⌛️ Current branch is feature branch'),
+          );
+          expect(messages.last, contains('❌ Current branch is feature branch'));
+        },
+      );
     });
   });
 }
+
+class MockGgGitIsFeatureBranch extends Mock implements gg_git.IsFeatureBranch {}
