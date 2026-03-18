@@ -6,7 +6,7 @@
 
 - Update latest dependencies, Add .gitattributes file
 
-## [Unreleased]
+## [3.1.0] - 2026-03-18
 
 ### Changed
 
@@ -194,7 +194,7 @@
 
 - Initial version.
 
-[Unreleased]: https://github.com/inlavigo/gg_publish/compare/3.0.18...HEAD
+[3.1.0]: https://github.com/inlavigo/gg_publish/compare/3.0.18...3.1.0
 [3.0.18]: https://github.com/inlavigo/gg_publish/compare/3.0.17...3.0.18
 [3.0.17]: https://github.com/inlavigo/gg_publish/compare/3.0.16...3.0.17
 [3.0.16]: https://github.com/inlavigo/gg_publish/compare/3.0.15...3.0.16
