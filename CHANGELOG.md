@@ -1,10 +1,16 @@
 # Changelog
 
-## [3.0.19] - 2026-02-18
+## \[3.0.19\] - 2026-02-18
 
 ### Changed
 
 - Update latest dependencies, Add .gitattributes file
+
+## [Unreleased]
+
+### Changed
+
+- Improve error message for non-feature branches in is\_feature\_branch
 
 ## [3.0.18] - 2025-08-11
 

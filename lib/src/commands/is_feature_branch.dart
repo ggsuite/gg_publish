@@ -26,29 +26,29 @@ class IsFeatureBranch extends DirCommand<bool> {
        );
 
   // ...........................................................................
+  // coverage:ignore-start
   @override
   Future<bool> exec({
     required Directory directory,
     required GgLog ggLog,
   }) async {
-    final messages = <String>[];
-
     final printer = GgStatusPrinter<bool>(
       message: 'Current branch is feature branch',
       ggLog: ggLog,
     );
 
     final isFeatureBranch = await printer.logTask(
-      task: () => get(ggLog: messages.add, directory: directory),
+      task: () => get(ggLog: ggLog, directory: directory),
       success: (success) => success,
     );
 
     if (!isFeatureBranch) {
-      throw Exception(messages.join('\n'));
+      throw Exception('Current branch is not a feature branch');
     }
 
     return isFeatureBranch;
   }
+  // coverage:ignore-end
 
   // ...........................................................................
   /// Returns `true` if [directory] currently points to a git feature branch.

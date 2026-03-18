@@ -123,7 +123,12 @@ void main() {
             contains('⌛️ Current branch is feature branch'),
           );
           expect(messages.last, contains('❌ Current branch is feature branch'));
+          print(exceptionMessage);
           expect(exceptionMessage, isNotEmpty);
+          expect(
+            exceptionMessage,
+            contains('Current branch is not a feature branch'),
+          );
         },
       );
     });
