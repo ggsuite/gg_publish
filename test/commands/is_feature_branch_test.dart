@@ -45,6 +45,12 @@ void main() {
   });
 
   group('IsFeatureBranch', () {
+    group('constructor', () {
+      test('should create wrapped gg_git command by default', () {
+        expect(() => IsFeatureBranch(ggLog: messages.add), returnsNormally);
+      });
+    });
+
     group('get(directory, ggLog)', () {
       test('should delegate to gg_git.IsFeatureBranch', () async {
         when(

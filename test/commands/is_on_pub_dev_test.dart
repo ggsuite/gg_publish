@@ -34,6 +34,12 @@ void main() {
   });
 
   group('IsOnPubDev', () {
+    group('constructor', () {
+      test('should create publishTo command by default', () {
+        expect(() => IsOnPubDev(ggLog: messages.add), returnsNormally);
+      });
+    });
+
     group('get(directory, ggLog)', () {
       test('should return true when publish target is pub.dev', () async {
         when(
