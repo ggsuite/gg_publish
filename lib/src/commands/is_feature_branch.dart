@@ -25,13 +25,7 @@ class IsFeatureBranch extends DirCommand<bool> {
          description: 'Checks if the current git branch is a feature branch.',
        );
 
-  /// The wrapped implementation from the `gg_git` package.
-  final gg_git.IsFeatureBranch _isFeatureBranch;
-
   // ...........................................................................
-  /// Executes the command and logs the result using [GgStatusPrinter].
-  ///
-  /// Throws an [Exception] when the current branch is not a feature branch.
   @override
   Future<bool> exec({
     required Directory directory,
@@ -62,4 +56,10 @@ class IsFeatureBranch extends DirCommand<bool> {
   Future<bool> get({required GgLog ggLog, required Directory directory}) async {
     return _isFeatureBranch.get(ggLog: ggLog, directory: directory);
   }
+
+  // ######################
+  // Private
+  // ######################
+
+  final gg_git.IsFeatureBranch _isFeatureBranch;
 }
