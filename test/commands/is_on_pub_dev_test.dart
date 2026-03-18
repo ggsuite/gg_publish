@@ -6,7 +6,6 @@
 
 import 'dart:io';
 
-import 'package:args/command_runner.dart';
 import 'package:gg_git/gg_git_test_helpers.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:mocktail/mocktail.dart';
@@ -19,7 +18,6 @@ void main() {
   late Directory d;
   late IsOnPubDev isOnPubDev;
   late PublishTo publishTo;
-  late CommandRunner<dynamic> runner;
   final messages = <String>[];
 
   setUp(() async {
@@ -28,7 +26,6 @@ void main() {
     await initGit(d);
     publishTo = MockPublishTo();
     isOnPubDev = IsOnPubDev(ggLog: messages.add, publishTo: publishTo);
-    runner = CommandRunner<dynamic>('test', 'test')..addCommand(isOnPubDev);
     registerFallbackValue(d);
   });
 

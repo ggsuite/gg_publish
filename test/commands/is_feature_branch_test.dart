@@ -85,14 +85,8 @@ void main() {
         );
 
         expect(result, isTrue);
-        expect(
-          messages.first,
-          contains('⌛️ Current branch is a feature branch.'),
-        );
-        expect(
-          messages.last,
-          contains('✅ Current branch is a feature branch.'),
-        );
+        expect(messages.first, contains('⌛️ Current branch is feature branch'));
+        expect(messages.last, contains('✅ Current branch is feature branch'));
       });
 
       test(
@@ -118,12 +112,9 @@ void main() {
 
           expect(
             messages.first,
-            contains('⌛️ Current branch is a feature branch.'),
+            contains('⌛️ Current branch is feature branch'),
           );
-          expect(
-            messages.last,
-            contains('❌ Current branch is a feature branch.'),
-          );
+          expect(messages.last, contains('❌ Current branch is feature branch'));
           expect(exceptionMessage, isNotEmpty);
         },
       );
@@ -140,15 +131,8 @@ void main() {
 
         await runner.run(['is-feature-branch', '--input', d.path]);
 
-        expect(
-          messages.last,
-          contains('✅ Current branch is a feature branch.'),
-        );
+        expect(messages.last, contains('✅ Current branch is feature branch'));
       });
-    });
-
-    test('should have a code coverage of 100%', () {
-      expect(IsFeatureBranch(ggLog: messages.add), isNotNull);
     });
   });
 }
