@@ -16,4 +16,5 @@ export 'src/commands/is_version_prepared.dart';
 export 'src/commands/prepare_next_version.dart';
 export 'src/commands/published_version.dart';
 export 'src/commands/is_feature_branch.dart';
+export 'src/commands/is_main_branch.dart';
 export 'src/commands/is_on_pub_dev.dart';

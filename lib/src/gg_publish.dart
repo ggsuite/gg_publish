@@ -21,6 +21,7 @@ class GgPublish extends Command<dynamic> {
     addSubcommand(PublishedVersion(ggLog: ggLog));
     addSubcommand(PrepareNextVersion(ggLog: ggLog));
     addSubcommand(IsFeatureBranch(ggLog: ggLog));
+    addSubcommand(IsMainBranch(ggLog: ggLog));
     addSubcommand(IsOnPubDev(ggLog: ggLog));
   }
 
