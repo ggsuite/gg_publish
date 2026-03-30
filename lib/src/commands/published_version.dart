@@ -22,7 +22,7 @@ class PublishedVersion extends DirCommand<Version> {
     required super.ggLog,
     FromGit? versionFromGit,
     http.Client? httpClient,
-  }) : _httpClient = httpClient ?? http.Client(), // coverage:ignore-line
+  }) : _httpClient = httpClient, // coverage:ignore-line
        _versionFromGit = versionFromGit ?? FromGit(ggLog: ggLog),
        super(
          name: 'published-version',
@@ -72,9 +72,10 @@ class PublishedVersion extends DirCommand<Version> {
     // Get the package info json from pub.dev
     late http.Response response;
     try {
+      final httpClient = _httpClient ?? http.Client();
       final uri = Uri.parse('https://pub.dev/api/packages/$name');
-      response = await _httpClient.get(uri);
-      _httpClient.close();
+      response = await httpClient.get(uri);
+      httpClient.close();
     } catch (e) {
       throw Exception(
         'Exception while getting the latest version from pub.dev:\n'
@@ -115,7 +116,7 @@ class PublishedVersion extends DirCommand<Version> {
   // ######################
   // Private
   // ######################
-  final http.Client _httpClient;
+  final http.Client? _httpClient;
   final FromGit _versionFromGit;
 }
 
