@@ -23,6 +23,8 @@ class GgPublish extends Command<dynamic> {
     addSubcommand(IsFeatureBranch(ggLog: ggLog));
     addSubcommand(IsMainBranch(ggLog: ggLog));
     addSubcommand(IsOnPubDev(ggLog: ggLog));
+    addSubcommand(MainBranch(ggLog: ggLog));
+    addSubcommand(MergeMainIntoFeat(ggLog: ggLog));
   }
 
   /// The log function.

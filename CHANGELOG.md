@@ -6,6 +6,18 @@
 
 - Update latest dependencies, Add .gitattributes file
 
+## [3.3.0] - 2026-04-07
+
+### Changed
+
+- kidney: changed references to path
+- Refactor MainBranch to inject process runner and improve tests
+- kidney: changed references to git
+
+### Fixed
+
+- Remove useCarriageReturn and fix ggLog parameter in merge command
+
 ## [3.2.1] - 2026-03-30
 
 ## [3.2.0] - 2026-03-19
@@ -202,6 +214,7 @@
 
 - Initial version.
 
+[3.3.0]: https://github.com/inlavigo/gg_publish/compare/3.2.1...3.3.0
 [3.2.1]: https://github.com/inlavigo/gg_publish/compare/3.2.0...3.2.1
 [3.2.0]: https://github.com/inlavigo/gg_publish/compare/3.1.0...3.2.0
 [3.1.0]: https://github.com/inlavigo/gg_publish/compare/3.0.18...3.1.0
