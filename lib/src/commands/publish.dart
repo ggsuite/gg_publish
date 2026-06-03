@@ -9,6 +9,7 @@ import 'dart:convert';
 
 import 'package:gg_args/gg_args.dart';
 import 'package:gg_console_colors/gg_console_colors.dart';
+import 'package:gg_lang/gg_lang.dart';
 import 'package:gg_log/gg_log.dart';
 import 'package:gg_process/gg_process.dart';
 import 'package:gg_publish/gg_publish.dart';
@@ -20,17 +21,23 @@ class Publish extends DirCommand<void> {
   /// Constructor
   Publish({
     required super.ggLog,
-    super.description = 'Publishes the current directory to pub.dev.',
+    super.description = 'Publishes the current directory to its registry.',
     super.name = 'publish',
     IsVersionPrepared? isVersionPrepared,
     GgProcessWrapper processWrapper = const GgProcessWrapper(),
     String? Function()? readLineFromStdIn,
+    LanguageCatalog? catalog,
   }) : _isVersionPrepared =
            isVersionPrepared ?? IsVersionPrepared(ggLog: ggLog),
        _processWrapper = processWrapper,
+       _catalog = catalog,
        _readLineFromStdIn = readLineFromStdIn ?? stdin.readLineSync {
     _addArgs();
   }
+
+  /// The language catalog used to resolve the publish command. Defaults to the
+  /// bundled gg_lang catalog when null.
+  final LanguageCatalog? _catalog;
 
   // ...........................................................................
   @override
@@ -104,11 +111,29 @@ class Publish extends DirCommand<void> {
   ) async {
     final errors = <String>[];
 
-    final process = await _processWrapper.start('dart', [
-      'pub',
-      'publish',
-      if (!askBeforePublishing) '--force',
-    ], workingDirectory: directory.path);
+    final catalog = _catalog ?? await LanguageCatalog.load();
+    final type = detectProjectType(directory);
+    final command = catalog.spec(type).command('publish');
+    final executable = command.exec ?? command.tool!;
+    final isDart = type.isDartFamily;
+    final args = [
+      ...command.args,
+      // `dart pub publish` prompts unless forced; npm has no such prompt.
+      if (isDart && !askBeforePublishing) '--force',
+    ];
+
+    final process = command.runInShell
+        ? await _processWrapper.start(
+            executable,
+            args,
+            workingDirectory: directory.path,
+            runInShell: true,
+          )
+        : await _processWrapper.start(
+            executable,
+            args,
+            workingDirectory: directory.path,
+          );
 
     // Log the output
     final s0 = process.stdout.transform(utf8.decoder).listen((s) {
@@ -132,7 +157,8 @@ class Publish extends DirCommand<void> {
 
     if (exitCode != 0 || errors.isNotEmpty) {
       throw Exception(
-        "»dart pub publish« was not successful: ${errors.join('\n')}",
+        '»$executable ${command.args.join(' ')}« was not successful: '
+        "${errors.join('\n')}",
       );
     }
   }

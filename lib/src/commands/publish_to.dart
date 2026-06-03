@@ -7,16 +7,26 @@
 import 'dart:io';
 
 import 'package:gg_args/gg_args.dart';
+import 'package:gg_lang/gg_lang.dart';
 import 'package:gg_log/gg_log.dart';
 
-/// Returns the value of pubspec.yaml's publish_to field.
+/// Returns the publish target of a package's manifest.
+///
+/// For Dart/Flutter this is the value of `pubspec.yaml`'s `publish_to` field
+/// (defaulting to `pub.dev`). For TypeScript it is derived from
+/// `package.json`'s `private` field: `none` when private, otherwise `npm`.
 class PublishTo extends DirCommand<void> {
   /// Constructor
   PublishTo({
     required super.ggLog,
     super.name = 'publish-to',
     super.description = 'Publishes the package to the given directory.',
-  });
+    LanguageCatalog? catalog,
+  }) : _catalog = catalog;
+
+  /// The language catalog used to detect the manifest. Defaults to the bundled
+  /// gg_lang catalog when null.
+  final LanguageCatalog? _catalog;
 
   // ...........................................................................
   @override
@@ -26,30 +36,22 @@ class PublishTo extends DirCommand<void> {
   }
 
   // ...........................................................................
-  /// Returns the value of pubspec.yaml's publish_to field.
-  /// If the field is not set, pub.dev is returned.
+  /// Returns the publish target of the manifest in [directory].
   Future<String> fromDirectory(Directory directory) async {
-    // Has not publish_to: none
-    final pubspec = File('${directory.path}/pubspec.yaml');
-    return fromFile(pubspecFile: pubspec);
-  }
+    final catalog = _catalog ?? await LanguageCatalog.load();
+    final type = detectProjectType(directory);
+    final manifest = Manifest(
+      directory: directory,
+      spec: catalog.spec(type).manifest,
+    );
 
-  // ...........................................................................
-  /// Returns the value of pubspec.yaml's publish_to field.
-  /// If the field is not set, pub.dev is returned.
-  Future<String> fromFile({required File pubspecFile}) async {
-    // Has not publish_to: none
-    final pubspec = await pubspecFile.readAsString();
-    return fromString(pubspec);
-  }
-
-  // ...........................................................................
-  /// Returns the value of pubspec.yaml's publish_to field.
-  /// If the field is not set, pub.dev is returned.
-  Future<String> fromString(String pubspec) async {
-    final regExp = RegExp(r'publish_to:\s*(\S+)');
-    final match = regExp.firstMatch(pubspec);
-    return match?.group(1) ?? 'pub.dev';
+    switch (type) {
+      case ProjectType.dart:
+      case ProjectType.flutter:
+        return await manifest.readPublishTargetMarker() ?? 'pub.dev';
+      case ProjectType.typescript:
+        return await manifest.isPrivate() ? 'none' : 'npm';
+    }
   }
 }
 

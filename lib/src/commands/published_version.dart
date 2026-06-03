@@ -4,10 +4,10 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:gg_args/gg_args.dart';
+import 'package:gg_lang/gg_lang.dart';
 import 'package:gg_log/gg_log.dart';
 import 'package:gg_version/gg_version.dart';
 import 'package:pub_semver/pub_semver.dart';
@@ -15,20 +15,25 @@ import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart' as mocktail;
 
 // .............................................................................
-/// Returns the version published to pub.dev of a given dart package
+/// Returns the version a package has published to its registry (pub.dev for
+/// Dart/Flutter, npm for TypeScript).
 class PublishedVersion extends DirCommand<Version> {
   /// Constructor
   PublishedVersion({
     required super.ggLog,
     FromGit? versionFromGit,
     http.Client? httpClient,
-  }) : _httpClient = httpClient, // coverage:ignore-line
+    LanguageCatalog? catalog,
+    RegistryFactory? registryFactory,
+  }) : _catalog = catalog,
+       _registryFactory =
+           registryFactory ?? RegistryFactory(httpClient: httpClient),
        _versionFromGit = versionFromGit ?? FromGit(ggLog: ggLog),
        super(
          name: 'published-version',
          description:
-             'Returns the version published to pub.dev of a given dart '
-             'package.',
+             'Returns the version published to the package registry '
+             '(pub.dev / npm).',
        );
 
   // ...........................................................................
@@ -43,68 +48,50 @@ class PublishedVersion extends DirCommand<Version> {
   }
 
   // ...........................................................................
-  /// Returns true if the current directory state is published to pub.dev
-  /// If the package cannot be found on pub.dev, the version
-  /// from the git tags is treated as published version.
+  /// Returns the version the package in [directory] has published to its
+  /// registry. If the package cannot be found there, the version from the git
+  /// tags is treated as the published version.
   @override
   Future<Version> get({
     required GgLog ggLog,
     required Directory directory,
   }) async {
-    // Read pubspec.yaml
-    final pubspecFile = File('${directory.path}/pubspec.yaml');
-    if (!pubspecFile.existsSync()) {
+    final catalog = _catalog ?? await LanguageCatalog.load();
+
+    final ProjectType type;
+    try {
+      type = detectProjectType(directory);
+    } catch (_) {
       throw ArgumentError('pubspec.yaml not found');
     }
-    final pubspec = pubspecFile.readAsStringSync();
 
-    // Is published to none? Return verson from tag
-    if (pubspec.contains(RegExp(r'publish_to:\s*none'))) {
-      return await _versionFromGitTag(directory, ggLog);
+    final spec = catalog.spec(type);
+    final manifest = Manifest(directory: directory, spec: spec.manifest);
+
+    // Not published to a public registry? Return the version from the git tag.
+    if (await manifest.isPrivate()) {
+      return _versionFromGitTag(directory, ggLog);
     }
 
-    // Read the name from pubspec.yaml
-    final name = RegExp(r'name: (.*)').firstMatch(pubspec)?.group(1);
-    if (name == null) {
-      throw ArgumentError('name not found in pubspec.yaml');
-    }
-
-    // Get the package info json from pub.dev
-    late http.Response response;
+    final String name;
     try {
-      final httpClient = _httpClient ?? http.Client();
-      final uri = Uri.parse('https://pub.dev/api/packages/$name');
-      response = await httpClient.get(uri);
-      httpClient.close();
-    } catch (e) {
+      name = await manifest.readName();
+    } on ManifestException {
+      throw ArgumentError('name not found in ${spec.manifest.file}');
+    }
+
+    final registry = _registryFactory.forProjectType(type, spec: spec);
+
+    final Version? latest;
+    try {
+      latest = await registry.latestVersion(packageName: name);
+    } on RegistryException catch (e) {
       throw Exception(
-        'Exception while getting the latest version from pub.dev:\n'
-        '$e',
+        'Exception while getting the latest version from the registry:\n$e',
       );
     }
 
-    final statusCode = response.statusCode;
-    if (statusCode == 404) {
-      return await _versionFromGitTag(directory, ggLog);
-    }
-
-    if (statusCode != 200) {
-      throw ArgumentError(
-        'Error $statusCode while getting the latest version from pub.dev',
-      );
-    }
-
-    final parseResponse = jsonDecode(response.body) as Map<String, dynamic>;
-    if (parseResponse['latest'] == null) {
-      throw ArgumentError('Response from pub.dev does not contain "latest"');
-    }
-
-    final latest = parseResponse['latest'] as Map<String, dynamic>;
-    if (latest['version'] == null) {
-      throw ArgumentError('Response from pub.dev does not contain "version"');
-    }
-
-    return Version.parse(latest['version'] as String);
+    return latest ?? await _versionFromGitTag(directory, ggLog);
   }
 
   // ...........................................................................
@@ -116,7 +103,8 @@ class PublishedVersion extends DirCommand<Version> {
   // ######################
   // Private
   // ######################
-  final http.Client? _httpClient;
+  final LanguageCatalog? _catalog;
+  final RegistryFactory _registryFactory;
   final FromGit _versionFromGit;
 }
 

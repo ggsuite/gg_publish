@@ -8,6 +8,7 @@ import 'dart:io';
 
 import 'package:gg_args/gg_args.dart';
 import 'package:gg_console_colors/gg_console_colors.dart';
+import 'package:gg_lang/gg_lang.dart';
 import 'package:gg_log/gg_log.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
@@ -23,9 +24,11 @@ class IsVersionPrepared extends DirCommand<bool> {
     PublishedVersion? publishedVersion,
     AllVersions? allVersions,
     bool? treatUnpublishedAsOk,
+    LanguageCatalog? catalog,
   }) : _treatUnpublishedAsOk = treatUnpublishedAsOk,
        _publishedVersion = publishedVersion ?? PublishedVersion(ggLog: ggLog),
        _allVersions = allVersions ?? AllVersions(ggLog: ggLog),
+       _catalog = catalog,
        super(
          name: 'is-version-prepared',
          description: 'pubspec.yaml and CHANGELOG have same new version?',
@@ -69,44 +72,59 @@ class IsVersionPrepared extends DirCommand<bool> {
   }) async {
     treatUnpublishedAsOk ??= _treatUnpublishedAsOk ?? false;
 
-    // Get all version
-    final allVersions = await _allVersions.get(
-      ggLog: ggLog,
-      directory: directory,
-      ignoreUncommitted: true,
-    );
+    final supportsChangeLog = detectProjectType(directory).isDartFamily;
 
-    // Version in CHANGELOG.md must either be "Unreleased"
-    // or it must match the version in pubspect.yaml
-    final isUnreleased = await _isUnreleased(directory);
-    final changeLogIsOk = treatUnpublishedAsOk && isUnreleased;
+    // The version that is about to be published (pubspec.yaml / package.json).
+    final Version localVersion;
 
-    if (!changeLogIsOk && allVersions.pubspec != allVersions.changeLog) {
-      ggLog(
-        darkGray(
-          [
-            'Version in ${blue('./CHANGELOG.md')} must either',
-            'be ${green("[Unreleased]")}',
-            'or it must match the version in ${blue('./pubspec.yaml')}.',
-          ].join(' '),
-        ),
+    if (supportsChangeLog) {
+      // Dart/Flutter: the CHANGELOG.md drives versioning and must either be
+      // "Unreleased" or match the version in pubspec.yaml.
+      final allVersions = await _allVersions.get(
+        ggLog: ggLog,
+        directory: directory,
+        ignoreUncommitted: true,
       );
-      return false;
+      localVersion = allVersions.pubspec;
+
+      final isUnreleased = await _isUnreleased(directory);
+      final changeLogIsOk = treatUnpublishedAsOk && isUnreleased;
+
+      if (!changeLogIsOk && allVersions.pubspec != allVersions.changeLog) {
+        ggLog(
+          darkGray(
+            [
+              'Version in ${blue('./CHANGELOG.md')} must either',
+              'be ${green("[Unreleased]")}',
+              'or it must match the version in ${blue('./pubspec.yaml')}.',
+            ].join(' '),
+          ),
+        );
+        return false;
+      }
+    } else {
+      // TypeScript & co.: the registry and package.json are the source of
+      // truth; there is no CHANGELOG.md to compare against.
+      final catalog = _catalog ?? await LanguageCatalog.load();
+      localVersion = await Manifest.detect(directory, catalog).readVersion();
     }
 
     // Where is the package published to?
-    final publishTo = await PublishTo(ggLog: ggLog).fromDirectory(directory);
-    final publishToPubDev = publishTo == 'pub.dev';
+    final publishTo = await PublishTo(
+      ggLog: ggLog,
+      catalog: _catalog,
+    ).fromDirectory(directory);
+    final publishToRegistry = publishTo == 'pub.dev' || publishTo == 'npm';
     final publishToGit = publishTo == 'none';
-    if (!publishToPubDev && !publishToGit) {
+    if (!publishToRegistry && !publishToGit) {
       throw UnimplementedError('Publishing to $publishTo is not supported.');
     }
 
-    // Publish to pub.dev?
-    // Get publishedVersion from pub.dev
+    // Publish to a public registry (pub.dev / npm)?
+    // Get the published version from there.
     late Version publishedVersion;
 
-    if (publishToPubDev) {
+    if (publishToRegistry) {
       try {
         publishedVersion = await _publishedVersion.get(
           ggLog: ggLog,
@@ -127,13 +145,16 @@ class IsVersionPrepared extends DirCommand<bool> {
     }
 
     // Publish to git?
-    // Get publishedVersion from git
+    // Get publishedVersion from the latest git tag (works without a CHANGELOG).
     if ((publishToGit)) {
-      publishedVersion = allVersions.gitLatest ?? Version(0, 0, 0);
+      final latest = await FromGit(
+        ggLog: ggLog,
+      ).latest(directory: directory, ggLog: ggLog);
+      publishedVersion = latest ?? Version(0, 0, 0);
     }
 
-    // Version in pubspec.yaml must be one step bigger than the published one
-    final l = allVersions.pubspec;
+    // Version in the manifest must be one step bigger than the published one
+    final l = localVersion;
     final p = publishedVersion;
 
     final nextPatch = Version(p.major, p.minor, p.patch + 1);
@@ -162,6 +183,10 @@ class IsVersionPrepared extends DirCommand<bool> {
   final PublishedVersion _publishedVersion;
   final AllVersions _allVersions;
   final bool? _treatUnpublishedAsOk;
+
+  /// The language catalog used to resolve the manifest for non-Dart project
+  /// types. Defaults to the bundled gg_lang catalog when null.
+  final LanguageCatalog? _catalog;
 
   // ...........................................................................
   Future<bool> _isUnreleased(Directory directory) async {

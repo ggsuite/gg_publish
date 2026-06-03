@@ -9,12 +9,15 @@
 import 'dart:io';
 
 import 'package:gg_git/gg_git_test_helpers.dart';
+import 'package:gg_lang/gg_lang.dart';
 import 'package:gg_process/gg_process.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
 void main() {
+  final catalog = LanguageCatalog.fromString(_catalogJson);
+
   final messages = <String>[];
   final ggLog = messages.add;
   late Directory d;
@@ -50,6 +53,10 @@ void main() {
     d = await Directory.systemTemp.createTemp();
     await initGit(d);
     await addAndCommitSampleFile(d);
+    // A manifest so the publish command can be resolved for the project type.
+    File(
+      '${d.path}/pubspec.yaml',
+    ).writeAsStringSync('name: test\nversion: 1.0.0\n');
     process = GgFakeProcess();
     isVersionPrepared = MockIsVersionPrepared();
     processWrapper = MockGgProcessWrapper();
@@ -58,6 +65,7 @@ void main() {
       processWrapper: processWrapper,
       isVersionPrepared: isVersionPrepared,
       readLineFromStdIn: () => stdInValue,
+      catalog: catalog,
     );
   });
 
@@ -204,6 +212,39 @@ void main() {
           expect(exceptionMessage, contains('Error: Something went wrong'));
         });
       });
+
+      group('for a TypeScript project', () {
+        test('runs »npm publish«', () async {
+          final tsDir = await Directory.systemTemp.createTemp();
+          File(
+            '${tsDir.path}/package.json',
+          ).writeAsStringSync('{"name": "ts", "version": "1.0.0"}');
+          File('${tsDir.path}/tsconfig.json').writeAsStringSync('{}');
+
+          when(
+            () => isVersionPrepared.get(ggLog: ggLog, directory: tsDir),
+          ).thenAnswer((_) async => true);
+          when(
+            () => processWrapper.start(
+              'npm',
+              ['publish'],
+              workingDirectory: tsDir.path,
+              runInShell: true,
+            ),
+          ).thenAnswer((_) => Future.value(process));
+
+          bool isDone = false;
+          publish
+              .exec(directory: tsDir, ggLog: ggLog)
+              .then((_) => isDone = true);
+          await Future<void>.delayed(Duration.zero);
+          process.exit(0);
+          await Future<void>.delayed(Duration.zero);
+
+          expect(isDone, isTrue);
+          await tsDir.delete(recursive: true);
+        });
+      });
     });
 
     test('has a code coverage of 100%', () {
@@ -211,3 +252,63 @@ void main() {
     });
   });
 }
+
+const _manifest = '''
+"manifest": {
+  "file": "pubspec.yaml",
+  "format": "yaml",
+  "versionPath": "version",
+  "namePath": "name",
+  "publishTargetMarker": "publish_to",
+  "lockFile": "pubspec.lock"
+}''';
+
+const _catalogJson =
+    '''
+{
+  "schemaVersion": 1,
+  "languages": {
+    "dart": {
+      "displayName": "Dart",
+      $_manifest,
+      "commands": {
+        "publish": {
+          "label": "dart pub publish",
+          "exec": "dart",
+          "args": ["pub", "publish"]
+        }
+      }
+    },
+    "flutter": {
+      "displayName": "Flutter",
+      $_manifest,
+      "commands": {
+        "publish": {
+          "label": "flutter pub publish",
+          "exec": "flutter",
+          "args": ["pub", "publish"]
+        }
+      }
+    },
+    "typescript": {
+      "displayName": "TypeScript",
+      "manifest": {
+        "file": "package.json",
+        "format": "json",
+        "versionPath": "version",
+        "namePath": "name",
+        "publishTargetMarker": "private",
+        "lockFile": "package-lock.json"
+      },
+      "commands": {
+        "publish": {
+          "label": "npm publish",
+          "exec": "npm",
+          "args": ["publish"],
+          "runInShell": true
+        }
+      }
+    }
+  }
+}
+''';
