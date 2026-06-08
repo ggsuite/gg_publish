@@ -63,15 +63,33 @@ void main() {
           expect(messages.last, 'pub.dev');
         });
 
-        test(
-          'when called with fromDirectory(), fromFile() or fromString()',
-          () async {
-            await initPubspec(publishTo: null);
-            expect(await publishTo.fromDirectory(d), 'pub.dev');
-            await initPubspec(publishTo: 'xyz');
-            expect(await publishTo.fromDirectory(d), 'xyz');
-          },
-        );
+        test('when called with fromDirectory()', () async {
+          await initPubspec(publishTo: null);
+          expect(await publishTo.fromDirectory(d), 'pub.dev');
+          await initPubspec(publishTo: 'xyz');
+          expect(await publishTo.fromDirectory(d), 'xyz');
+        });
+
+        group('for a TypeScript project', () {
+          Future<void> initPackageJson({required bool private}) async {
+            final pubspec = File('${d.path}/pubspec.yaml');
+            if (pubspec.existsSync()) pubspec.deleteSync();
+            File('${d.path}/package.json').writeAsStringSync(
+              '{"name": "ts", "version": "1.0.0", "private": $private}',
+            );
+            File('${d.path}/tsconfig.json').writeAsStringSync('{}');
+          }
+
+          test('returns "none" when the package is private', () async {
+            await initPackageJson(private: true);
+            expect(await publishTo.fromDirectory(d), 'none');
+          });
+
+          test('returns "npm" when the package is public', () async {
+            await initPackageJson(private: false);
+            expect(await publishTo.fromDirectory(d), 'npm');
+          });
+        });
       });
     });
   });

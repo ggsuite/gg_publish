@@ -9,6 +9,7 @@ import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:gg_console_colors/gg_console_colors.dart';
 import 'package:gg_git/gg_git_test_helpers.dart';
+import 'package:gg_lang/gg_lang.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:path/path.dart';
@@ -359,6 +360,79 @@ void main() async {
         });
       });
 
+      group('for TypeScript packages (package.json, no CHANGELOG)', () {
+        // Writes a minimal TypeScript project (package.json + tsconfig.json)
+        // with the given version into the test directory.
+        Future<void> writeTsProject(
+          String version, {
+          bool private = false,
+        }) async {
+          final priv = private ? ',"private":true' : '';
+          await File(
+            join(d.path, 'package.json'),
+          ).writeAsString('{"name":"ts_pkg","version":"$version"$priv}');
+          await File(join(d.path, 'tsconfig.json')).writeAsString('{}');
+        }
+
+        IsVersionPrepared tsIsVersionPrepared() => IsVersionPrepared(
+          ggLog: ggLog,
+          publishedVersion: publishedVersion,
+          catalog: LanguageCatalog.fromString(_catalogJson),
+        );
+
+        test(
+          'returns true when package.json is the next npm increment',
+          () async {
+            // npm reports the published version as 2.0.0
+            when(
+              () => publishedVersion.get(ggLog: ggLog, directory: d),
+            ).thenAnswer((_) async => Version(2, 0, 0));
+
+            for (final version in ['2.0.1', '2.1.0', '3.0.0']) {
+              await writeTsProject(version);
+
+              final result = await tsIsVersionPrepared().get(
+                ggLog: ggLog,
+                directory: d,
+              );
+              expect(result, isTrue);
+              expect(messages.isEmpty, isTrue);
+            }
+          },
+        );
+
+        test(
+          'returns false when package.json is not the next npm increment',
+          () async {
+            when(
+              () => publishedVersion.get(ggLog: ggLog, directory: d),
+            ).thenAnswer((_) async => Version(2, 0, 0));
+
+            await writeTsProject('4.0.0');
+
+            final result = await tsIsVersionPrepared().get(
+              ggLog: ggLog,
+              directory: d,
+            );
+            expect(result, isFalse);
+            expect(messages.last, contains('must be one of the following'));
+          },
+        );
+
+        test('uses the latest git tag for private packages', () async {
+          // A private package ("private": true) publishes to git only.
+          await writeTsProject('1.0.1', private: true);
+          await addTag(d, '1.0.0');
+
+          final result = await tsIsVersionPrepared().get(
+            ggLog: ggLog,
+            directory: d,
+          );
+          expect(result, isTrue);
+          expect(messages.isEmpty, isTrue);
+        });
+      });
+
       group('should throw', () {
         test(
           'when pubspec.yaml contains an unsupported publish_to: value',
@@ -464,3 +538,44 @@ void main() async {
     });
   });
 }
+
+const _manifest = '''
+"manifest": {
+  "file": "pubspec.yaml",
+  "format": "yaml",
+  "versionPath": "version",
+  "namePath": "name",
+  "publishTargetMarker": "publish_to",
+  "lockFile": "pubspec.lock"
+}''';
+
+const _catalogJson =
+    '''
+{
+  "schemaVersion": 1,
+  "languages": {
+    "dart": {
+      "displayName": "Dart",
+      $_manifest,
+      "commands": {}
+    },
+    "flutter": {
+      "displayName": "Flutter",
+      $_manifest,
+      "commands": {}
+    },
+    "typescript": {
+      "displayName": "TypeScript",
+      "manifest": {
+        "file": "package.json",
+        "format": "json",
+        "versionPath": "version",
+        "namePath": "name",
+        "publishTargetMarker": "private",
+        "lockFile": "package-lock.json"
+      },
+      "commands": {}
+    }
+  }
+}
+''';

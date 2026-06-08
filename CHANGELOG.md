@@ -6,6 +6,16 @@
 
 - Update latest dependencies, Add .gitattributes file
 
+## [3.4.0] - 2026-06-08
+
+### Changed
+
+- feat: language-universal publishing via gg\_lang (npm + pub.dev registry-aware version checks, manifest-driven publish command, TypeScript bypasses CHANGELOG)
+- feat(do add): auto-clone transitive deps into master before graph build & P:\programs\flutter/bin/internal/exit\_with\_errorlevel.bat
+- gg\_multi: changed references to git
+- gg\_multi: changed references to git
+- Gg Multi: changed references to pub.dev
+
 ## [3.3.1] - 2026-04-20
 
 ## [3.3.0] - 2026-04-07
@@ -216,6 +226,7 @@
 
 - Initial version.
 
+[3.4.0]: https://github.com/inlavigo/gg_publish/compare/3.3.1...3.4.0
 [3.3.1]: https://github.com/inlavigo/gg_publish/compare/3.3.0...3.3.1
 [3.3.0]: https://github.com/inlavigo/gg_publish/compare/3.2.1...3.3.0
 [3.2.1]: https://github.com/inlavigo/gg_publish/compare/3.2.0...3.2.1

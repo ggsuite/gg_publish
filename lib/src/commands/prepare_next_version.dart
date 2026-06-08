@@ -7,6 +7,7 @@
 import 'dart:io';
 
 import 'package:gg_args/gg_args.dart';
+import 'package:gg_lang/gg_lang.dart';
 import 'package:gg_log/gg_log.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
@@ -29,14 +30,22 @@ enum VersionIncrement {
 /// Creates a new version and writes it into pubspec.yaml
 class PrepareNextVersion extends DirCommand<void> {
   /// Constructor
-  PrepareNextVersion({required super.ggLog, PublishedVersion? publishedVersion})
-    : _publishedVersion = publishedVersion ?? PublishedVersion(ggLog: ggLog),
-      super(
-        name: 'prepare-next-version',
-        description: 'Creates a new version in pubspec.yaml and CHANGELOG.md.',
-      ) {
+  PrepareNextVersion({
+    required super.ggLog,
+    PublishedVersion? publishedVersion,
+    LanguageCatalog? catalog,
+  }) : _publishedVersion = publishedVersion ?? PublishedVersion(ggLog: ggLog),
+       _catalog = catalog,
+       super(
+         name: 'prepare-next-version',
+         description: 'Creates a new version in the package manifest.',
+       ) {
     _addArgs();
   }
+
+  /// The language catalog used to detect the manifest. Defaults to the bundled
+  /// gg_lang catalog when null.
+  final LanguageCatalog? _catalog;
 
   // ...........................................................................
   // ...........................................................................
@@ -85,7 +94,7 @@ class PrepareNextVersion extends DirCommand<void> {
   }) async {
     // Checks
     await check(directory: directory);
-    await _checkPubspec(directory: directory);
+    final manifest = await _checkedManifest(directory: directory);
 
     // Estimate the next version
     final next = await nextVersion(
@@ -95,12 +104,8 @@ class PrepareNextVersion extends DirCommand<void> {
       publishedVersion: publishedVersion,
     );
 
-    // Write the next version into pubspec.yaml
-    await _writeVersionIntoPubspec(
-      directory: directory,
-      ggLog: ggLog,
-      next: next,
-    );
+    // Write the next version into the manifest (format-preserving).
+    await manifest.writeVersion(next);
   }
 
   // ...........................................................................
@@ -152,16 +157,32 @@ class PrepareNextVersion extends DirCommand<void> {
   final PublishedVersion _publishedVersion;
 
   // ...........................................................................
-  Future<void> _checkPubspec({required Directory directory}) async {
-    final pubspecFile = File('${directory.path}/pubspec.yaml');
-    if (!await pubspecFile.exists()) {
+  /// Detects the manifest, ensures it exists and carries a version, and
+  /// returns a [Manifest] accessor for it.
+  Future<Manifest> _checkedManifest({required Directory directory}) async {
+    final catalog = _catalog ?? await LanguageCatalog.load();
+
+    final ProjectType type;
+    try {
+      type = detectProjectType(directory);
+    } catch (_) {
       throw Exception('pubspec.yaml not found');
     }
 
-    final content = await pubspecFile.readAsString();
-    if (!content.contains(RegExp(r'\nversion: '))) {
-      throw Exception('"version:" not found in pubspec.yaml');
+    final spec = catalog.spec(type).manifest;
+    final manifest = Manifest(directory: directory, spec: spec);
+
+    String? version;
+    try {
+      version = await manifest.readVersionString();
+    } on ManifestException {
+      version = null;
     }
+    if (version == null) {
+      throw Exception('"version:" not found in ${spec.file}');
+    }
+
+    return manifest;
   }
 
   // ...........................................................................
@@ -179,25 +200,6 @@ class PrepareNextVersion extends DirCommand<void> {
       allowed: VersionIncrement.values.map((e) => e.name),
       mandatory: true,
     );
-  }
-
-  // ...........................................................................
-  Future<void> _writeVersionIntoPubspec({
-    required Directory directory,
-    required GgLog ggLog,
-    required Version next,
-  }) async {
-    final pubspecFile = File('${directory.path}/pubspec.yaml');
-    final lines = await pubspecFile.readAsLines();
-    final newLines = <String>[];
-    for (final line in lines) {
-      if (line.startsWith('version: ')) {
-        newLines.add('version: $next');
-      } else {
-        newLines.add(line);
-      }
-    }
-    await pubspecFile.writeAsString(newLines.join('\n'));
   }
 }
 
