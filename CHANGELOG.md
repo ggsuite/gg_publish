@@ -11,7 +11,8 @@
 ### Changed
 
 - feat: language-universal publishing via gg\_lang (npm + pub.dev registry-aware version checks, manifest-driven publish command, TypeScript bypasses CHANGELOG)
-- feat(do add): auto-clone transitive deps into master before graph build &amp; P:\programs\flutter/bin/internal/exit\_with\_errorlevel.bat
+- feat(do add): auto-clone transitive deps into master before graph build & P:\programs\flutter/bin/internal/exit\_with\_errorlevel.bat
+- gg\_multi: changed references to git
 
 ## [3.3.1] - 2026-04-20
 
