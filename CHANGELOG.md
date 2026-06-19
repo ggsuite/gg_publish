@@ -6,6 +6,14 @@
 
 - Update latest dependencies, Add .gitattributes file
 
+## [3.5.0] - 2026-06-19
+
+### Changed
+
+- Treat dart-typescript bridge repos as TypeScript for can/do review (npm install, skip dart pub get); export isBridgeProject from gg\_one
+- Publish bridges as TypeScript: pnpm-aware publish, dual-manifest version bump, non-swallowed publish errors, idempotent resume, review skips merged repos, link: for local TS deps, package.json scripts check
+- gg\_multi: changed references to git
+
 ## [3.4.0] - 2026-06-08
 
 ### Changed
@@ -226,6 +234,7 @@
 
 - Initial version.
 
+[3.5.0]: https://github.com/inlavigo/gg_publish/compare/3.4.0...3.5.0
 [3.4.0]: https://github.com/inlavigo/gg_publish/compare/3.3.1...3.4.0
 [3.3.1]: https://github.com/inlavigo/gg_publish/compare/3.3.0...3.3.1
 [3.3.0]: https://github.com/inlavigo/gg_publish/compare/3.2.1...3.3.0

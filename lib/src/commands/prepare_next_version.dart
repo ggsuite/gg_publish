@@ -106,6 +106,19 @@ class PrepareNextVersion extends DirCommand<void> {
 
     // Write the next version into the manifest (format-preserving).
     await manifest.writeVersion(next);
+
+    // A bridge (pubspec.yaml + package.json + tsconfig.json) is published as
+    // TypeScript, but its Dart side must advance in lock-step: Dart consumers
+    // resolve the bridge via its git tag and read the version from the bridge's
+    // pubspec.yaml. Leaving it stale would break their version constraints.
+    if (isBridgeProject(directory)) {
+      final catalog = _catalog ?? await LanguageCatalog.load();
+      final dartManifest = Manifest(
+        directory: directory,
+        spec: catalog.spec(detectProjectType(directory)).manifest,
+      );
+      await dartManifest.writeVersion(next);
+    }
   }
 
   // ...........................................................................
@@ -164,7 +177,8 @@ class PrepareNextVersion extends DirCommand<void> {
 
     final ProjectType type;
     try {
-      type = detectProjectType(directory);
+      // Bridges bump their package.json version (published as TypeScript).
+      type = checkProjectType(directory);
     } catch (_) {
       throw Exception('pubspec.yaml not found');
     }

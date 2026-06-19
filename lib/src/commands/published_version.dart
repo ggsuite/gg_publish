@@ -60,7 +60,8 @@ class PublishedVersion extends DirCommand<Version> {
 
     final ProjectType type;
     try {
-      type = detectProjectType(directory);
+      // Bridges resolve to npm (published as TypeScript), so query npm.
+      type = checkProjectType(directory);
     } catch (_) {
       throw ArgumentError('pubspec.yaml not found');
     }
