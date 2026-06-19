@@ -179,7 +179,7 @@ void main() {
           // Check the exception
           expect(
             exceptionMessage,
-            contains('Exception: »dart pub publish« was not successful:'),
+            contains('»dart pub publish« failed with exit code 1'),
           );
         });
 
@@ -206,10 +206,57 @@ void main() {
           // Check the exception
           expect(
             exceptionMessage,
-            contains('Exception: »dart pub publish« was not successful:'),
+            contains('»dart pub publish« failed with exit code 0'),
           );
 
           expect(exceptionMessage, contains('Error: Something went wrong'));
+        });
+
+        test('and surfaces the output tail when stderr is empty', () async {
+          // npm/pnpm often write the real error to stdout (e.g. a 404/401
+          // on publish). The failure must still carry that detail.
+          mockIsVersionPrepared(true);
+          mockProcess(result: 0, force: false);
+
+          late String exceptionMessage;
+          publish.exec(directory: d, ggLog: ggLog).onError((error, _) {
+            exceptionMessage = error.toString();
+          });
+          await Future<void>.delayed(Duration.zero);
+
+          process.pushToStdout.add('npm error 404 Not Found - PUT ...');
+          await Future<void>.delayed(Duration.zero);
+
+          process.exit(1);
+          await Future<void>.delayed(Duration.zero);
+
+          expect(exceptionMessage, contains('failed with exit code 1'));
+          expect(exceptionMessage, contains('npm error 404 Not Found'));
+        });
+
+        test('keeps only the most recent output in the failure tail', () async {
+          mockIsVersionPrepared(true);
+          mockProcess(result: 0, force: false);
+
+          late String exceptionMessage;
+          publish.exec(directory: d, ggLog: ggLog).onError((error, _) {
+            exceptionMessage = error.toString();
+          });
+          await Future<void>.delayed(Duration.zero);
+
+          process.pushToStdout.add('VERY-FIRST-LINE');
+          for (var i = 0; i < 60; i++) {
+            process.pushToStdout.add('filler $i');
+          }
+          process.pushToStdout.add('VERY-LAST-LINE');
+          await Future<void>.delayed(Duration.zero);
+
+          process.exit(1);
+          await Future<void>.delayed(Duration.zero);
+
+          // The bounded tail drops the earliest output, keeps the latest.
+          expect(exceptionMessage, contains('VERY-LAST-LINE'));
+          expect(exceptionMessage, isNot(contains('VERY-FIRST-LINE')));
         });
       });
 
@@ -243,6 +290,78 @@ void main() {
 
           expect(isDone, isTrue);
           await tsDir.delete(recursive: true);
+        });
+
+        test('runs »pnpm publish --no-git-checks« for pnpm', () async {
+          final pnpmDir = await Directory.systemTemp.createTemp();
+          File(
+            '${pnpmDir.path}/package.json',
+          ).writeAsStringSync('{"name": "ts", "version": "1.0.0"}');
+          File('${pnpmDir.path}/tsconfig.json').writeAsStringSync('{}');
+          // The pnpm lockfile makes the project a pnpm project.
+          File('${pnpmDir.path}/pnpm-lock.yaml').writeAsStringSync('');
+
+          when(
+            () => isVersionPrepared.get(ggLog: ggLog, directory: pnpmDir),
+          ).thenAnswer((_) async => true);
+          when(
+            () => processWrapper.start(
+              'pnpm',
+              ['publish', '--no-git-checks'],
+              workingDirectory: pnpmDir.path,
+              runInShell: true,
+            ),
+          ).thenAnswer((_) => Future.value(process));
+
+          bool isDone = false;
+          publish
+              .exec(directory: pnpmDir, ggLog: ggLog)
+              .then((_) => isDone = true);
+          await Future<void>.delayed(Duration.zero);
+          process.exit(0);
+          await Future<void>.delayed(Duration.zero);
+
+          expect(isDone, isTrue);
+          await pnpmDir.delete(recursive: true);
+        });
+      });
+
+      group('for a bridge project (pubspec + package.json + tsconfig)', () {
+        test('runs »npm publish«, not »dart pub publish«', () async {
+          // A bridge ships pubspec.yaml AND package.json + tsconfig.json. It
+          // is published as a TypeScript package, so the publish command must
+          // resolve to »npm publish«.
+          final bridgeDir = await Directory.systemTemp.createTemp();
+          File('${bridgeDir.path}/pubspec.yaml').writeAsStringSync(
+            'name: bridge\nversion: 1.0.0\npublish_to: none\n',
+          );
+          File(
+            '${bridgeDir.path}/package.json',
+          ).writeAsStringSync('{"name": "@org/bridge", "version": "1.0.0"}');
+          File('${bridgeDir.path}/tsconfig.json').writeAsStringSync('{}');
+
+          when(
+            () => isVersionPrepared.get(ggLog: ggLog, directory: bridgeDir),
+          ).thenAnswer((_) async => true);
+          when(
+            () => processWrapper.start(
+              'npm',
+              ['publish'],
+              workingDirectory: bridgeDir.path,
+              runInShell: true,
+            ),
+          ).thenAnswer((_) => Future.value(process));
+
+          bool isDone = false;
+          publish
+              .exec(directory: bridgeDir, ggLog: ggLog)
+              .then((_) => isDone = true);
+          await Future<void>.delayed(Duration.zero);
+          process.exit(0);
+          await Future<void>.delayed(Duration.zero);
+
+          expect(isDone, isTrue);
+          await bridgeDir.delete(recursive: true);
         });
       });
     });

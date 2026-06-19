@@ -110,19 +110,38 @@ class Publish extends DirCommand<void> {
     bool askBeforePublishing,
   ) async {
     final errors = <String>[];
+    // A bounded tail of all output so a failure is never reported with an
+    // empty message, even when the tool writes its error to stdout.
+    final outputTail = <String>[];
 
-    final catalog = _catalog ?? await LanguageCatalog.load();
-    final type = detectProjectType(directory);
-    final command = catalog.spec(type).command('publish');
-    final executable = command.exec ?? command.tool!;
+    // Bridges (pubspec + package.json) are published as TypeScript.
+    final type = checkProjectType(directory);
     final isDart = type.isDartFamily;
-    final args = [
-      ...command.args,
-      // `dart pub publish` prompts unless forced; npm has no such prompt.
-      if (isDart && !askBeforePublishing) '--force',
-    ];
 
-    final process = command.runInShell
+    final String executable;
+    final List<String> args;
+    final bool runInShell;
+    if (isDart) {
+      final catalog = _catalog ?? await LanguageCatalog.load();
+      final command = catalog.spec(type).command('publish');
+      executable = command.exec ?? command.tool!;
+      args = <String>[
+        ...command.args,
+        // `dart pub publish` prompts unless forced.
+        if (!askBeforePublishing) '--force',
+      ];
+      runInShell = command.runInShell;
+    } else {
+      // TypeScript: publish with the project's actual package manager
+      // (pnpm/yarn/npm) instead of a hardcoded `npm publish`, so pnpm
+      // workspaces / .npmrc and `--no-git-checks` are respected.
+      final publish = detectTypeScriptPackageManager(directory).publishCommand;
+      executable = publish.executable;
+      args = publish.args;
+      runInShell = true;
+    }
+
+    final process = runInShell
         ? await _processWrapper.start(
             executable,
             args,
@@ -144,10 +163,12 @@ class Publish extends DirCommand<void> {
       } else {
         ggLog(darkGray(s));
       }
+      _rememberOutput(outputTail, s);
     });
 
     final s1 = process.stderr.transform(utf8.decoder).listen((s) {
       errors.add(red(s));
+      _rememberOutput(outputTail, s);
     });
 
     // Wait until process is finished
@@ -156,10 +177,26 @@ class Publish extends DirCommand<void> {
     await s1.cancel();
 
     if (exitCode != 0 || errors.isNotEmpty) {
+      // Never swallow the cause: report the command, its exit code, and the
+      // captured output (stderr, or the stdout tail when stderr is empty).
+      final detail = errors.isNotEmpty
+          ? errors.join('\n')
+          : outputTail.join().trim();
       throw Exception(
-        '»$executable ${command.args.join(' ')}« was not successful: '
-        "${errors.join('\n')}",
+        '»$executable ${args.join(' ')}« failed with exit code $exitCode'
+        '${detail.isEmpty ? '' : ':\n$detail'}',
       );
+    }
+  }
+
+  // ...........................................................................
+  /// Appends [chunk] to [tail], keeping only the most recent output so the
+  /// failure message stays bounded.
+  static void _rememberOutput(List<String> tail, String chunk) {
+    tail.add(chunk);
+    const maxChunks = 40;
+    if (tail.length > maxChunks) {
+      tail.removeRange(0, tail.length - maxChunks);
     }
   }
 

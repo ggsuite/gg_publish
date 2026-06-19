@@ -125,6 +125,33 @@ void main() async {
           final content = await File('${d.path}/pubspec.yaml').readAsString();
           expect(content, contains('version: 1.2.4'));
         });
+
+        test('into both manifests of a bridge, in lock-step', () async {
+          // Turn the fixture into a bridge: add package.json + tsconfig.json.
+          // The published version is read from the npm side (package.json), so
+          // it must carry a version too.
+          await File(
+            '${d.path}/package.json',
+          ).writeAsString('{"name": "@org/bridge", "version": "1.2.3"}');
+          await File('${d.path}/tsconfig.json').writeAsString('{}');
+          mockPublishedVersion();
+
+          await prepareNextVersion.apply(
+            ggLog: ggLog,
+            directory: d,
+            increment: VersionIncrement.patch,
+          );
+
+          // The published npm manifest is bumped …
+          final packageJson = await File(
+            '${d.path}/package.json',
+          ).readAsString();
+          expect(packageJson, contains('"version": "1.2.4"'));
+
+          // … and the Dart side advances in lock-step.
+          final pubspec = await File('${d.path}/pubspec.yaml').readAsString();
+          expect(pubspec, contains('version: 1.2.4'));
+        });
       });
     });
 

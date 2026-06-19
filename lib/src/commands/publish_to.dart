@@ -39,7 +39,8 @@ class PublishTo extends DirCommand<void> {
   /// Returns the publish target of the manifest in [directory].
   Future<String> fromDirectory(Directory directory) async {
     final catalog = _catalog ?? await LanguageCatalog.load();
-    final type = detectProjectType(directory);
+    // Bridges (pubspec + package.json) publish as TypeScript → npm target.
+    final type = checkProjectType(directory);
     final manifest = Manifest(
       directory: directory,
       spec: catalog.spec(type).manifest,

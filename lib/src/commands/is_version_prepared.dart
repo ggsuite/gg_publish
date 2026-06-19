@@ -72,7 +72,8 @@ class IsVersionPrepared extends DirCommand<bool> {
   }) async {
     treatUnpublishedAsOk ??= _treatUnpublishedAsOk ?? false;
 
-    final supportsChangeLog = detectProjectType(directory).isDartFamily;
+    // Bridges are treated as TypeScript (no CHANGELOG flow).
+    final supportsChangeLog = checkProjectType(directory).isDartFamily;
 
     // The version that is about to be published (pubspec.yaml / package.json).
     final Version localVersion;
@@ -106,7 +107,11 @@ class IsVersionPrepared extends DirCommand<bool> {
       // TypeScript & co.: the registry and package.json are the source of
       // truth; there is no CHANGELOG.md to compare against.
       final catalog = _catalog ?? await LanguageCatalog.load();
-      localVersion = await Manifest.detect(directory, catalog).readVersion();
+      localVersion = await Manifest.detect(
+        directory,
+        catalog,
+        treatBridgeAsTypeScript: true,
+      ).readVersion();
     }
 
     // Where is the package published to?
