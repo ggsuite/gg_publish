@@ -12,6 +12,7 @@
 
 - Treat dart-typescript bridge repos as TypeScript for can/do review (npm install, skip dart pub get); export isBridgeProject from gg\_one
 - Publish bridges as TypeScript: pnpm-aware publish, dual-manifest version bump, non-swallowed publish errors, idempotent resume, review skips merged repos, link: for local TS deps, package.json scripts check
+- gg\_multi: changed references to git
 
 ## [3.4.0] - 2026-06-08
 
