@@ -6,6 +6,12 @@
 
 - Update latest dependencies, Add .gitattributes file
 
+## [Unreleased]
+
+### Changed
+
+- gg\_multi: changed references to git
+
 ## [3.5.0] - 2026-06-19
 
 ### Changed
@@ -234,6 +240,7 @@
 
 - Initial version.
 
+[Unreleased]: https://github.com/inlavigo/gg_publish/compare/3.5.0...HEAD
 [3.5.0]: https://github.com/inlavigo/gg_publish/compare/3.4.0...3.5.0
 [3.4.0]: https://github.com/inlavigo/gg_publish/compare/3.3.1...3.4.0
 [3.3.1]: https://github.com/inlavigo/gg_publish/compare/3.3.0...3.3.1
