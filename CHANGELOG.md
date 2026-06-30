@@ -6,6 +6,12 @@
 
 - Update latest dependencies, Add .gitattributes file
 
+## [Unreleased]
+
+### Changed
+
+- feat(gg): do checkout + .gg/.ticket.json ticket marker; TS format no direct eslint &amp; P:\programs\flutter/bin/internal/exit\_with\_errorlevel.bat
+
 ## [3.5.1] - 2026-06-26
 
 ### Changed
@@ -240,6 +246,7 @@
 
 - Initial version.
 
+[Unreleased]: https://github.com/inlavigo/gg_publish/compare/3.5.1...HEAD
 [3.5.1]: https://github.com/inlavigo/gg_publish/compare/3.5.0...3.5.1
 [3.5.0]: https://github.com/inlavigo/gg_publish/compare/3.4.0...3.5.0
 [3.4.0]: https://github.com/inlavigo/gg_publish/compare/3.3.1...3.4.0
