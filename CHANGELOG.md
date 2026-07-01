@@ -6,6 +6,20 @@
 
 - Update latest dependencies, Add .gitattributes file
 
+## [3.6.0] - 2026-07-01
+
+### Changed
+
+- npm/pnpm (TypeScript) publishes now run *interactively* by inheriting the
+terminal's stdio, so the package manager can drive its own 2FA flow —
+prompting for a one-time password or opening its browser login — instead
+of failing with `ERR_PNPM_OTP_NON_INTERACTIVE` when gg captured the pipe.
+Dart/pub.dev publishing is unchanged (still captured, gg answers the
+confirmation prompt).
+- feat(gg): do checkout + .gg/.ticket.json ticket marker; TS format no direct eslint & P:\programs\flutter/bin/internal/exit\_with\_errorlevel.bat
+- feat(gg): interactive npm publish + npm-logged-in precheck; package.json prepublishOnly->build->test rules (bridges exempt from build->test); do review pnpm blockExoticSubdeps + stdout; can publish runs per-repo can-publish; do merge/publish write doCommit; pana skip label
+- gg\_multi: changed references to git
+
 ## [3.5.1] - 2026-06-26
 
 ### Changed
@@ -240,6 +254,7 @@
 
 - Initial version.
 
+[3.6.0]: https://github.com/inlavigo/gg_publish/compare/3.5.1...3.6.0
 [3.5.1]: https://github.com/inlavigo/gg_publish/compare/3.5.0...3.5.1
 [3.5.0]: https://github.com/inlavigo/gg_publish/compare/3.4.0...3.5.0
 [3.4.0]: https://github.com/inlavigo/gg_publish/compare/3.3.1...3.4.0

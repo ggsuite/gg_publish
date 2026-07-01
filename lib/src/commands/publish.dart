@@ -109,37 +109,50 @@ class Publish extends DirCommand<void> {
     GgLog ggLog,
     bool askBeforePublishing,
   ) async {
+    // Bridges (pubspec + package.json) are published as TypeScript.
+    final type = checkProjectType(directory);
+
+    if (type.isDartFamily) {
+      final catalog = _catalog ?? await LanguageCatalog.load();
+      final command = catalog.spec(type).command('publish');
+      await _publishCaptured(
+        directory,
+        ggLog,
+        command.exec ?? command.tool!,
+        <String>[
+          ...command.args,
+          // `dart pub publish` prompts unless forced.
+          if (!askBeforePublishing) '--force',
+        ],
+        command.runInShell,
+      );
+    } else {
+      // TypeScript: publish with the project's actual package manager
+      // (pnpm/yarn/npm), and run it *interactively* by inheriting the
+      // terminal's stdio. gg cannot feed a rotating 2FA one-time password into
+      // a captured pipe — pnpm even refuses OTP when non-interactive
+      // (ERR_PNPM_OTP_NON_INTERACTIVE) — so we let the package manager drive
+      // its own OTP / browser-login flow directly against the terminal.
+      final publish = detectTypeScriptPackageManager(directory).publishCommand;
+      await _publishInteractive(directory, publish.executable, publish.args);
+    }
+  }
+
+  // ...........................................................................
+  /// Publishes by capturing the tool's output live. Used for Dart/Flutter,
+  /// where gg answers the »Do you want to publish« confirmation from stdin and
+  /// surfaces the captured output (stderr, or the stdout tail) on failure.
+  Future<void> _publishCaptured(
+    Directory directory,
+    GgLog ggLog,
+    String executable,
+    List<String> args,
+    bool runInShell,
+  ) async {
     final errors = <String>[];
     // A bounded tail of all output so a failure is never reported with an
     // empty message, even when the tool writes its error to stdout.
     final outputTail = <String>[];
-
-    // Bridges (pubspec + package.json) are published as TypeScript.
-    final type = checkProjectType(directory);
-    final isDart = type.isDartFamily;
-
-    final String executable;
-    final List<String> args;
-    final bool runInShell;
-    if (isDart) {
-      final catalog = _catalog ?? await LanguageCatalog.load();
-      final command = catalog.spec(type).command('publish');
-      executable = command.exec ?? command.tool!;
-      args = <String>[
-        ...command.args,
-        // `dart pub publish` prompts unless forced.
-        if (!askBeforePublishing) '--force',
-      ];
-      runInShell = command.runInShell;
-    } else {
-      // TypeScript: publish with the project's actual package manager
-      // (pnpm/yarn/npm) instead of a hardcoded `npm publish`, so pnpm
-      // workspaces / .npmrc and `--no-git-checks` are respected.
-      final publish = detectTypeScriptPackageManager(directory).publishCommand;
-      executable = publish.executable;
-      args = publish.args;
-      runInShell = true;
-    }
 
     final process = runInShell
         ? await _processWrapper.start(
@@ -185,6 +198,32 @@ class Publish extends DirCommand<void> {
       throw Exception(
         '»$executable ${args.join(' ')}« failed with exit code $exitCode'
         '${detail.isEmpty ? '' : ':\n$detail'}',
+      );
+    }
+  }
+
+  // ...........................................................................
+  /// Publishes interactively by inheriting the terminal's stdio, so the
+  /// package manager can prompt for a 2FA one-time password or open its
+  /// browser login itself. gg does not capture the output in this mode — the
+  /// tool writes straight to the terminal — so only the exit code is inspected.
+  Future<void> _publishInteractive(
+    Directory directory,
+    String executable,
+    List<String> args,
+  ) async {
+    final process = await _processWrapper.start(
+      executable,
+      args,
+      workingDirectory: directory.path,
+      runInShell: true,
+      mode: ProcessStartMode.inheritStdio,
+    );
+
+    final exitCode = await process.exitCode;
+    if (exitCode != 0) {
+      throw Exception(
+        '»$executable ${args.join(' ')}« failed with exit code $exitCode',
       );
     }
   }
