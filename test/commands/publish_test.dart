@@ -141,6 +141,38 @@ void main() {
             });
           }
         });
+
+        test('runs the captured publish through a shell when the catalog '
+            'requests it', () async {
+          final shellPublish = Publish(
+            ggLog: ggLog,
+            processWrapper: processWrapper,
+            isVersionPrepared: isVersionPrepared,
+            readLineFromStdIn: () => stdInValue,
+            catalog: LanguageCatalog.fromString(_shellCatalogJson),
+          );
+          when(
+            () => isVersionPrepared.get(ggLog: ggLog, directory: d),
+          ).thenAnswer((_) async => true);
+          when(
+            () => processWrapper.start(
+              'dart',
+              ['pub', 'publish'],
+              workingDirectory: d.path,
+              runInShell: true,
+            ),
+          ).thenAnswer((_) => Future.value(process));
+
+          bool isDone = false;
+          shellPublish
+              .exec(directory: d, ggLog: ggLog)
+              .then((_) => isDone = true);
+          await Future<void>.delayed(Duration.zero);
+          process.exit(0);
+          await Future<void>.delayed(Duration.zero);
+
+          expect(isDone, isTrue);
+        });
       });
       group('should throw', () {
         test('if versions are not consistent', () async {
@@ -260,8 +292,8 @@ void main() {
         });
       });
 
-      group('for a TypeScript project', () {
-        test('runs »npm publish«', () async {
+      group('for a TypeScript project (published interactively)', () {
+        test('runs »npm publish« with inherited stdio', () async {
           final tsDir = await Directory.systemTemp.createTemp();
           File(
             '${tsDir.path}/package.json',
@@ -277,6 +309,7 @@ void main() {
               ['publish'],
               workingDirectory: tsDir.path,
               runInShell: true,
+              mode: ProcessStartMode.inheritStdio,
             ),
           ).thenAnswer((_) => Future.value(process));
 
@@ -310,6 +343,7 @@ void main() {
               ['publish', '--no-git-checks'],
               workingDirectory: pnpmDir.path,
               runInShell: true,
+              mode: ProcessStartMode.inheritStdio,
             ),
           ).thenAnswer((_) => Future.value(process));
 
@@ -322,6 +356,42 @@ void main() {
           await Future<void>.delayed(Duration.zero);
 
           expect(isDone, isTrue);
+          await pnpmDir.delete(recursive: true);
+        });
+
+        test('throws when the interactive publish fails', () async {
+          final pnpmDir = await Directory.systemTemp.createTemp();
+          File(
+            '${pnpmDir.path}/package.json',
+          ).writeAsStringSync('{"name": "ts", "version": "1.0.0"}');
+          File('${pnpmDir.path}/tsconfig.json').writeAsStringSync('{}');
+          File('${pnpmDir.path}/pnpm-lock.yaml').writeAsStringSync('');
+
+          when(
+            () => isVersionPrepared.get(ggLog: ggLog, directory: pnpmDir),
+          ).thenAnswer((_) async => true);
+          when(
+            () => processWrapper.start(
+              'pnpm',
+              ['publish', '--no-git-checks'],
+              workingDirectory: pnpmDir.path,
+              runInShell: true,
+              mode: ProcessStartMode.inheritStdio,
+            ),
+          ).thenAnswer((_) => Future.value(process));
+
+          late String exceptionMessage;
+          publish
+              .exec(directory: pnpmDir, ggLog: ggLog)
+              .onError((error, _) => exceptionMessage = error.toString());
+          await Future<void>.delayed(Duration.zero);
+          process.exit(1);
+          await Future<void>.delayed(Duration.zero);
+
+          expect(
+            exceptionMessage,
+            contains('»pnpm publish --no-git-checks« failed with exit code 1'),
+          );
           await pnpmDir.delete(recursive: true);
         });
       });
@@ -349,6 +419,7 @@ void main() {
               ['publish'],
               workingDirectory: bridgeDir.path,
               runInShell: true,
+              mode: ProcessStartMode.inheritStdio,
             ),
           ).thenAnswer((_) => Future.value(process));
 
@@ -381,6 +452,29 @@ const _manifest = '''
   "publishTargetMarker": "publish_to",
   "lockFile": "pubspec.lock"
 }''';
+
+// A catalog whose Dart publish command asks to run through a shell, so the
+// captured publish path exercises its runInShell branch.
+const _shellCatalogJson =
+    '''
+{
+  "schemaVersion": 1,
+  "languages": {
+    "dart": {
+      "displayName": "Dart",
+      $_manifest,
+      "commands": {
+        "publish": {
+          "label": "dart pub publish",
+          "exec": "dart",
+          "args": ["pub", "publish"],
+          "runInShell": true
+        }
+      }
+    }
+  }
+}
+''';
 
 const _catalogJson =
     '''

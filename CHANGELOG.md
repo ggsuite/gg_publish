@@ -10,7 +10,14 @@
 
 ### Changed
 
-- feat(gg): do checkout + .gg/.ticket.json ticket marker; TS format no direct eslint &amp; P:\programs\flutter/bin/internal/exit\_with\_errorlevel.bat
+- npm/pnpm (TypeScript) publishes now run *interactively* by inheriting the
+terminal's stdio, so the package manager can drive its own 2FA flow —
+prompting for a one-time password or opening its browser login — instead
+of failing with `ERR_PNPM_OTP_NON_INTERACTIVE` when gg captured the pipe.
+Dart/pub.dev publishing is unchanged (still captured, gg answers the
+confirmation prompt).
+- feat(gg): do checkout + .gg/.ticket.json ticket marker; TS format no direct eslint & P:\programs\flutter/bin/internal/exit\_with\_errorlevel.bat
+- feat(gg): interactive npm publish + npm-logged-in precheck; package.json prepublishOnly-&gt;build-&gt;test rules (bridges exempt from build-&gt;test); do review pnpm blockExoticSubdeps + stdout; can publish runs per-repo can-publish; do merge/publish write doCommit; pana skip label
 
 ## [3.5.1] - 2026-06-26
 
