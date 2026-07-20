@@ -27,6 +27,16 @@ enum VersionIncrement {
 }
 
 // .............................................................................
+/// Release channels for the next version
+enum ReleaseChannel {
+  /// Regular stable release
+  stable,
+
+  /// Release candidate prerelease (X.Y.Z-rc.N)
+  rc,
+}
+
+// .............................................................................
 /// Creates a new version and writes it into pubspec.yaml
 class PrepareNextVersion extends DirCommand<void> {
   /// Constructor
@@ -54,11 +64,13 @@ class PrepareNextVersion extends DirCommand<void> {
     required Directory directory,
     required GgLog ggLog,
     VersionIncrement? increment,
+    ReleaseChannel? channel,
     Version? publishedVersion,
   }) => get(
     directory: directory,
     ggLog: ggLog,
     increment: increment,
+    channel: channel,
     publishedVersion: publishedVersion,
   );
 
@@ -68,6 +80,7 @@ class PrepareNextVersion extends DirCommand<void> {
     required Directory directory,
     required GgLog ggLog,
     VersionIncrement? increment,
+    ReleaseChannel? channel,
     Version? publishedVersion,
   }) async {
     await GgStatusPrinter<void>(
@@ -78,6 +91,7 @@ class PrepareNextVersion extends DirCommand<void> {
         ggLog: ggLog,
         directory: directory,
         increment: increment ?? _incrementFromArgs,
+        channel: channel ?? _channelFromArgs,
         publishedVersion: publishedVersion,
       ),
       success: (success) => true,
@@ -90,6 +104,7 @@ class PrepareNextVersion extends DirCommand<void> {
     required Directory directory,
     required GgLog ggLog,
     required VersionIncrement increment,
+    ReleaseChannel channel = ReleaseChannel.stable,
     Version? publishedVersion,
   }) async {
     // Checks
@@ -101,6 +116,7 @@ class PrepareNextVersion extends DirCommand<void> {
       directory: directory,
       ggLog: ggLog,
       increment: increment,
+      channel: channel,
       publishedVersion: publishedVersion,
     );
 
@@ -127,7 +143,9 @@ class PrepareNextVersion extends DirCommand<void> {
     required Directory directory,
     required GgLog ggLog,
     required VersionIncrement increment,
+    ReleaseChannel channel = ReleaseChannel.stable,
     Version? publishedVersion,
+    List<Version>? allPublishedVersions,
   }) async {
     // Package is not published? Treat the git version tag as published version.
 
@@ -143,7 +161,57 @@ class PrepareNextVersion extends DirCommand<void> {
       increment: increment,
     );
 
-    return next;
+    if (channel == ReleaseChannel.stable) {
+      return next;
+    }
+
+    // rc channel: append the next free rc number for the target version.
+    allPublishedVersions ??= await _publishedVersion.allVersions(
+      directory: directory,
+      ggLog: ggLog,
+    );
+
+    return nextRcVersion(target: next, publishedVersions: allPublishedVersions);
+  }
+
+  // ...........................................................................
+  /// Returns the next rc prerelease for [target] (e.g. `1.2.0-rc.1`), based
+  /// on the rc versions already found in [publishedVersions]. Throws when
+  /// [target] itself is already published as a stable version.
+  Version nextRcVersion({
+    required Version target,
+    required List<Version> publishedVersions,
+  }) {
+    final sameRelease = publishedVersions.where(
+      (v) =>
+          v.major == target.major &&
+          v.minor == target.minor &&
+          v.patch == target.patch,
+    );
+
+    var maxRc = 0;
+    for (final version in sameRelease) {
+      if (version.preRelease.isEmpty) {
+        throw Exception(
+          'Cannot prepare an rc for $target: $target is already published as '
+          'a stable version. That version number is spent (this also applies '
+          'to a retracted release) — choose a higher increment.',
+        );
+      }
+
+      final pre = version.preRelease;
+      if (pre.length == 2 && pre.first == 'rc' && pre.last is int) {
+        final number = pre.last as int;
+        if (number > maxRc) maxRc = number;
+      }
+    }
+
+    return Version(
+      target.major,
+      target.minor,
+      target.patch,
+      pre: 'rc.${maxRc + 1}',
+    );
   }
 
   // ...........................................................................
@@ -206,6 +274,13 @@ class PrepareNextVersion extends DirCommand<void> {
   }
 
   // ...........................................................................
+  ReleaseChannel get _channelFromArgs {
+    final channelFromArgsStr =
+        argResults?['channel'] as String? ?? ReleaseChannel.stable.name;
+    return ReleaseChannel.values.byName(channelFromArgsStr);
+  }
+
+  // ...........................................................................
   void _addArgs() {
     argParser.addOption(
       'version-increment',
@@ -213,6 +288,13 @@ class PrepareNextVersion extends DirCommand<void> {
       help: 'The increment the next version is compared to the current one.',
       allowed: VersionIncrement.values.map((e) => e.name),
       mandatory: true,
+    );
+
+    argParser.addOption(
+      'channel',
+      help: 'The release channel of the next version.',
+      allowed: ReleaseChannel.values.map((e) => e.name),
+      defaultsTo: ReleaseChannel.stable.name,
     );
   }
 }

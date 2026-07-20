@@ -102,7 +102,8 @@ void main() async {
                   '$versions must be one of the following:'
                   '\n- 2.0.1'
                   '\n- 2.1.0'
-                  '\n- 3.0.0',
+                  '\n- 3.0.0'
+                  '\nor an rc prerelease of one of them (e.g. 2.0.1-rc.1).',
                 ),
               );
             });
@@ -138,7 +139,8 @@ void main() async {
                   '$versions must be one of the following:'
                   '\n- 3.0.3'
                   '\n- 3.1.0'
-                  '\n- 4.0.0',
+                  '\n- 4.0.0'
+                  '\nor an rc prerelease of one of them (e.g. 3.0.3-rc.1).',
                 ),
               );
             });
@@ -169,6 +171,109 @@ void main() async {
                     );
                     expect(result, isTrue);
                     expect(messages.isEmpty, isTrue);
+                  }
+                });
+
+                test('with an rc prerelease of an allowed increment', () async {
+                  // Assume the published version is 2.0.0
+                  when(
+                    () => publishedVersion.get(ggLog: ggLog, directory: d),
+                  ).thenAnswer((_) async => Version(2, 0, 0));
+
+                  for (final version in [
+                    '2.0.1-rc.1',
+                    '2.1.0-rc.3',
+                    '3.0.0-rc.2',
+                  ]) {
+                    await addAndCommitVersions(
+                      d,
+                      pubspec: version,
+                      changeLog: version,
+                      gitHead: version,
+                    );
+
+                    final result = await isVersionPrepared.get(
+                      ggLog: ggLog,
+                      directory: d,
+                    );
+                    expect(result, isTrue);
+                    expect(messages.isEmpty, isTrue);
+                  }
+                });
+
+                test('with a later rc when the published version is '
+                    'itself an rc prerelease', () async {
+                  // Publishing rc.2+ of a version whose published baseline is
+                  // already a prerelease (e.g. a private git-tag package).
+                  // pub_semver's nextX strips the prerelease, so the allowed
+                  // base must be 2.1.0 (not 2.2.0/2.1.1).
+                  when(
+                    () => publishedVersion.get(ggLog: ggLog, directory: d),
+                  ).thenAnswer((_) async => Version.parse('2.1.0-rc.1'));
+
+                  await addAndCommitVersions(
+                    d,
+                    pubspec: '2.1.0-rc.2',
+                    changeLog: '2.1.0-rc.2',
+                    gitHead: '2.1.0-rc.2',
+                  );
+
+                  final result = await isVersionPrepared.get(
+                    ggLog: ggLog,
+                    directory: d,
+                  );
+                  expect(result, isTrue);
+                  expect(messages.isEmpty, isTrue);
+                });
+
+                test('with the stable release finishing an rc line', () async {
+                  // After rc's, the stable X.Y.0 must be accepted when the
+                  // published baseline is still the prerelease.
+                  when(
+                    () => publishedVersion.get(ggLog: ggLog, directory: d),
+                  ).thenAnswer((_) async => Version.parse('2.1.0-rc.2'));
+
+                  await addAndCommitVersions(
+                    d,
+                    pubspec: '2.1.0',
+                    changeLog: '2.1.0',
+                    gitHead: '2.1.0',
+                  );
+
+                  final result = await isVersionPrepared.get(
+                    ggLog: ggLog,
+                    directory: d,
+                  );
+                  expect(result, isTrue);
+                  expect(messages.isEmpty, isTrue);
+                });
+
+                test('but not with other prerelease forms', () async {
+                  // Assume the published version is 2.0.0
+                  when(
+                    () => publishedVersion.get(ggLog: ggLog, directory: d),
+                  ).thenAnswer((_) async => Version(2, 0, 0));
+
+                  // A non-rc prerelease and an rc of a wrong base version
+                  // must both be rejected.
+                  for (final version in ['2.0.1-beta.1', '2.2.0-rc.1']) {
+                    await addAndCommitVersions(
+                      d,
+                      pubspec: version,
+                      changeLog: version,
+                      gitHead: version,
+                    );
+
+                    final result = await isVersionPrepared.get(
+                      ggLog: ggLog,
+                      directory: d,
+                    );
+                    expect(result, isFalse);
+                    expect(
+                      messages.last,
+                      contains('must be one of the following'),
+                    );
+                    messages.clear();
                   }
                 });
 

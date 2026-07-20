@@ -6,6 +6,17 @@
 
 - Update latest dependencies, Add .gitattributes file
 
+## [3.7.0] - 2026-07-20
+
+### Added
+
+- Add rc prerelease channel to gg do publish (channel field/flag, X.Y.Z-rc.N computation, npm --tag rc, single + multi repo)
+- Address review: wrap registry version-parse errors as RegistryException, clarify spent-version rc message, lock cider rc changelog format
+
+### Changed
+
+- gg\_multi: changed references to git
+
 ## [3.6.0] - 2026-07-01
 
 ### Changed
@@ -254,6 +265,7 @@ confirmation prompt).
 
 - Initial version.
 
+[3.7.0]: https://github.com/inlavigo/gg_publish/compare/3.6.0...3.7.0
 [3.6.0]: https://github.com/inlavigo/gg_publish/compare/3.5.1...3.6.0
 [3.5.1]: https://github.com/inlavigo/gg_publish/compare/3.5.0...3.5.1
 [3.5.0]: https://github.com/inlavigo/gg_publish/compare/3.4.0...3.5.0

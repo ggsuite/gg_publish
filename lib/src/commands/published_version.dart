@@ -56,6 +56,57 @@ class PublishedVersion extends DirCommand<Version> {
     required GgLog ggLog,
     required Directory directory,
   }) async {
+    final resolved = await _resolve(directory: directory);
+
+    // Not published to a public registry? Return the version from the git tag.
+    if (resolved == null) {
+      return _versionFromGitTag(directory, ggLog);
+    }
+
+    final Version? latest;
+    try {
+      latest = await resolved.registry.latestVersion(
+        packageName: resolved.name,
+      );
+    } on RegistryException catch (e) {
+      throw Exception(
+        'Exception while getting the latest version from the registry:\n$e',
+      );
+    }
+
+    return latest ?? await _versionFromGitTag(directory, ggLog);
+  }
+
+  // ...........................................................................
+  /// Returns all versions the package has published to its registry,
+  /// including prereleases. For private packages, the git version tags are
+  /// returned instead. Empty when nothing has been published yet.
+  Future<List<Version>> allVersions({
+    required GgLog ggLog,
+    required Directory directory,
+  }) async {
+    final resolved = await _resolve(directory: directory);
+
+    // Not published to a public registry? Return the git version tags.
+    if (resolved == null) {
+      return _versionFromGit.allVersions(directory: directory, ggLog: ggLog);
+    }
+
+    try {
+      return await resolved.registry.allVersions(packageName: resolved.name);
+    } on RegistryException catch (e) {
+      throw Exception(
+        'Exception while getting all versions from the registry:\n$e',
+      );
+    }
+  }
+
+  // ...........................................................................
+  /// Resolves the registry and package name for [directory]. Returns null
+  /// for private packages that are not published to a public registry.
+  Future<({Registry registry, String name})?> _resolve({
+    required Directory directory,
+  }) async {
     final catalog = _catalog ?? await LanguageCatalog.load();
 
     final ProjectType type;
@@ -69,9 +120,8 @@ class PublishedVersion extends DirCommand<Version> {
     final spec = catalog.spec(type);
     final manifest = Manifest(directory: directory, spec: spec.manifest);
 
-    // Not published to a public registry? Return the version from the git tag.
     if (await manifest.isPrivate()) {
-      return _versionFromGitTag(directory, ggLog);
+      return null;
     }
 
     final String name;
@@ -82,17 +132,7 @@ class PublishedVersion extends DirCommand<Version> {
     }
 
     final registry = _registryFactory.forProjectType(type, spec: spec);
-
-    final Version? latest;
-    try {
-      latest = await registry.latestVersion(packageName: name);
-    } on RegistryException catch (e) {
-      throw Exception(
-        'Exception while getting the latest version from the registry:\n$e',
-      );
-    }
-
-    return latest ?? await _versionFromGitTag(directory, ggLog);
+    return (registry: registry, name: name);
   }
 
   // ...........................................................................

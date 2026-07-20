@@ -313,15 +313,40 @@ void main() {
             ),
           ).thenAnswer((_) => Future.value(process));
 
-          bool isDone = false;
-          publish
-              .exec(directory: tsDir, ggLog: ggLog)
-              .then((_) => isDone = true);
-          await Future<void>.delayed(Duration.zero);
+          // exitCode is a completer; completing it before the flow awaits it
+          // is safe, so no polling is needed — await the exec future directly.
+          final future = publish.exec(directory: tsDir, ggLog: ggLog);
           process.exit(0);
-          await Future<void>.delayed(Duration.zero);
+          await future;
 
-          expect(isDone, isTrue);
+          await tsDir.delete(recursive: true);
+        });
+
+        test('adds »--tag rc« for a prerelease version', () async {
+          // Without a dist-tag, npm would move `latest` onto the prerelease.
+          final tsDir = await Directory.systemTemp.createTemp();
+          File(
+            '${tsDir.path}/package.json',
+          ).writeAsStringSync('{"name": "ts", "version": "1.1.0-rc.1"}');
+          File('${tsDir.path}/tsconfig.json').writeAsStringSync('{}');
+
+          when(
+            () => isVersionPrepared.get(ggLog: ggLog, directory: tsDir),
+          ).thenAnswer((_) async => true);
+          when(
+            () => processWrapper.start(
+              'npm',
+              ['publish', '--tag', 'rc'],
+              workingDirectory: tsDir.path,
+              runInShell: true,
+              mode: ProcessStartMode.inheritStdio,
+            ),
+          ).thenAnswer((_) => Future.value(process));
+
+          final future = publish.exec(directory: tsDir, ggLog: ggLog);
+          process.exit(0);
+          await future;
+
           await tsDir.delete(recursive: true);
         });
 
@@ -347,15 +372,10 @@ void main() {
             ),
           ).thenAnswer((_) => Future.value(process));
 
-          bool isDone = false;
-          publish
-              .exec(directory: pnpmDir, ggLog: ggLog)
-              .then((_) => isDone = true);
-          await Future<void>.delayed(Duration.zero);
+          final future = publish.exec(directory: pnpmDir, ggLog: ggLog);
           process.exit(0);
-          await Future<void>.delayed(Duration.zero);
+          await future;
 
-          expect(isDone, isTrue);
           await pnpmDir.delete(recursive: true);
         });
 
@@ -380,13 +400,12 @@ void main() {
             ),
           ).thenAnswer((_) => Future.value(process));
 
-          late String exceptionMessage;
-          publish
+          String? exceptionMessage;
+          final future = publish
               .exec(directory: pnpmDir, ggLog: ggLog)
               .onError((error, _) => exceptionMessage = error.toString());
-          await Future<void>.delayed(Duration.zero);
           process.exit(1);
-          await Future<void>.delayed(Duration.zero);
+          await future;
 
           expect(
             exceptionMessage,
@@ -423,15 +442,10 @@ void main() {
             ),
           ).thenAnswer((_) => Future.value(process));
 
-          bool isDone = false;
-          publish
-              .exec(directory: bridgeDir, ggLog: ggLog)
-              .then((_) => isDone = true);
-          await Future<void>.delayed(Duration.zero);
+          final future = publish.exec(directory: bridgeDir, ggLog: ggLog);
           process.exit(0);
-          await Future<void>.delayed(Duration.zero);
+          await future;
 
-          expect(isDone, isTrue);
           await bridgeDir.delete(recursive: true);
         });
       });

@@ -269,6 +269,154 @@ void main() async {
 
         expect(nextVersion, Version(1, 2, 4));
       });
+
+      group('with channel == ReleaseChannel.rc', () {
+        void mockAllVersions(List<Version> versions) {
+          when(
+            () => publishedVersion.allVersions(
+              ggLog: ggLog,
+              directory: any(named: 'directory'),
+            ),
+          ).thenAnswer((_) async => versions);
+        }
+
+        test('returns rc.1 when no rc exists for the target yet', () async {
+          mockPublishedVersion();
+          mockAllVersions([Version(1, 2, 3)]);
+
+          final nextVersion = await prepareNextVersion.nextVersion(
+            ggLog: ggLog,
+            directory: d,
+            increment: VersionIncrement.minor,
+            channel: ReleaseChannel.rc,
+          );
+
+          expect(nextVersion, Version.parse('1.3.0-rc.1'));
+        });
+
+        test('increments the highest existing rc number', () async {
+          mockPublishedVersion();
+          mockAllVersions([
+            Version(1, 2, 3),
+            Version.parse('1.3.0-rc.1'),
+            Version.parse('1.3.0-rc.3'),
+          ]);
+
+          final nextVersion = await prepareNextVersion.nextVersion(
+            ggLog: ggLog,
+            directory: d,
+            increment: VersionIncrement.minor,
+            channel: ReleaseChannel.rc,
+          );
+
+          expect(nextVersion, Version.parse('1.3.0-rc.4'));
+        });
+
+        test('uses allPublishedVersions when provided', () async {
+          mockPublishedVersion();
+
+          final nextVersion = await prepareNextVersion.nextVersion(
+            ggLog: ggLog,
+            directory: d,
+            increment: VersionIncrement.patch,
+            channel: ReleaseChannel.rc,
+            allPublishedVersions: [Version.parse('1.2.4-rc.7')],
+          );
+
+          expect(nextVersion, Version.parse('1.2.4-rc.8'));
+          verifyNever(
+            () => publishedVersion.allVersions(
+              ggLog: ggLog,
+              directory: any(named: 'directory'),
+            ),
+          );
+        });
+
+        test('throws when the target is already published as stable', () async {
+          mockPublishedVersion();
+          mockAllVersions([Version(1, 2, 3), Version(1, 3, 0)]);
+
+          await expectLater(
+            prepareNextVersion.nextVersion(
+              ggLog: ggLog,
+              directory: d,
+              increment: VersionIncrement.minor,
+              channel: ReleaseChannel.rc,
+            ),
+            throwsA(
+              isA<Exception>().having(
+                (e) => e.toString(),
+                'message',
+                contains('1.3.0 is already published as a stable version'),
+              ),
+            ),
+          );
+        });
+
+        test('ignores non-rc prereleases of the target', () async {
+          mockPublishedVersion();
+          mockAllVersions([
+            Version.parse('1.3.0-beta.5'),
+            Version.parse('1.3.0-rc.abc'),
+          ]);
+
+          final nextVersion = await prepareNextVersion.nextVersion(
+            ggLog: ggLog,
+            directory: d,
+            increment: VersionIncrement.minor,
+            channel: ReleaseChannel.rc,
+          );
+
+          expect(nextVersion, Version.parse('1.3.0-rc.1'));
+        });
+      });
+    });
+
+    group('apply(..., channel: ReleaseChannel.rc)', () {
+      test('writes the rc version into pubspec.yaml', () async {
+        mockPublishedVersion();
+        when(
+          () => publishedVersion.allVersions(
+            ggLog: ggLog,
+            directory: any(named: 'directory'),
+          ),
+        ).thenAnswer((_) async => [Version(1, 2, 3)]);
+
+        await prepareNextVersion.apply(
+          ggLog: ggLog,
+          directory: d,
+          increment: VersionIncrement.patch,
+          channel: ReleaseChannel.rc,
+        );
+
+        final content = await File('${d.path}/pubspec.yaml').readAsString();
+        expect(content, contains('version: 1.2.4-rc.1'));
+      });
+    });
+
+    group('exec(..., --channel rc)', () {
+      test('reads the channel from the command line', () async {
+        mockPublishedVersion();
+        when(
+          () => publishedVersion.allVersions(
+            ggLog: ggLog,
+            directory: any(named: 'directory'),
+          ),
+        ).thenAnswer((_) async => [Version(1, 2, 3)]);
+
+        await runner.run([
+          'prepare-next-version',
+          '--version-increment',
+          'patch',
+          '--channel',
+          'rc',
+          '-i',
+          d.path,
+        ]);
+
+        final content = await File('${d.path}/pubspec.yaml').readAsString();
+        expect(content, contains('version: 1.2.4-rc.1'));
+      });
     });
 
     test('should have a code coverage of 100%', () {

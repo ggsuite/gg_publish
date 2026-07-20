@@ -158,27 +158,47 @@ class IsVersionPrepared extends DirCommand<bool> {
       publishedVersion = latest ?? Version(0, 0, 0);
     }
 
-    // Version in the manifest must be one step bigger than the published one
+    // Version in the manifest must be one step bigger than the published one.
+    // Use the same pub_semver increments as PrepareNextVersion so both agree
+    // when the published version is itself a prerelease (nextX strips the
+    // prerelease suffix instead of bumping the number) — otherwise a second rc
+    // of such a version would be wrongly rejected here.
     final l = localVersion;
     final p = publishedVersion;
 
-    final nextPatch = Version(p.major, p.minor, p.patch + 1);
-    final nextMinor = Version(p.major, p.minor + 1, 0);
-    final nextMajor = Version(p.major + 1, 0, 0);
+    final nextPatch = p.nextPatch;
+    final nextMinor = p.nextMinor;
+    final nextMajor = p.nextMajor;
 
-    if (l != nextPatch && l != nextMinor && l != nextMajor) {
+    final allowedTargets = [nextPatch, nextMinor, nextMajor];
+    final isAllowedStable = allowedTargets.contains(l);
+
+    // An rc prerelease (X.Y.Z-rc.N) is prepared when its release version
+    // X.Y.Z is one of the allowed increments.
+    final base = Version(l.major, l.minor, l.patch);
+    final isAllowedRc = _isRc(l) && allowedTargets.contains(base);
+
+    if (!isAllowedStable && !isAllowedRc) {
       ggLog(
         darkGray(
           '$messagePrefix must be one of the following:'
           '\n- $nextPatch'
           '\n- $nextMinor'
-          '\n- $nextMajor',
+          '\n- $nextMajor'
+          '\nor an rc prerelease of one of them (e.g. $nextPatch-rc.1).',
         ),
       );
       return false;
     }
 
     return true;
+  }
+
+  // ...........................................................................
+  /// Returns true when [version] is an rc prerelease (X.Y.Z-rc.N).
+  static bool _isRc(Version version) {
+    final pre = version.preRelease;
+    return pre.length == 2 && pre.first == 'rc' && pre.last is int;
   }
 
   // ######################

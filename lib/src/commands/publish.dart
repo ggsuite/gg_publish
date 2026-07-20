@@ -134,7 +134,10 @@ class Publish extends DirCommand<void> {
       // (ERR_PNPM_OTP_NON_INTERACTIVE) — so we let the package manager drive
       // its own OTP / browser-login flow directly against the terminal.
       final publish = detectTypeScriptPackageManager(directory).publishCommand;
-      await _publishInteractive(directory, publish.executable, publish.args);
+      await _publishInteractive(directory, publish.executable, <String>[
+        ...publish.args,
+        ...await _npmDistTagArgs(directory),
+      ]);
     }
   }
 
@@ -226,6 +229,23 @@ class Publish extends DirCommand<void> {
         '»$executable ${args.join(' ')}« failed with exit code $exitCode',
       );
     }
+  }
+
+  // ...........................................................................
+  /// Returns `--tag <identifier>` when the manifest version is a prerelease
+  /// (e.g. `--tag rc` for `1.2.0-rc.1`). Without it, npm would move the
+  /// `latest` dist-tag onto the prerelease, so consumers would install it by
+  /// default and the next stable release would be computed from it.
+  Future<List<String>> _npmDistTagArgs(Directory directory) async {
+    final catalog = _catalog ?? await LanguageCatalog.load();
+    final version = await Manifest.detect(
+      directory,
+      catalog,
+      treatBridgeAsTypeScript: true,
+    ).readVersion();
+
+    if (version.preRelease.isEmpty) return [];
+    return ['--tag', version.preRelease.first.toString()];
   }
 
   // ...........................................................................
