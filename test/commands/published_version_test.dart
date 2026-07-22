@@ -96,6 +96,7 @@ void main() {
                 any(),
                 any(),
                 runInShell: any(named: 'runInShell'),
+                workingDirectory: any(named: 'workingDirectory'),
               ),
             ).thenAnswer((_) async => ProcessResult(0, 0, '7.8.9\n', ''));
 
@@ -106,6 +107,17 @@ void main() {
 
             final version = await pv.get(directory: tsDir, ggLog: messages.add);
             expect(version, Version(7, 8, 9));
+
+            // npm must run inside the package directory so it picks up the
+            // project-level .npmrc (scoped/private registries).
+            verify(
+              () => wrapper.run(
+                any(),
+                any(),
+                runInShell: any(named: 'runInShell'),
+                workingDirectory: tsDir.path,
+              ),
+            ).called(1);
           });
 
           test('with a real response', () async {

@@ -1,10 +1,11 @@
 # Changelog
 
-## \[3.0.19\] - 2026-02-18
+## [3.7.1] - 2026-07-22
 
 ### Changed
 
-- Update latest dependencies, Add .gitattributes file
+- Run npm registry lookups in the package directory so the project-level .npmrc with private feeds is honored
+- gg\_multi: changed references to git
 
 ## [3.7.0] - 2026-07-20
 
@@ -83,6 +84,7 @@ confirmation prompt).
 
 - Improve error message for non-feature branches in is\_feature\_branch
 - Update dependencies: gg\_console\_colors, gg\_git, gg\_capture\_print
+- Update latest dependencies, Add .gitattributes file
 
 ## [3.0.18] - 2025-08-11
 
@@ -265,6 +267,7 @@ confirmation prompt).
 
 - Initial version.
 
+[3.7.1]: https://github.com/inlavigo/gg_publish/compare/3.7.0...3.7.1
 [3.7.0]: https://github.com/inlavigo/gg_publish/compare/3.6.0...3.7.0
 [3.6.0]: https://github.com/inlavigo/gg_publish/compare/3.5.1...3.6.0
 [3.5.1]: https://github.com/inlavigo/gg_publish/compare/3.5.0...3.5.1
