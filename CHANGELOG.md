@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [3.7.1] - 2026-07-22
 
 ### Changed
 
@@ -267,7 +267,7 @@ confirmation prompt).
 
 - Initial version.
 
-[Unreleased]: https://github.com/inlavigo/gg_publish/compare/3.7.0...HEAD
+[3.7.1]: https://github.com/inlavigo/gg_publish/compare/3.7.0...3.7.1
 [3.7.0]: https://github.com/inlavigo/gg_publish/compare/3.6.0...3.7.0
 [3.6.0]: https://github.com/inlavigo/gg_publish/compare/3.5.1...3.6.0
 [3.5.1]: https://github.com/inlavigo/gg_publish/compare/3.5.0...3.5.1
