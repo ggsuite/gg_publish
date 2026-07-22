@@ -131,7 +131,13 @@ class PublishedVersion extends DirCommand<Version> {
       throw ArgumentError('name not found in ${spec.manifest.file}');
     }
 
-    final registry = _registryFactory.forProjectType(type, spec: spec);
+    // The package directory matters for npm lookups: npm resolves the
+    // project-level .npmrc (scoped/private registries) from its CWD.
+    final registry = _registryFactory.forProjectType(
+      type,
+      spec: spec,
+      workingDirectory: directory.path,
+    );
     return (registry: registry, name: name);
   }
 

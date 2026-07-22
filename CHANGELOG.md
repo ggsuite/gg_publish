@@ -6,6 +6,12 @@
 
 - Update latest dependencies, Add .gitattributes file
 
+## [Unreleased]
+
+### Changed
+
+- Run npm registry lookups in the package directory so the project-level .npmrc with private feeds is honored
+
 ## [3.7.0] - 2026-07-20
 
 ### Added
@@ -265,6 +271,7 @@ confirmation prompt).
 
 - Initial version.
 
+[Unreleased]: https://github.com/inlavigo/gg_publish/compare/3.7.0...HEAD
 [3.7.0]: https://github.com/inlavigo/gg_publish/compare/3.6.0...3.7.0
 [3.6.0]: https://github.com/inlavigo/gg_publish/compare/3.5.1...3.6.0
 [3.5.1]: https://github.com/inlavigo/gg_publish/compare/3.5.0...3.5.1
