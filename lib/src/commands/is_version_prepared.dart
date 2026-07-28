@@ -16,7 +16,8 @@ import 'package:gg_version/gg_version.dart';
 import 'package:pub_semver/pub_semver.dart';
 
 // #############################################################################
-/// Is the version in pubspec.yaml an increment of the version at pub.dev?
+/// Is the version in the manifest (pubspec.yaml / package.json) an increment
+/// of the version published to the registry (pub.dev / npm)?
 class IsVersionPrepared extends DirCommand<bool> {
   /// Constructor
   IsVersionPrepared({
@@ -31,7 +32,7 @@ class IsVersionPrepared extends DirCommand<bool> {
        _catalog = catalog,
        super(
          name: 'is-version-prepared',
-         description: 'pubspec.yaml and CHANGELOG have same new version?',
+         description: 'Manifest and CHANGELOG have same new version?',
        );
 
   // ...........................................................................
@@ -59,8 +60,15 @@ class IsVersionPrepared extends DirCommand<bool> {
     return ok;
   }
 
-  /// The prefix appended to many messages
-  static final messagePrefix = 'Version in ${blue('./pubspec.yaml')}';
+  /// The prefix appended to many messages. [manifestFile] is the manifest the
+  /// version was read from — `pubspec.yaml` for Dart/Flutter, `package.json`
+  /// for TypeScript. Naming the wrong file here is what makes a TypeScript
+  /// project look like it is being treated as a Dart one.
+  static String messagePrefixFor(String manifestFile) =>
+      'Version in ${blue('./$manifestFile')}';
+
+  /// The prefix appended to many messages, for Dart/Flutter projects.
+  static final messagePrefix = messagePrefixFor('pubspec.yaml');
 
   // ...........................................................................
   /// Returns true if the current directory state is published to pub.dev
@@ -73,7 +81,14 @@ class IsVersionPrepared extends DirCommand<bool> {
     treatUnpublishedAsOk ??= _treatUnpublishedAsOk ?? false;
 
     // Bridges are treated as TypeScript (no CHANGELOG flow).
-    final supportsChangeLog = checkProjectType(directory).isDartFamily;
+    final projectType = checkProjectType(directory);
+    final supportsChangeLog = projectType.isDartFamily;
+
+    final catalog = _catalog ?? await LanguageCatalog.load();
+
+    // The manifest the local version is read from. Used in messages so a
+    // TypeScript project is not told to fix its (non-existing) pubspec.yaml.
+    final manifestFile = catalog.spec(projectType).manifest.file;
 
     // The version that is about to be published (pubspec.yaml / package.json).
     final Version localVersion;
@@ -106,7 +121,6 @@ class IsVersionPrepared extends DirCommand<bool> {
     } else {
       // TypeScript & co.: the registry and package.json are the source of
       // truth; there is no CHANGELOG.md to compare against.
-      final catalog = _catalog ?? await LanguageCatalog.load();
       localVersion = await Manifest.detect(
         directory,
         catalog,
@@ -181,7 +195,7 @@ class IsVersionPrepared extends DirCommand<bool> {
     if (!isAllowedStable && !isAllowedRc) {
       ggLog(
         darkGray(
-          '$messagePrefix must be one of the following:'
+          '${messagePrefixFor(manifestFile)} must be one of the following:'
           '\n- $nextPatch'
           '\n- $nextMinor'
           '\n- $nextMajor'
