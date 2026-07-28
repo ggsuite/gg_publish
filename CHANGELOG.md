@@ -1,5 +1,22 @@
 # Changelog
 
+## \[3.8.0\] - 2026-07-27
+
+### Added
+
+- IsVersionPrepared.messagePrefixFor(manifestFile) builds the message prefix from the manifest the version was actually read from
+
+### Fixed
+
+- "Version in ./pubspec.yaml must be one of the following" no longer names pubspec.yaml for TypeScript projects, which made them look like they were detected as Dart projects. The message now names package.json.
+- Requires gg\_lang ^0.2.5, so npm published-version lookups no longer trust the "latest" dist-tag
+
+## [Unreleased]
+
+### Changed
+
+- Name the actual manifest in the version-not-prepared message
+
 ## [3.7.1] - 2026-07-22
 
 ### Changed
@@ -267,6 +284,7 @@ confirmation prompt).
 
 - Initial version.
 
+[Unreleased]: https://github.com/inlavigo/gg_publish/compare/3.7.1...HEAD
 [3.7.1]: https://github.com/inlavigo/gg_publish/compare/3.7.0...3.7.1
 [3.7.0]: https://github.com/inlavigo/gg_publish/compare/3.6.0...3.7.0
 [3.6.0]: https://github.com/inlavigo/gg_publish/compare/3.5.1...3.6.0

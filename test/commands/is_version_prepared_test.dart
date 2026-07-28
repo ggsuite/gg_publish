@@ -521,6 +521,12 @@ void main() async {
             );
             expect(result, isFalse);
             expect(messages.last, contains('must be one of the following'));
+
+            // The message must name package.json — naming pubspec.yaml here
+            // makes a TypeScript project look like it is treated as a Dart
+            // one.
+            expect(messages.last, contains('package.json'));
+            expect(messages.last, isNot(contains('pubspec.yaml')));
           },
         );
 

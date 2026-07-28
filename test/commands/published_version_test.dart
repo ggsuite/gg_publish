@@ -98,7 +98,9 @@ void main() {
                 runInShell: any(named: 'runInShell'),
                 workingDirectory: any(named: 'workingDirectory'),
               ),
-            ).thenAnswer((_) async => ProcessResult(0, 0, '7.8.9\n', ''));
+            ).thenAnswer(
+              (_) async => ProcessResult(0, 0, '["7.8.8", "7.8.9"]\n', ''),
+            );
 
             final pv = PublishedVersion(
               ggLog: messages.add,
