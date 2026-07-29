@@ -1,0 +1,10 @@
+{
+  "issue_id": "09_recreate_tags",
+  "description": "Recreate tags on publishing",
+  "repositories": [
+    {
+      "name": "gg_publish",
+      "url": "git@github.com:ggsuite/gg_publish.git"
+    }
+  ]
+}
