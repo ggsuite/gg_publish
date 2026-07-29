@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## 3.8.1 - 2026-07-29
 
 ### Added
 
@@ -15,25 +15,25 @@
 ### Changed
 
 - Support projects without manifest: ProjectType.none, checks skipped, version tracked as git tag only
-- gg\_multi: changed references to git
+- gg_multi: changed references to git
 
 ## 3.7.3 - 2026-07-29
 
 ### Added
 
-- WaitUntilPublished command: waits until the current manifest version is visible on the registry (pub.dev/npm) — announces the wait incl. a status url, reports progress and fails with a bounded timeout (15 min — pub.dev itself can take up to \~10 min) instead of hanging; skips packages that publish to no registry
+- WaitUntilPublished command: waits until the current manifest version is visible on the registry (pub.dev/npm) — announces the wait incl. a status url, reports progress and fails with a bounded timeout (15 min — pub.dev itself can take up to ~10 min) instead of hanging; skips packages that publish to no registry
 - IsVersionPrepared.messagePrefixFor(manifestFile) builds the message prefix from the manifest the version was actually read from
 - Add WaitUntilPublished command with status url and bounded timeout
 
 ### Changed
 
-- Raise WaitUntilPublished default timeout to 15 min (pub.dev can take \~10 min)
+- Raise WaitUntilPublished default timeout to 15 min (pub.dev can take ~10 min)
 
 ### Fixed
 
 - Fix hanging publishing process
 - "Version in ./pubspec.yaml must be one of the following" no longer names pubspec.yaml for TypeScript projects, which made them look like they were detected as Dart projects. The message now names package.json.
-- Requires gg\_lang ^0.2.5, so npm published-version lookups no longer trust the "latest" dist-tag
+- Requires gg_lang ^0.2.5, so npm published-version lookups no longer trust the "latest" dist-tag
 
 ## 3.7.2 - 2026-07-28
 
@@ -46,7 +46,7 @@
 ### Changed
 
 - Run npm registry lookups in the package directory so the project-level .npmrc with private feeds is honored
-- gg\_multi: changed references to git
+- gg_multi: changed references to git
 
 ## 3.7.0 - 2026-07-20
 
@@ -57,7 +57,7 @@
 
 ### Changed
 
-- gg\_multi: changed references to git
+- gg_multi: changed references to git
 
 ## 3.6.0 - 2026-07-01
 
@@ -69,32 +69,32 @@ prompting for a one-time password or opening its browser login — instead
 of failing with `ERR_PNPM_OTP_NON_INTERACTIVE` when gg captured the pipe.
 Dart/pub.dev publishing is unchanged (still captured, gg answers the
 confirmation prompt).
-- feat(gg): do checkout + .gg/.ticket.json ticket marker; TS format no direct eslint & P:\programs\flutter/bin/internal/exit\_with\_errorlevel.bat
+- feat(gg): do checkout + .gg/.ticket.json ticket marker; TS format no direct eslint & P:\programs\flutter/bin/internal/exit_with_errorlevel.bat
 - feat(gg): interactive npm publish + npm-logged-in precheck; package.json prepublishOnly->build->test rules (bridges exempt from build->test); do review pnpm blockExoticSubdeps + stdout; can publish runs per-repo can-publish; do merge/publish write doCommit; pana skip label
-- gg\_multi: changed references to git
+- gg_multi: changed references to git
 
 ## 3.5.1 - 2026-06-26
 
 ### Changed
 
-- gg\_multi: changed references to git
+- gg_multi: changed references to git
 
 ## 3.5.0 - 2026-06-19
 
 ### Changed
 
-- Treat dart-typescript bridge repos as TypeScript for can/do review (npm install, skip dart pub get); export isBridgeProject from gg\_one
+- Treat dart-typescript bridge repos as TypeScript for can/do review (npm install, skip dart pub get); export isBridgeProject from gg_one
 - Publish bridges as TypeScript: pnpm-aware publish, dual-manifest version bump, non-swallowed publish errors, idempotent resume, review skips merged repos, link: for local TS deps, package.json scripts check
-- gg\_multi: changed references to git
+- gg_multi: changed references to git
 
 ## 3.4.0 - 2026-06-08
 
 ### Changed
 
-- feat: language-universal publishing via gg\_lang (npm + pub.dev registry-aware version checks, manifest-driven publish command, TypeScript bypasses CHANGELOG)
-- feat(do add): auto-clone transitive deps into master before graph build & P:\programs\flutter/bin/internal/exit\_with\_errorlevel.bat
-- gg\_multi: changed references to git
-- gg\_multi: changed references to git
+- feat: language-universal publishing via gg_lang (npm + pub.dev registry-aware version checks, manifest-driven publish command, TypeScript bypasses CHANGELOG)
+- feat(do add): auto-clone transitive deps into master before graph build & P:\programs\flutter/bin/internal/exit_with_errorlevel.bat
+- gg_multi: changed references to git
+- gg_multi: changed references to git
 - Gg Multi: changed references to pub.dev
 
 ## 3.3.1 - 2026-04-20
@@ -123,15 +123,15 @@ confirmation prompt).
 
 ### Changed
 
-- Improve error message for non-feature branches in is\_feature\_branch
-- Update dependencies: gg\_console\_colors, gg\_git, gg\_capture\_print
+- Improve error message for non-feature branches in is_feature_branch
+- Update dependencies: gg_console_colors, gg_git, gg_capture_print
 - Update latest dependencies, Add .gitattributes file
 
 ## 3.0.18 - 2025-08-11
 
 ### Changed
 
-- Update to gg\_git 3.0.0
+- Update to gg_git 3.0.0
 
 ## 3.0.17 - 2025-06-09
 
@@ -153,7 +153,7 @@ confirmation prompt).
 
 ### Removed
 
-- dependency to gg\_install\_gg, remove ./check script
+- dependency to gg_install_gg, remove ./check script
 
 ## 3.0.14 - 2024-04-11
 
@@ -203,7 +203,7 @@ confirmation prompt).
 
 ### Changed
 
-- Update dependency gg\_version to 4.0.0
+- Update dependency gg_version to 4.0.0
 
 ## 3.0.6 - 2024-04-09
 
@@ -215,7 +215,7 @@ confirmation prompt).
 
 ### Fixed
 
-- PublishedVersion did not handle publish\_to: none
+- PublishedVersion did not handle publish_to: none
 
 ## 3.0.4 - 2024-04-09
 
@@ -233,7 +233,7 @@ confirmation prompt).
 
 ### Added
 
-- Take over IsVersionPrepared, PrepareNextVersion and PublishedVersion from gg\_version
+- Take over IsVersionPrepared, PrepareNextVersion and PublishedVersion from gg_version
 - IsVersionPrepared: Does also work for packages not published to git
 
 ## 3.0.1 - 2024-04-08
@@ -258,7 +258,7 @@ confirmation prompt).
 
 ## 2.0.2 - 2024-01-01
 
-- Update gg\_version to 2.0.0
+- Update gg_version to 2.0.0
 
 ## 2.0.1 - 2024-01-01
 
