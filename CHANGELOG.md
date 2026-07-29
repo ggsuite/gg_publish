@@ -14,6 +14,7 @@
 
 ### Fixed
 
+- Fix hanging publishing process
 - "Version in ./pubspec.yaml must be one of the following" no longer names pubspec.yaml for TypeScript projects, which made them look like they were detected as Dart projects. The message now names package.json.
 - Requires gg\_lang ^0.2.5, so npm published-version lookups no longer trust the "latest" dist-tag
 
