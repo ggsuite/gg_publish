@@ -5,6 +5,10 @@
     {
       "name": "gg_publish",
       "url": "git@github.com:ggsuite/gg_publish.git"
+    },
+    {
+      "name": "gg_one",
+      "url": "git@github.com:ggsuite/gg_one.git"
     }
   ]
 }
