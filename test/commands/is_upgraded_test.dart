@@ -129,6 +129,14 @@ void main() {
 
   // ...........................................................................
   group('IsUpgraded', () {
+    group('- without a pubspec.yaml', () {
+      test('should skip the check and print ✅', () async {
+        File('${d.path}/pubspec.yaml').deleteSync();
+        await viaCli();
+        expectSuccess();
+      });
+    });
+
     group('- standard case', () {
       group('- up to date? ', () {
         setUp(() async {

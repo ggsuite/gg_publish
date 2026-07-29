@@ -90,6 +90,13 @@ void main() {
             expect(await publishTo.fromDirectory(d), 'npm');
           });
         });
+
+        group('for a project without a manifest', () {
+          test('returns "none"', () async {
+            expect(pubSpec.existsSync(), isFalse);
+            expect(await publishTo.fromDirectory(d), 'none');
+          });
+        });
       });
     });
   });

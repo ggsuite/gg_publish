@@ -63,6 +63,13 @@ class IsUpgraded extends DirCommand<bool> {
   }) async {
     majorVersions ??= argResults?['major-versions'] as bool? ?? false;
 
+    // Without a pubspec.yaml there are no pub dependencies to upgrade.
+    final pubspec = File('${directory.path}/pubspec.yaml');
+    if (!pubspec.existsSync()) {
+      ggLog('No pubspec.yaml — no dependencies to upgrade. Check skipped.');
+      return true;
+    }
+
     // Check if the 'flutter' command is available, assuming Flutter projects
     // include Flutter dependencies
     bool isFlutterProject = isFlutterDir(directory);

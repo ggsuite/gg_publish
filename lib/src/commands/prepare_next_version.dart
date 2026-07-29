@@ -109,6 +109,17 @@ class PrepareNextVersion extends DirCommand<void> {
   }) async {
     // Checks
     await check(directory: directory);
+
+    // Without a manifest there is no file to write the version into — the
+    // next version is created as a git tag by the publish flow instead.
+    if (checkProjectType(directory) == ProjectType.none) {
+      ggLog(
+        'Git-only project — no manifest to write. '
+        'The next version is created as a git tag.',
+      );
+      return;
+    }
+
     final manifest = await _checkedManifest(directory: directory);
 
     // Estimate the next version
@@ -243,12 +254,11 @@ class PrepareNextVersion extends DirCommand<void> {
   Future<Manifest> _checkedManifest({required Directory directory}) async {
     final catalog = _catalog ?? await LanguageCatalog.load();
 
-    final ProjectType type;
-    try {
-      // Bridges bump their package.json version (published as TypeScript).
-      type = checkProjectType(directory);
-    } catch (_) {
-      throw Exception('pubspec.yaml not found');
+    // Bridges bump their package.json version (published as TypeScript).
+    final type = checkProjectType(directory);
+    if (type == ProjectType.none) {
+      // Defensive: apply() skips manifest-less projects before calling this.
+      throw Exception('pubspec.yaml not found'); // coverage:ignore-line
     }
 
     final spec = catalog.spec(type).manifest;

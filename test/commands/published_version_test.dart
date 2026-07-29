@@ -217,23 +217,23 @@ void main() {
         });
       });
 
-      group('should throw', () {
-        test('when directory does not contain a pubspec.yaml', () async {
+      group('should fall back to the git version tag', () {
+        test('when directory does not contain a manifest', () async {
           initCommand();
           await File(join(d.path, 'pubspec.yaml')).delete();
-          expect(
-            () async =>
-                await publishedVersion.get(directory: d, ggLog: messages.add),
-            throwsA(
-              isA<ArgumentError>().having(
-                (e) => e.message,
-                'message',
-                'pubspec.yaml not found',
-              ),
-            ),
-          );
-        });
+          await initGit(d);
+          await addAndCommitSampleFile(d);
+          await addTags(d, ['1.2.3']);
 
+          final result = await publishedVersion.get(
+            directory: d,
+            ggLog: messages.add,
+          );
+          expect(result, Version(1, 2, 3));
+        });
+      });
+
+      group('should throw', () {
         test('when pubspec.yaml does not contain a name field', () {
           initCommand();
 

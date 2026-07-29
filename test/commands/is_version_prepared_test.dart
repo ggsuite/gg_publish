@@ -52,6 +52,17 @@ void main() async {
   group('IsVersionPrepared', () {
     group('get(directory, ggLog)', () {
       group('should succeed', () {
+        group('and return true', () {
+          test('when the project has no manifest', () async {
+            final result = await isVersionPrepared.get(
+              ggLog: ggLog,
+              directory: d,
+            );
+            expect(result, isTrue);
+            expect(messages.last, contains('Check skipped'));
+          });
+        });
+
         group('and return false', () {
           test(
             'when pubspec.yaml and CHANGELOG have different versions',

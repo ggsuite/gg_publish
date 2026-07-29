@@ -107,16 +107,16 @@ class PublishedVersion extends DirCommand<Version> {
   Future<({Registry registry, String name})?> _resolve({
     required Directory directory,
   }) async {
-    final catalog = _catalog ?? await LanguageCatalog.load();
+    // Bridges resolve to npm (published as TypeScript), so query npm.
+    final type = checkProjectType(directory);
 
-    final ProjectType type;
-    try {
-      // Bridges resolve to npm (published as TypeScript), so query npm.
-      type = checkProjectType(directory);
-    } catch (_) {
-      throw ArgumentError('pubspec.yaml not found');
+    // Without a manifest there is no registry — versions live in git tags
+    // only, exactly like for private packages.
+    if (type == ProjectType.none) {
+      return null;
     }
 
+    final catalog = _catalog ?? await LanguageCatalog.load();
     final spec = catalog.spec(type);
     final manifest = Manifest(directory: directory, spec: spec.manifest);
 

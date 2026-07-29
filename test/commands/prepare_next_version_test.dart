@@ -61,29 +61,26 @@ void main() async {
   // ...........................................................................
   group('PrepareNextVersion', () {
     group('apply(directory, ggLog, increment)', () {
+      group('should do nothing', () {
+        test('if the project has no manifest', () async {
+          // Delete pubspec.yaml → ProjectType.none
+          await File('${d.path}/pubspec.yaml').delete();
+
+          // Execute command
+          await prepareNextVersion.apply(
+            ggLog: ggLog,
+            directory: d,
+            increment: VersionIncrement.patch,
+          );
+
+          // No manifest was created, the version lives in git tags only.
+          expect(File('${d.path}/pubspec.yaml').existsSync(), isFalse);
+          expect(messages.last, contains('Git-only project'));
+        });
+      });
+
       group('should throw', () {
         group('if pubspec.yaml', () {
-          test('is missing', () async {
-            // Delete pubspec.yaml
-            await File('${d.path}/pubspec.yaml').delete();
-
-            // Execute command
-            late String exception;
-
-            try {
-              await prepareNextVersion.apply(
-                ggLog: ggLog,
-                directory: d,
-                increment: VersionIncrement.patch,
-              );
-            } catch (e) {
-              exception = e.toString();
-            }
-
-            // Check exception
-            expect(exception, 'Exception: pubspec.yaml not found');
-          });
-
           test('is not containing a version', () async {
             // Empty pubspec.yaml
             await File('${d.path}/pubspec.yaml').writeAsString('');

@@ -175,6 +175,24 @@ void main() {
         });
       });
       group('should throw', () {
+        test('if the project has no manifest', () async {
+          late String exceptionMessage;
+
+          mockIsVersionPrepared(true);
+          File('${d.path}/pubspec.yaml').deleteSync();
+
+          try {
+            await publish.exec(directory: d, ggLog: ggLog);
+          } on Exception catch (e) {
+            exceptionMessage = e.toString();
+          }
+
+          expect(
+            exceptionMessage,
+            contains('there is no registry to publish to'),
+          );
+        });
+
         test('if versions are not consistent', () async {
           late String exceptionMessage;
 
