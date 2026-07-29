@@ -1,10 +1,16 @@
 # Changelog
 
-## \[3.8.0\] - 2026-07-27
+## [3.7.3] - 2026-07-29
 
 ### Added
 
+- WaitUntilPublished command: waits until the current manifest version is visible on the registry (pub.dev/npm) — announces the wait incl. a status url, reports progress and fails with a bounded timeout (15 min — pub.dev itself can take up to \~10 min) instead of hanging; skips packages that publish to no registry
 - IsVersionPrepared.messagePrefixFor(manifestFile) builds the message prefix from the manifest the version was actually read from
+- Add WaitUntilPublished command with status url and bounded timeout
+
+### Changed
+
+- Raise WaitUntilPublished default timeout to 15 min (pub.dev can take \~10 min)
 
 ### Fixed
 
@@ -284,6 +290,7 @@ confirmation prompt).
 
 - Initial version.
 
+[3.7.3]: https://github.com/inlavigo/gg_publish/compare/3.7.2...3.7.3
 [3.7.2]: https://github.com/inlavigo/gg_publish/compare/3.7.1...3.7.2
 [3.7.1]: https://github.com/inlavigo/gg_publish/compare/3.7.0...3.7.1
 [3.7.0]: https://github.com/inlavigo/gg_publish/compare/3.6.0...3.7.0
