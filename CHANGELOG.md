@@ -1,12 +1,13 @@
 # Changelog
 
-## [Unreleased]
+## Unreleased
 
 ### Changed
 
 - Support projects without manifest: ProjectType.none, checks skipped, version tracked as git tag only
+- gg\_multi: changed references to git
 
-## [3.7.3] - 2026-07-29
+## 3.7.3 - 2026-07-29
 
 ### Added
 
@@ -24,20 +25,20 @@
 - "Version in ./pubspec.yaml must be one of the following" no longer names pubspec.yaml for TypeScript projects, which made them look like they were detected as Dart projects. The message now names package.json.
 - Requires gg\_lang ^0.2.5, so npm published-version lookups no longer trust the "latest" dist-tag
 
-## [3.7.2] - 2026-07-28
+## 3.7.2 - 2026-07-28
 
 ### Changed
 
 - Name the actual manifest in the version-not-prepared message
 
-## [3.7.1] - 2026-07-22
+## 3.7.1 - 2026-07-22
 
 ### Changed
 
 - Run npm registry lookups in the package directory so the project-level .npmrc with private feeds is honored
 - gg\_multi: changed references to git
 
-## [3.7.0] - 2026-07-20
+## 3.7.0 - 2026-07-20
 
 ### Added
 
@@ -48,7 +49,7 @@
 
 - gg\_multi: changed references to git
 
-## [3.6.0] - 2026-07-01
+## 3.6.0 - 2026-07-01
 
 ### Changed
 
@@ -62,13 +63,13 @@ confirmation prompt).
 - feat(gg): interactive npm publish + npm-logged-in precheck; package.json prepublishOnly->build->test rules (bridges exempt from build->test); do review pnpm blockExoticSubdeps + stdout; can publish runs per-repo can-publish; do merge/publish write doCommit; pana skip label
 - gg\_multi: changed references to git
 
-## [3.5.1] - 2026-06-26
+## 3.5.1 - 2026-06-26
 
 ### Changed
 
 - gg\_multi: changed references to git
 
-## [3.5.0] - 2026-06-19
+## 3.5.0 - 2026-06-19
 
 ### Changed
 
@@ -76,7 +77,7 @@ confirmation prompt).
 - Publish bridges as TypeScript: pnpm-aware publish, dual-manifest version bump, non-swallowed publish errors, idempotent resume, review skips merged repos, link: for local TS deps, package.json scripts check
 - gg\_multi: changed references to git
 
-## [3.4.0] - 2026-06-08
+## 3.4.0 - 2026-06-08
 
 ### Changed
 
@@ -86,9 +87,9 @@ confirmation prompt).
 - gg\_multi: changed references to git
 - Gg Multi: changed references to pub.dev
 
-## [3.3.1] - 2026-04-20
+## 3.3.1 - 2026-04-20
 
-## [3.3.0] - 2026-04-07
+## 3.3.0 - 2026-04-07
 
 ### Changed
 
@@ -100,15 +101,15 @@ confirmation prompt).
 
 - Remove useCarriageReturn and fix ggLog parameter in merge command
 
-## [3.2.1] - 2026-03-30
+## 3.2.1 - 2026-03-30
 
-## [3.2.0] - 2026-03-19
+## 3.2.0 - 2026-03-19
 
 ### Added
 
 - Add is-main-branch command to check for main branch in Git
 
-## [3.1.0] - 2026-03-18
+## 3.1.0 - 2026-03-18
 
 ### Changed
 
@@ -116,25 +117,25 @@ confirmation prompt).
 - Update dependencies: gg\_console\_colors, gg\_git, gg\_capture\_print
 - Update latest dependencies, Add .gitattributes file
 
-## [3.0.18] - 2025-08-11
+## 3.0.18 - 2025-08-11
 
 ### Changed
 
 - Update to gg\_git 3.0.0
 
-## [3.0.17] - 2025-06-09
+## 3.0.17 - 2025-06-09
 
 ### Changed
 
 - Improve version mismatch error message
 
-## [3.0.16] - 2024-04-13
+## 3.0.16 - 2024-04-13
 
 ### Removed
 
 - dependency pana
 
-## [3.0.15] - 2024-04-12
+## 3.0.15 - 2024-04-12
 
 ### Added
 
@@ -144,25 +145,25 @@ confirmation prompt).
 
 - dependency to gg\_install\_gg, remove ./check script
 
-## [3.0.14] - 2024-04-11
+## 3.0.14 - 2024-04-11
 
 ### Changed
 
 - upgrade dependencies
 
-## [3.0.13] - 2024-04-11
+## 3.0.13 - 2024-04-11
 
 ### Changed
 
 - Fix mocks
 
-## [3.0.12] - 2024-04-11
+## 3.0.12 - 2024-04-11
 
 ### Added
 
 - PrepareNextVersion: Specify published version from outside
 
-## [3.0.11] - 2024-04-11
+## 3.0.11 - 2024-04-11
 
 ### Changed
 
@@ -170,68 +171,68 @@ confirmation prompt).
 - derive all mocks from MockDirCommand
 - Fintue mocks
 
-## [3.0.10] - 2024-04-11
+## 3.0.10 - 2024-04-11
 
 ### Added
 
 - Extend mock for IsUpgraded
 
-## [3.0.9] - 2024-04-09
+## 3.0.9 - 2024-04-09
 
 ### Removed
 
 - 'Pipline: Disable cache'
 
-## [3.0.8] - 2024-04-09
+## 3.0.8 - 2024-04-09
 
 ### Fixed
 
 - Fixed an error on IsVersionPrepared
 
-## [3.0.7] - 2024-04-09
+## 3.0.7 - 2024-04-09
 
 ### Changed
 
 - Update dependency gg\_version to 4.0.0
 
-## [3.0.6] - 2024-04-09
+## 3.0.6 - 2024-04-09
 
 ### Added
 
 - Publish: add askBeforePublishing to supress asking for confirmation
 
-## [3.0.5] - 2024-04-09
+## 3.0.5 - 2024-04-09
 
 ### Fixed
 
 - PublishedVersion did not handle publish\_to: none
 
-## [3.0.4] - 2024-04-09
+## 3.0.4 - 2024-04-09
 
 ### Fixed
 
 - IsPublished will no also handle packages that are not published to pub.dev
 
-## [3.0.3] - 2024-04-09
+## 3.0.3 - 2024-04-09
 
 ### Fixed
 
 - IsVersionPrepared did not work with local uncommitted changes
 
-## [3.0.2] - 2024-04-08
+## 3.0.2 - 2024-04-08
 
 ### Added
 
 - Take over IsVersionPrepared, PrepareNextVersion and PublishedVersion from gg\_version
 - IsVersionPrepared: Does also work for packages not published to git
 
-## [3.0.1] - 2024-04-08
+## 3.0.1 - 2024-04-08
 
 ### Added
 
 - publish-to command to get the publish target
 
-## [3.0.0] - 2024-04-06
+## 3.0.0 - 2024-04-06
 
 ### Added
 
@@ -296,37 +297,3 @@ confirmation prompt).
 ## 1.0.0 - 2024-01-01
 
 - Initial version.
-
-[Unreleased]: https://github.com/inlavigo/gg_publish/compare/3.7.3...HEAD
-[3.7.3]: https://github.com/inlavigo/gg_publish/compare/3.7.2...3.7.3
-[3.7.2]: https://github.com/inlavigo/gg_publish/compare/3.7.1...3.7.2
-[3.7.1]: https://github.com/inlavigo/gg_publish/compare/3.7.0...3.7.1
-[3.7.0]: https://github.com/inlavigo/gg_publish/compare/3.6.0...3.7.0
-[3.6.0]: https://github.com/inlavigo/gg_publish/compare/3.5.1...3.6.0
-[3.5.1]: https://github.com/inlavigo/gg_publish/compare/3.5.0...3.5.1
-[3.5.0]: https://github.com/inlavigo/gg_publish/compare/3.4.0...3.5.0
-[3.4.0]: https://github.com/inlavigo/gg_publish/compare/3.3.1...3.4.0
-[3.3.1]: https://github.com/inlavigo/gg_publish/compare/3.3.0...3.3.1
-[3.3.0]: https://github.com/inlavigo/gg_publish/compare/3.2.1...3.3.0
-[3.2.1]: https://github.com/inlavigo/gg_publish/compare/3.2.0...3.2.1
-[3.2.0]: https://github.com/inlavigo/gg_publish/compare/3.1.0...3.2.0
-[3.1.0]: https://github.com/inlavigo/gg_publish/compare/3.0.18...3.1.0
-[3.0.18]: https://github.com/inlavigo/gg_publish/compare/3.0.17...3.0.18
-[3.0.17]: https://github.com/inlavigo/gg_publish/compare/3.0.16...3.0.17
-[3.0.16]: https://github.com/inlavigo/gg_publish/compare/3.0.15...3.0.16
-[3.0.15]: https://github.com/inlavigo/gg_publish/compare/3.0.14...3.0.15
-[3.0.14]: https://github.com/inlavigo/gg_publish/compare/3.0.13...3.0.14
-[3.0.13]: https://github.com/inlavigo/gg_publish/compare/3.0.12...3.0.13
-[3.0.12]: https://github.com/inlavigo/gg_publish/compare/3.0.11...3.0.12
-[3.0.11]: https://github.com/inlavigo/gg_publish/compare/3.0.10...3.0.11
-[3.0.10]: https://github.com/inlavigo/gg_publish/compare/3.0.9...3.0.10
-[3.0.9]: https://github.com/inlavigo/gg_publish/compare/3.0.8...3.0.9
-[3.0.8]: https://github.com/inlavigo/gg_publish/compare/3.0.7...3.0.8
-[3.0.7]: https://github.com/inlavigo/gg_publish/compare/3.0.6...3.0.7
-[3.0.6]: https://github.com/inlavigo/gg_publish/compare/3.0.5...3.0.6
-[3.0.5]: https://github.com/inlavigo/gg_publish/compare/3.0.4...3.0.5
-[3.0.4]: https://github.com/inlavigo/gg_publish/compare/3.0.3...3.0.4
-[3.0.3]: https://github.com/inlavigo/gg_publish/compare/3.0.2...3.0.3
-[3.0.2]: https://github.com/inlavigo/gg_publish/compare/3.0.1...3.0.2
-[3.0.1]: https://github.com/inlavigo/gg_publish/compare/3.0.0...3.0.1
-[3.0.0]: https://github.com/inlavigo/gg_publish/compare/2.0.2...3.0.0
