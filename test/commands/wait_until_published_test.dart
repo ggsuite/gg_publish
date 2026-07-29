@@ -120,7 +120,7 @@ void main() {
 
       test('has sensible default timeouts', () {
         final command = WaitUntilPublished(ggLog: ggLog);
-        expect(command.timeout, const Duration(minutes: 10));
+        expect(command.timeout, const Duration(minutes: 15));
         expect(command.pollInterval, const Duration(seconds: 10));
       });
     });

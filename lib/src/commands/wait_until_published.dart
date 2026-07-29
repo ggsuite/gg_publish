@@ -32,7 +32,9 @@ class WaitUntilPublished extends DirCommand<void> {
     PublishTo? publishTo,
     LanguageCatalog? catalog,
     RegistryWaiter? waiter,
-    this.timeout = const Duration(minutes: 10),
+    // pub.dev can take up to ~10 minutes to make a fresh upload visible —
+    // the default leaves headroom beyond that.
+    this.timeout = const Duration(minutes: 15),
     this.pollInterval = const Duration(seconds: 10),
   }) : _publishTo = publishTo ?? PublishTo(ggLog: ggLog),
        _catalog = catalog,

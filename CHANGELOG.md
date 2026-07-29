@@ -4,9 +4,13 @@
 
 ### Added
 
-- WaitUntilPublished command: waits until the current manifest version is visible on the registry (pub.dev/npm) — announces the wait incl. a status url, reports progress and fails with a bounded timeout instead of hanging; skips packages that publish to no registry
+- WaitUntilPublished command: waits until the current manifest version is visible on the registry (pub.dev/npm) — announces the wait incl. a status url, reports progress and fails with a bounded timeout (15 min — pub.dev itself can take up to \~10 min) instead of hanging; skips packages that publish to no registry
 - IsVersionPrepared.messagePrefixFor(manifestFile) builds the message prefix from the manifest the version was actually read from
 - Add WaitUntilPublished command with status url and bounded timeout
+
+### Changed
+
+- Raise WaitUntilPublished default timeout to 15 min (pub.dev can take \~10 min)
 
 ### Fixed
 
