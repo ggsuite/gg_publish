@@ -1,11 +1,5 @@
 # Changelog
 
-## [Unreleased]
-
-### Fixed
-
-- Fix hanging publishing process
-
 ## [3.7.3] - 2026-07-29
 
 ### Added
@@ -20,6 +14,7 @@
 
 ### Fixed
 
+- Fix hanging publishing process
 - "Version in ./pubspec.yaml must be one of the following" no longer names pubspec.yaml for TypeScript projects, which made them look like they were detected as Dart projects. The message now names package.json.
 - Requires gg\_lang ^0.2.5, so npm published-version lookups no longer trust the "latest" dist-tag
 
@@ -296,7 +291,6 @@ confirmation prompt).
 
 - Initial version.
 
-[Unreleased]: https://github.com/inlavigo/gg_publish/compare/3.7.3...HEAD
 [3.7.3]: https://github.com/inlavigo/gg_publish/compare/3.7.2...3.7.3
 [3.7.2]: https://github.com/inlavigo/gg_publish/compare/3.7.1...3.7.2
 [3.7.1]: https://github.com/inlavigo/gg_publish/compare/3.7.0...3.7.1
