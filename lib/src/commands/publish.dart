@@ -24,11 +24,19 @@ class Publish extends DirCommand<void> {
     super.description = 'Publishes the current directory to its registry.',
     super.name = 'publish',
     IsVersionPrepared? isVersionPrepared,
+    RemoveVersionTag? removeVersionTag,
     GgProcessWrapper processWrapper = const GgProcessWrapper(),
     String? Function()? readLineFromStdIn,
     LanguageCatalog? catalog,
   }) : _isVersionPrepared =
            isVersionPrepared ?? IsVersionPrepared(ggLog: ggLog),
+       _removeVersionTag =
+           removeVersionTag ??
+           RemoveVersionTag(
+             ggLog: ggLog,
+             processWrapper: processWrapper,
+             catalog: catalog,
+           ),
        _processWrapper = processWrapper,
        _catalog = catalog,
        _readLineFromStdIn = readLineFromStdIn ?? stdin.readLineSync {
@@ -81,6 +89,7 @@ class Publish extends DirCommand<void> {
   // ######################
 
   final IsVersionPrepared _isVersionPrepared;
+  final RemoveVersionTag _removeVersionTag;
   final GgProcessWrapper _processWrapper;
   final String? Function() _readLineFromStdIn;
 
@@ -98,6 +107,12 @@ class Publish extends DirCommand<void> {
     if (!isVersionPrepared) {
       throw Exception('Version is not prepared.');
     }
+
+    // A previous publish may have failed after tagging the release. That tag
+    // points at a commit this run replaces, so remove it locally and on the
+    // remote — the tag step of the publish flow recreates it on the new
+    // release commit.
+    await _removeVersionTag.get(directory: directory, ggLog: ggLog);
 
     // Publish
     await _publish(directory, ggLog, askBeforePublishing);
