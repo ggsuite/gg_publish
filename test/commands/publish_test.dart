@@ -25,6 +25,7 @@ void main() {
   late GgProcessWrapper processWrapper;
   late GgFakeProcess process;
   late IsVersionPrepared isVersionPrepared;
+  late MockRemoveVersionTag removeVersionTag;
   late String? stdInValue;
 
   // ...........................................................................
@@ -60,10 +61,14 @@ void main() {
     process = GgFakeProcess();
     isVersionPrepared = MockIsVersionPrepared();
     processWrapper = MockGgProcessWrapper();
+    removeVersionTag = MockRemoveVersionTag();
+    registerFallbackValue(d);
+    removeVersionTag.mockGet(result: false, ggLog: ggLog);
     publish = Publish(
       ggLog: ggLog,
       processWrapper: processWrapper,
       isVersionPrepared: isVersionPrepared,
+      removeVersionTag: removeVersionTag,
       readLineFromStdIn: () => stdInValue,
       catalog: catalog,
     );
@@ -142,12 +147,35 @@ void main() {
           }
         });
 
+        test('after removing an already existing version tag', () async {
+          // A publish that failed after tagging leaves the tag on a commit
+          // this run replaces. It must be gone - locally and on the remote -
+          // before publishing, so the tag step can recreate it.
+          mockIsVersionPrepared(true);
+          mockProcess(result: 0, force: false);
+          removeVersionTag.mockGet(result: true, ggLog: ggLog);
+
+          final future = publish.exec(directory: d, ggLog: ggLog);
+          await Future<void>.delayed(Duration.zero);
+          process.exit(0);
+          await future;
+
+          verifyInOrder([
+            () => removeVersionTag.get(directory: d, ggLog: ggLog),
+            () => processWrapper.start('dart', [
+              'pub',
+              'publish',
+            ], workingDirectory: d.path),
+          ]);
+        });
+
         test('runs the captured publish through a shell when the catalog '
             'requests it', () async {
           final shellPublish = Publish(
             ggLog: ggLog,
             processWrapper: processWrapper,
             isVersionPrepared: isVersionPrepared,
+            removeVersionTag: removeVersionTag,
             readLineFromStdIn: () => stdInValue,
             catalog: LanguageCatalog.fromString(_shellCatalogJson),
           );

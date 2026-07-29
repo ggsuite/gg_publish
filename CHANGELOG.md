@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- RemoveVersionTag command: removes an already existing tag of the version to be published - locally as well as on the remote - so the publish flow can recreate it on the new release commit
+
+### Changed
+
+- Publish removes an already existing version tag before publishing to the registry. A publish that failed after tagging left the tag on a commit the retry replaces, which made the tag step of the next run refuse to tag or tag an abandoned commit.
+
 ## 3.8.0 - 2026-07-29
 
 ### Changed
