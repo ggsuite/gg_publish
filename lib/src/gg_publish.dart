@@ -17,6 +17,7 @@ class GgPublish extends Command<dynamic> {
     addSubcommand(IsUpgraded(ggLog: ggLog));
     addSubcommand(Publish(ggLog: ggLog));
     addSubcommand(PublishTo(ggLog: ggLog));
+    addSubcommand(WaitUntilPublished(ggLog: ggLog));
     addSubcommand(IsVersionPrepared(ggLog: ggLog));
     addSubcommand(PublishedVersion(ggLog: ggLog));
     addSubcommand(PrepareNextVersion(ggLog: ggLog));
