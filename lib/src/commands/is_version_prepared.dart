@@ -82,6 +82,17 @@ class IsVersionPrepared extends DirCommand<bool> {
 
     // Bridges are treated as TypeScript (no CHANGELOG flow).
     final projectType = checkProjectType(directory);
+
+    // Without a manifest there is no version to prepare — the next version
+    // is derived from the latest git tag at publish time.
+    if (projectType == ProjectType.none) {
+      ggLog(
+        'No manifest — the next version derives from the latest git tag. '
+        'Check skipped.',
+      );
+      return true;
+    }
+
     final supportsChangeLog = projectType.isDartFamily;
 
     final catalog = _catalog ?? await LanguageCatalog.load();

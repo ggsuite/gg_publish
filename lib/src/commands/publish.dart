@@ -112,6 +112,13 @@ class Publish extends DirCommand<void> {
     // Bridges (pubspec + package.json) are published as TypeScript.
     final type = checkProjectType(directory);
 
+    if (type == ProjectType.none) {
+      throw Exception(
+        'A project without a manifest publishes to git only — '
+        'there is no registry to publish to.',
+      );
+    }
+
     if (type.isDartFamily) {
       final catalog = _catalog ?? await LanguageCatalog.load();
       final command = catalog.spec(type).command('publish');

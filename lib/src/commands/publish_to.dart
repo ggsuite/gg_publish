@@ -38,9 +38,16 @@ class PublishTo extends DirCommand<void> {
   // ...........................................................................
   /// Returns the publish target of the manifest in [directory].
   Future<String> fromDirectory(Directory directory) async {
-    final catalog = _catalog ?? await LanguageCatalog.load();
     // Bridges (pubspec + package.json) publish as TypeScript → npm target.
     final type = checkProjectType(directory);
+
+    // Without a manifest there is no registry — such projects publish to
+    // git only.
+    if (type == ProjectType.none) {
+      return 'none';
+    }
+
+    final catalog = _catalog ?? await LanguageCatalog.load();
     final manifest = Manifest(
       directory: directory,
       spec: catalog.spec(type).manifest,
@@ -52,6 +59,11 @@ class PublishTo extends DirCommand<void> {
         return await manifest.readPublishTargetMarker() ?? 'pub.dev';
       case ProjectType.typescript:
         return await manifest.isPrivate() ? 'none' : 'npm';
+      // coverage:ignore-start
+      case ProjectType.none:
+        // Handled above — kept for exhaustiveness.
+        return 'none';
+      // coverage:ignore-end
     }
   }
 }
