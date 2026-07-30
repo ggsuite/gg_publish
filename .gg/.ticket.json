@@ -1,0 +1,10 @@
+{
+  "issue_id": "25_fix_publishing_error",
+  "description": "Fix publishing error",
+  "repositories": [
+    {
+      "name": "gg_publish",
+      "url": "git@github.com:ggsuite/gg_publish.git"
+    }
+  ]
+}
