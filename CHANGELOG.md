@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.8.2 - 2026-07-30
+
+### Added
+
+- Add package version number code to each package
+
 ## 3.8.1 - 2026-07-29
 
 ### Added

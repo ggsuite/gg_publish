@@ -1,5 +1,5 @@
 // @license
-// Copyright (c) 2019 - 2024 Dr. Gabriel Gatzsche. All Rights Reserved.
+// Copyright (c) ggsuite
 //
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
@@ -11,6 +11,7 @@ import 'package:gg_lang/gg_lang.dart';
 import 'package:gg_log/gg_log.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
+import 'package:gg_version/gg_version.dart';
 import 'package:pub_semver/pub_semver.dart';
 
 // .............................................................................
@@ -44,8 +45,11 @@ class PrepareNextVersion extends DirCommand<void> {
     required super.ggLog,
     PublishedVersion? publishedVersion,
     LanguageCatalog? catalog,
+    WriteVersionFile? writeVersionFile,
   }) : _publishedVersion = publishedVersion ?? PublishedVersion(ggLog: ggLog),
        _catalog = catalog,
+       _writeVersionFile =
+           writeVersionFile ?? WriteVersionFile(ggLog: ggLog, catalog: catalog),
        super(
          name: 'prepare-next-version',
          description: 'Creates a new version in the package manifest.',
@@ -146,6 +150,16 @@ class PrepareNextVersion extends DirCommand<void> {
       );
       await dartManifest.writeVersion(next);
     }
+
+    // Keep the generated version constant in step with the manifest. This has
+    // to happen here and not only in the test suite: »do publish« bumps the
+    // version, commits, and then uploads without running the tests again, so
+    // the published artifact would otherwise report the previous version.
+    await _writeVersionFile.apply(
+      directory: directory,
+      ggLog: ggLog,
+      version: next.toString(),
+    );
   }
 
   // ...........................................................................
@@ -247,6 +261,9 @@ class PrepareNextVersion extends DirCommand<void> {
 
   // ...........................................................................
   final PublishedVersion _publishedVersion;
+
+  // ...........................................................................
+  final WriteVersionFile _writeVersionFile;
 
   // ...........................................................................
   /// Detects the manifest, ensures it exists and carries a version, and
