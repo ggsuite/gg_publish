@@ -9,6 +9,7 @@ import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:gg_git/gg_git_test_helpers.dart';
 import 'package:gg_publish/gg_publish.dart';
+import 'package:gg_version/gg_version.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
@@ -148,6 +149,74 @@ void main() async {
           // … and the Dart side advances in lock-step.
           final pubspec = await File('${d.path}/pubspec.yaml').readAsString();
           expect(pubspec, contains('version: 1.2.4'));
+        });
+      });
+
+      group('should write the generated version file', () {
+        test(
+          'carrying the version being released, not the previous one',
+          () async {
+            // »do publish« bumps, commits and then uploads without running the
+            // tests again, so the generated constant has to be written here or
+            // the published artifact would report the previous version.
+            mockPublishedVersion();
+
+            await prepareNextVersion.apply(
+              ggLog: ggLog,
+              directory: d,
+              increment: VersionIncrement.patch,
+            );
+
+            final name = RegExp(r'^name:\s*(\S+)', multiLine: true)
+                .firstMatch(
+                  await File('${d.path}/pubspec.yaml').readAsString(),
+                )!
+                .group(1)!;
+            final slug = versionFileSlug(name);
+            final identifier = versionFileIdentifier(slug);
+
+            final generated = File('${d.path}/lib/src/${slug}_version.dart');
+            expect(generated.existsSync(), isTrue);
+            expect(
+              await generated.readAsString(),
+              contains("const String $identifier = '1.2.4';"),
+            );
+
+            // The self-healing mirror test comes with it, otherwise gg_test
+            // fails the »tests« check before running anything.
+            expect(
+              File('${d.path}/test/${slug}_version_test.dart').existsSync(),
+              isTrue,
+            );
+          },
+        );
+
+        test('for both languages of a bridge', () async {
+          await File(
+            '${d.path}/package.json',
+          ).writeAsString('{"name": "@org/bridge", "version": "1.2.3"}');
+          await File('${d.path}/tsconfig.json').writeAsString('{}');
+          mockPublishedVersion();
+
+          await prepareNextVersion.apply(
+            ggLog: ggLog,
+            directory: d,
+            increment: VersionIncrement.patch,
+          );
+
+          expect(
+            await File('${d.path}/src/bridge_version.ts').readAsString(),
+            contains("export const bridgeVersion = '1.2.4';"),
+          );
+
+          final name = RegExp(r'^name:\s*(\S+)', multiLine: true)
+              .firstMatch(await File('${d.path}/pubspec.yaml').readAsString())!
+              .group(1)!;
+          final slug = versionFileSlug(name);
+          expect(
+            await File('${d.path}/lib/src/${slug}_version.dart').readAsString(),
+            contains("= '1.2.4';"),
+          );
         });
       });
     });
