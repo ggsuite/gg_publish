@@ -1,0 +1,10 @@
+{
+  "issue_id": "24_no_double_branch_delete",
+  "description": "Don't delete branches twice",
+  "repositories": [
+    {
+      "name": "gg_publish",
+      "url": "git@github.com:ggsuite/gg_publish.git"
+    }
+  ]
+}
