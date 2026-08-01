@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Stop publishing when warnings happen
+
 ## 3.8.4 - 2026-07-30
 
 ## 3.8.3 - 2026-07-30

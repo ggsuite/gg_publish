@@ -137,17 +137,23 @@ class Publish extends DirCommand<void> {
     if (type.isDartFamily) {
       final catalog = _catalog ?? await LanguageCatalog.load();
       final command = catalog.spec(type).command('publish');
-      await _publishCaptured(
-        directory,
-        ggLog,
-        command.exec ?? command.tool!,
-        <String>[
-          ...command.args,
-          // `dart pub publish` prompts unless forced.
-          if (!askBeforePublishing) '--force',
-        ],
-        command.runInShell,
-      );
+      final executable = command.exec ?? command.tool!;
+
+      // Validate first: a dry run surfaces pub's warnings without uploading
+      // anything. Only when it is clean do we publish for real - and then with
+      // `--skip-validation`, because the validation already happened here and
+      // rerunning it would just repeat the same checks.
+      await _dryRun(directory, ggLog, executable, <String>[
+        ...command.args,
+        '--dry-run',
+      ], command.runInShell);
+
+      await _publishCaptured(directory, ggLog, executable, <String>[
+        ...command.args,
+        '--skip-validation',
+        // `dart pub publish` prompts unless forced.
+        if (!askBeforePublishing) '--force',
+      ], command.runInShell);
     } else {
       // TypeScript: publish with the project's actual package manager
       // (pnpm/yarn/npm), and run it *interactively* by inheriting the
@@ -162,6 +168,90 @@ class Publish extends DirCommand<void> {
       ]);
     }
   }
+
+  // ...........................................................................
+  /// Runs the publish command with `--dry-run` and breaks the publish flow
+  /// when the validation reports a warning. The warning is printed in red,
+  /// with the paths it mentions highlighted in blue.
+  Future<void> _dryRun(
+    Directory directory,
+    GgLog ggLog,
+    String executable,
+    List<String> args,
+    bool runInShell,
+  ) async {
+    final result = await _processWrapper.run(
+      executable,
+      args,
+      workingDirectory: directory.path,
+      runInShell: runInShell,
+    );
+
+    // pub writes the validation report to stderr, but not every tool does -
+    // inspect both streams.
+    final output = '${result.stdout}\n${result.stderr}';
+    final warning = _extractWarning(output);
+
+    if (warning != null) {
+      ggLog(red(_highlightPaths(warning)));
+      throw Exception(
+        'Publishing was stopped because »$executable ${args.join(' ')}« '
+        'reported a warning. Fix it, or exclude the files using a '
+        '.pubignore.',
+      );
+    }
+
+    if (result.exitCode != 0) {
+      final detail = output.trim();
+      throw Exception(
+        '»$executable ${args.join(' ')}« failed with exit code '
+        '${result.exitCode}${detail.isEmpty ? '' : ':\n$detail'}',
+      );
+    }
+  }
+
+  // ...........................................................................
+  /// Returns the warning block of a `--dry-run` [output], or null when the
+  /// dry run reported no warnings.
+  static String? _extractWarning(String output) {
+    final lines = output.split('\n');
+    final start = lines.indexWhere(
+      (l) => l.contains('Package validation found the following'),
+    );
+    if (start == -1) {
+      // A summary without a report still means the package is not clean.
+      // »Package has 0 warnings.« is the clean case and must not break.
+      for (final line in lines) {
+        final match = RegExp(r'Package has (\d+) warning').firstMatch(line);
+        if (match != null && match[1] != '0') {
+          return line.trim();
+        }
+      }
+      return null;
+    }
+
+    // The report ends where pub starts summarizing again.
+    final end = lines.indexWhere(
+      (l) => l.contains('The server may enforce additional checks'),
+      start,
+    );
+
+    final block = lines.sublist(start, end == -1 ? lines.length : end);
+    return block.join('\n').trim();
+  }
+
+  // ...........................................................................
+  /// Colors every path-like token of [text] blue, so the offending files stand
+  /// out within the red warning.
+  static String _highlightPaths(String text) => text.replaceAllMapped(
+    RegExp(r'[^\s`]+'),
+    (match) {
+      final token = match[0]!;
+      final isPath =
+          token.contains('/') || RegExp(r'^\.?[\w-]+\.[\w-]+$').hasMatch(token);
+      return isPath ? blue(token) : token;
+    },
+  );
 
   // ...........................................................................
   /// Publishes by capturing the tool's output live. Used for Dart/Flutter,

@@ -38,11 +38,33 @@ void main() {
   }
 
   // ...........................................................................
+  /// Stubs the `--dry-run` validation preceding every Dart publish.
+  void mockDryRun({
+    String stdout = 'Package has 0 warnings.',
+    String stderr = '',
+    int exitCode = 0,
+    String executable = 'dart',
+    bool runInShell = false,
+    Directory? directory,
+  }) {
+    when(
+      () => processWrapper.run(
+        executable,
+        ['pub', 'publish', '--dry-run'],
+        workingDirectory: (directory ?? d).path,
+        runInShell: runInShell,
+      ),
+    ).thenAnswer((_) async => ProcessResult(0, exitCode, stdout, stderr));
+  }
+
+  // ...........................................................................
   void mockProcess({required int result, required bool force}) {
+    mockDryRun();
     when(
       () => processWrapper.start('dart', [
         'pub',
         'publish',
+        '--skip-validation',
         if (force) '--force',
       ], workingDirectory: d.path),
     ).thenAnswer((_) => Future.value(process));
@@ -165,6 +187,7 @@ void main() {
             () => processWrapper.start('dart', [
               'pub',
               'publish',
+              '--skip-validation',
             ], workingDirectory: d.path),
           ]);
         });
@@ -182,10 +205,11 @@ void main() {
           when(
             () => isVersionPrepared.get(ggLog: ggLog, directory: d),
           ).thenAnswer((_) async => true);
+          mockDryRun(runInShell: true);
           when(
             () => processWrapper.start(
               'dart',
-              ['pub', 'publish'],
+              ['pub', 'publish', '--skip-validation'],
               workingDirectory: d.path,
               runInShell: true,
             ),
@@ -257,7 +281,9 @@ void main() {
           // Check the exception
           expect(
             exceptionMessage,
-            contains('»dart pub publish« failed with exit code 1'),
+            contains(
+              '»dart pub publish --skip-validation« failed with exit code 1',
+            ),
           );
         });
 
@@ -284,7 +310,9 @@ void main() {
           // Check the exception
           expect(
             exceptionMessage,
-            contains('»dart pub publish« failed with exit code 0'),
+            contains(
+              '»dart pub publish --skip-validation« failed with exit code 0',
+            ),
           );
 
           expect(exceptionMessage, contains('Error: Something went wrong'));
@@ -336,6 +364,108 @@ void main() {
           expect(exceptionMessage, contains('VERY-LAST-LINE'));
           expect(exceptionMessage, isNot(contains('VERY-FIRST-LINE')));
         });
+      });
+
+      group('with »--dry-run«', () {
+        const warning = '''
+Package validation found the following potential issue:
+* 2 checked-in files are ignored by a `.gitignore`.
+
+  Files that are checked in while gitignored:
+
+  .gg/.gg.json
+  .gg/.ticket.json
+
+The server may enforce additional checks.
+
+Package has 1 warning.''';
+
+        test(
+          'breaks the publishing when the dry run reports a warning',
+          () async {
+            mockIsVersionPrepared(true);
+            mockDryRun(stdout: '', stderr: warning, exitCode: 65);
+
+            late String exceptionMessage;
+            await publish
+                .exec(directory: d, ggLog: ggLog)
+                .onError((error, _) => exceptionMessage = error.toString());
+
+            expect(exceptionMessage, contains('reported a warning'));
+
+            // The warning is printed in red, the paths within it in blue.
+            final logged = messages.firstWhere((m) => m.contains('.gg.json'));
+            expect(logged, startsWith('\x1B[31m'));
+            expect(logged, contains('\x1B[34m.gg/.gg.json'));
+            expect(logged, contains('\x1B[34m.gg/.ticket.json'));
+            // The summary line is not part of the printed report.
+            expect(logged, isNot(contains('additional checks')));
+
+            // The real publish must not have been started.
+            verifyNever(
+              () => processWrapper.start(
+                any(),
+                any(),
+                workingDirectory: any(named: 'workingDirectory'),
+              ),
+            );
+          },
+        );
+
+        test(
+          'breaks the publishing on a warning summary without a report',
+          () async {
+            mockIsVersionPrepared(true);
+            mockDryRun(stdout: 'Package has 2 warnings.', exitCode: 65);
+
+            late String exceptionMessage;
+            await publish
+                .exec(directory: d, ggLog: ggLog)
+                .onError((error, _) => exceptionMessage = error.toString());
+
+            expect(exceptionMessage, contains('reported a warning'));
+          },
+        );
+
+        test(
+          'throws when the dry run fails without reporting a warning',
+          () async {
+            mockIsVersionPrepared(true);
+            mockDryRun(stderr: 'Could not resolve dependencies', exitCode: 1);
+
+            late String exceptionMessage;
+            await publish
+                .exec(directory: d, ggLog: ggLog)
+                .onError((error, _) => exceptionMessage = error.toString());
+
+            expect(
+              exceptionMessage,
+              contains('»dart pub publish --dry-run« failed with exit code 1'),
+            );
+            expect(
+              exceptionMessage,
+              contains('Could not resolve dependencies'),
+            );
+          },
+        );
+
+        test(
+          'throws without detail when the failing dry run stays silent',
+          () async {
+            mockIsVersionPrepared(true);
+            mockDryRun(exitCode: 1, stdout: '');
+
+            late String exceptionMessage;
+            await publish
+                .exec(directory: d, ggLog: ggLog)
+                .onError((error, _) => exceptionMessage = error.toString());
+
+            expect(
+              exceptionMessage,
+              contains('»dart pub publish --dry-run« failed with exit code 1'),
+            );
+          },
+        );
       });
 
       group('for a TypeScript project (published interactively)', () {
