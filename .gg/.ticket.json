@@ -1,0 +1,11 @@
+{
+  "issue_id": "59",
+  "description": "Take base version from git tags when publish_to is none",
+  "gg_version": "14.0.1",
+  "repositories": [
+    {
+      "name": "gg_publish",
+      "url": "git@github.com:ggsuite/gg_publish.git"
+    }
+  ]
+}
