@@ -14,6 +14,7 @@ import 'package:gg_log/gg_log.dart';
 import 'package:gg_process/gg_process.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
+import 'package:pub_semver/pub_semver.dart';
 
 // #############################################################################
 /// Base class for all ggGit commands
@@ -28,8 +29,10 @@ class Publish extends DirCommand<void> {
     GgProcessWrapper processWrapper = const GgProcessWrapper(),
     String? Function()? readLineFromStdIn,
     LanguageCatalog? catalog,
+    PublishedVersion? publishedVersion,
   }) : _isVersionPrepared =
            isVersionPrepared ?? IsVersionPrepared(ggLog: ggLog),
+       _publishedVersion = publishedVersion ?? PublishedVersion(ggLog: ggLog),
        _removeVersionTag =
            removeVersionTag ??
            RemoveVersionTag(
@@ -89,6 +92,7 @@ class Publish extends DirCommand<void> {
   // ######################
 
   final IsVersionPrepared _isVersionPrepared;
+  final PublishedVersion _publishedVersion;
   final RemoveVersionTag _removeVersionTag;
   final GgProcessWrapper _processWrapper;
   final String? Function() _readLineFromStdIn;
@@ -108,14 +112,134 @@ class Publish extends DirCommand<void> {
       throw Exception('Version is not prepared.');
     }
 
+    // At least one version must already be on the registry: a first-time
+    // publish needs authentication, access rights and the package creation
+    // to be sorted out with the registry interactively — the user does that
+    // manually, gg continues afterwards.
+    final publishedManually = await _ensureFirstVersionIsInRegistry(
+      directory: directory,
+      ggLog: ggLog,
+    );
+
     // A previous publish may have failed after tagging the release. That tag
     // points at a commit this run replaces, so remove it locally and on the
     // remote — the tag step of the publish flow recreates it on the new
     // release commit.
     await _removeVersionTag.get(directory: directory, ggLog: ggLog);
 
-    // Publish
-    await _publish(directory, ggLog, askBeforePublishing);
+    // Publish. When the user just published the current version manually,
+    // uploading it again would be rejected by the registry.
+    if (!publishedManually) {
+      await _publish(directory, ggLog, askBeforePublishing);
+    }
+  }
+
+  // ...........................................................................
+  /// Makes sure at least one version of the package is available on its
+  /// registry. When the package was never published, the user is asked to
+  /// publish the first version manually directly out of the current working
+  /// folder; gg continues after the user confirmed. Returns true when the
+  /// user published the current version manually this way — the automated
+  /// upload must be skipped then. Packages without a public registry are
+  /// not checked.
+  Future<bool> _ensureFirstVersionIsInRegistry({
+    required Directory directory,
+    required GgLog ggLog,
+  }) async {
+    final versions = await _publishedVersion.registryVersions(
+      directory: directory,
+    );
+
+    // Packages without a public registry (null) have nothing to check;
+    // packages with at least one published version are fine as well.
+    if (versions == null || versions.isNotEmpty) {
+      return false;
+    }
+
+    final type = checkProjectType(directory);
+    final registry = type.isDartFamily ? 'pub.dev' : 'npm';
+    final name = await _packageName(directory);
+
+    ggLog(
+      yellow(
+        '»$name« has no version published on $registry yet.\n'
+        'Please publish the first version manually directly out of the '
+        'current working folder:',
+      ),
+    );
+    ggLog(blue('  cd ${directory.absolute.path}'));
+    ggLog(blue('  ${await _manualPublishCommand(directory, type)}'));
+
+    while (true) {
+      ggLog(yellow('Press ⏎ once the package is published, »q« + ⏎ to abort.'));
+      final answer = (_readLineFromStdIn() ?? '').trim().toLowerCase();
+      if (answer == 'q') {
+        throw Exception(
+          'Publishing aborted: »$name« has no version on $registry.',
+        );
+      }
+
+      final versionsNow =
+          await _publishedVersion.registryVersions(directory: directory) ??
+          <Version>[];
+
+      if (versionsNow.isNotEmpty) {
+        ggLog(yellow('»$name« is now available on $registry. Continuing.'));
+
+        // Only when the user published the *current* version the automated
+        // upload has to be skipped. A different version (e.g. an earlier
+        // one) still needs the regular upload — which works now that the
+        // package exists on the registry.
+        final catalog = _catalog ?? await LanguageCatalog.load();
+        final currentVersion = await Manifest.detect(
+          directory,
+          catalog,
+          treatBridgeAsTypeScript: true,
+        ).readVersion();
+        return versionsNow.contains(currentVersion);
+      }
+
+      ggLog(
+        yellow(
+          '»$name« is not yet visible on $registry. A fresh publish can '
+          'take a few minutes to appear. Please try again.',
+        ),
+      );
+    }
+  }
+
+  // ...........................................................................
+  /// The name of the package in [directory], read from its manifest.
+  Future<String> _packageName(Directory directory) async {
+    final catalog = _catalog ?? await LanguageCatalog.load();
+    return await Manifest.detect(
+      directory,
+      catalog,
+      treatBridgeAsTypeScript: true,
+    ).readName();
+  }
+
+  // ...........................................................................
+  /// The shell command the user executes to publish the package manually.
+  /// Dart/Flutter packages publish with the catalog's publish command, npm
+  /// packages with pnpm.
+  Future<String> _manualPublishCommand(
+    Directory directory,
+    ProjectType type,
+  ) async {
+    if (type.isDartFamily) {
+      final catalog = _catalog ?? await LanguageCatalog.load();
+      return catalog.spec(type).command('publish').label;
+    }
+
+    // A scoped package is private by default on npm — the first publish is
+    // rejected without »--access public«. »--no-git-checks« is needed
+    // because gg publishes from a feature branch.
+    final name = await _packageName(directory);
+    final access = name.startsWith('@') ? ' --access public' : '';
+    final distTag = await _npmDistTagArgs(directory);
+    final tag = distTag.isEmpty ? '' : ' ${distTag.join(' ')}';
+    return 'pnpm publish --no-git-checks$access$tag';
   }
 
   // ...........................................................................

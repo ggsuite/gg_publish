@@ -13,10 +13,11 @@ import 'package:gg_lang/gg_lang.dart';
 import 'package:gg_process/gg_process.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 
 void main() {
-  final catalog = LanguageCatalog.fromString(_catalogJson);
+  final catalog = LanguageCatalog.fromString(catalogJson);
 
   final messages = <String>[];
   final ggLog = messages.add;
@@ -26,6 +27,7 @@ void main() {
   late GgFakeProcess process;
   late IsVersionPrepared isVersionPrepared;
   late MockRemoveVersionTag removeVersionTag;
+  late MockPublishedVersion publishedVersion;
   late String? stdInValue;
 
   // ...........................................................................
@@ -34,6 +36,22 @@ void main() {
       when(
         () => isVersionPrepared.get(ggLog: ggLog, directory: d),
       ).thenAnswer((_) => Future.value(value));
+    });
+  }
+
+  // ...........................................................................
+  /// Makes the registry report the given version lists, one per call.
+  /// The last list is repeated for further calls. Null means »the package
+  /// has no public registry«.
+  void mockRegistryVersions(List<List<Version>?> results) {
+    var call = 0;
+    when(
+      () =>
+          publishedVersion.registryVersions(directory: any(named: 'directory')),
+    ).thenAnswer((_) async {
+      final result = results[call < results.length ? call : results.length - 1];
+      call++;
+      return result;
     });
   }
 
@@ -84,8 +102,13 @@ void main() {
     isVersionPrepared = MockIsVersionPrepared();
     processWrapper = MockGgProcessWrapper();
     removeVersionTag = MockRemoveVersionTag();
+    publishedVersion = MockPublishedVersion();
     registerFallbackValue(d);
     removeVersionTag.mockGet(result: false, ggLog: ggLog);
+    // By default the package is already available on the registry.
+    mockRegistryVersions([
+      [Version(0, 9, 0)],
+    ]);
     publish = Publish(
       ggLog: ggLog,
       processWrapper: processWrapper,
@@ -93,6 +116,7 @@ void main() {
       removeVersionTag: removeVersionTag,
       readLineFromStdIn: () => stdInValue,
       catalog: catalog,
+      publishedVersion: publishedVersion,
     );
   });
 
@@ -233,7 +257,8 @@ void main() {
             isVersionPrepared: isVersionPrepared,
             removeVersionTag: removeVersionTag,
             readLineFromStdIn: () => stdInValue,
-            catalog: LanguageCatalog.fromString(_shellCatalogJson),
+            catalog: LanguageCatalog.fromString(shellCatalogJson),
+            publishedVersion: publishedVersion,
           );
           when(
             () => isVersionPrepared.get(ggLog: ggLog, directory: d),
@@ -397,6 +422,192 @@ void main() {
           expect(exceptionMessage, contains('VERY-LAST-LINE'));
           expect(exceptionMessage, isNot(contains('VERY-FIRST-LINE')));
         });
+      });
+
+      group('when the package is not yet in the registry', () {
+        Publish publishWithAnswers(List<String?> answers) => Publish(
+          ggLog: ggLog,
+          processWrapper: processWrapper,
+          isVersionPrepared: isVersionPrepared,
+          removeVersionTag: removeVersionTag,
+          readLineFromStdIn: () => answers.removeAt(0),
+          catalog: catalog,
+          publishedVersion: publishedVersion,
+        );
+
+        test('asks for a manual first publish and skips the automated '
+            'upload when the user published the current version', () async {
+          mockIsVersionPrepared(true);
+          mockRegistryVersions([
+            <Version>[],
+            [Version(1, 0, 0)],
+          ]);
+
+          await publishWithAnswers(['']).exec(directory: d, ggLog: ggLog);
+
+          final log = messages.join('\n');
+          expect(log, contains('»test« has no version published on pub.dev'));
+          expect(
+            log,
+            contains(
+              'publish the first version manually directly out of the '
+              'current working folder',
+            ),
+          );
+          expect(log, contains('cd ${d.absolute.path}'));
+          expect(log, contains('dart pub publish'));
+          expect(log, contains('»test« is now available on pub.dev'));
+
+          // The user published 1.0.0 - the current version - manually, so
+          // the automated upload must not run. The stale-tag cleanup that
+          // precedes the upload still does.
+          verify(() => removeVersionTag.get(directory: d, ggLog: ggLog));
+          verifyNever(
+            () => processWrapper.start(
+              any(),
+              any(),
+              workingDirectory: any(named: 'workingDirectory'),
+            ),
+          );
+        });
+
+        test('runs the automated upload when the user published '
+            'a different version manually', () async {
+          mockIsVersionPrepared(true);
+          mockRegistryVersions([
+            <Version>[],
+            [Version(0, 5, 0)],
+          ]);
+          mockProcess(result: 0, force: false);
+
+          final future = publishWithAnswers([
+            '',
+          ]).exec(directory: d, ggLog: ggLog);
+          await Future<void>.delayed(Duration.zero);
+          process.exit(0);
+          await future;
+
+          // 0.5.0 is on the registry now, but the current version 1.0.0
+          // still needs the regular upload.
+          verify(
+            () => processWrapper.start('dart', [
+              'pub',
+              'publish',
+              '--skip-validation',
+            ], workingDirectory: d.path),
+          );
+        });
+
+        test('asks again while the package is not yet visible', () async {
+          mockIsVersionPrepared(true);
+          mockRegistryVersions([
+            <Version>[],
+            <Version>[],
+            [Version(1, 0, 0)],
+          ]);
+
+          await publishWithAnswers(['', '']).exec(directory: d, ggLog: ggLog);
+
+          expect(
+            messages.join('\n'),
+            contains('»test« is not yet visible on pub.dev'),
+          );
+        });
+
+        test('treats an unresolvable registry re-check like »not yet '
+            'visible«', () async {
+          mockIsVersionPrepared(true);
+          mockRegistryVersions([
+            <Version>[],
+            null,
+            [Version(1, 0, 0)],
+          ]);
+
+          await publishWithAnswers(['', '']).exec(directory: d, ggLog: ggLog);
+
+          expect(
+            messages.join('\n'),
+            contains('»test« is not yet visible on pub.dev'),
+          );
+        });
+
+        test('aborts when the user enters »q«', () async {
+          mockIsVersionPrepared(true);
+          mockRegistryVersions([<Version>[]]);
+
+          await expectLater(
+            publishWithAnswers(['q']).exec(directory: d, ggLog: ggLog),
+            throwsA(
+              isA<Exception>().having(
+                (e) => e.toString(),
+                'message',
+                contains(
+                  'Publishing aborted: »test« has no version on pub.dev.',
+                ),
+              ),
+            ),
+          );
+        });
+
+        test('shows a pnpm command with »--access public« and the dist tag '
+            'for a scoped prerelease npm package', () async {
+          final tsDir = await Directory.systemTemp.createTemp();
+          File(
+            '${tsDir.path}/package.json',
+          ).writeAsStringSync('{"name": "@org/ts", "version": "1.1.0-rc.1"}');
+          File('${tsDir.path}/tsconfig.json').writeAsStringSync('{}');
+
+          when(
+            () => isVersionPrepared.get(ggLog: ggLog, directory: tsDir),
+          ).thenAnswer((_) async => true);
+          mockRegistryVersions([
+            <Version>[],
+            [Version.parse('1.1.0-rc.1')],
+          ]);
+
+          await publishWithAnswers(['']).exec(directory: tsDir, ggLog: ggLog);
+
+          final log = messages.join('\n');
+          expect(log, contains('»@org/ts« has no version published on npm'));
+          expect(
+            log,
+            contains(
+              'pnpm publish --no-git-checks --access public '
+              '--tag rc',
+            ),
+          );
+
+          await tsDir.delete(recursive: true);
+        });
+
+        test(
+          'shows a plain pnpm command for an unscoped stable npm package',
+          () async {
+            final tsDir = await Directory.systemTemp.createTemp();
+            File(
+              '${tsDir.path}/package.json',
+            ).writeAsStringSync('{"name": "ts", "version": "1.0.0"}');
+            File('${tsDir.path}/tsconfig.json').writeAsStringSync('{}');
+
+            when(
+              () => isVersionPrepared.get(ggLog: ggLog, directory: tsDir),
+            ).thenAnswer((_) async => true);
+            mockRegistryVersions([
+              <Version>[],
+              [Version(1, 0, 0)],
+            ]);
+
+            await publishWithAnswers(['']).exec(directory: tsDir, ggLog: ggLog);
+
+            final log = messages.join('\n');
+            expect(log, contains('cd ${tsDir.absolute.path}'));
+            expect(log, contains('pnpm publish --no-git-checks'));
+            expect(log, isNot(contains('--access public')));
+            expect(log, isNot(contains('--tag')));
+
+            await tsDir.delete(recursive: true);
+          },
+        );
       });
 
       group('with »--dry-run«', () {
@@ -678,7 +889,7 @@ const _manifest = '''
 
 // A catalog whose Dart publish command asks to run through a shell, so the
 // captured publish path exercises its runInShell branch.
-const _shellCatalogJson =
+const shellCatalogJson =
     '''
 {
   "schemaVersion": 1,
@@ -699,7 +910,7 @@ const _shellCatalogJson =
 }
 ''';
 
-const _catalogJson =
+const catalogJson =
     '''
 {
   "schemaVersion": 1,
