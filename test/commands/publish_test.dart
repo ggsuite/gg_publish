@@ -82,7 +82,6 @@ void main() {
       () => processWrapper.start('dart', [
         'pub',
         'publish',
-        '--skip-validation',
         if (force) '--force',
       ], workingDirectory: d.path),
     ).thenAnswer((_) => Future.value(process));
@@ -194,9 +193,9 @@ void main() {
         });
 
         test('although »dart pub publish« writes notices to stderr', () async {
-          // `dart pub` uses stderr for progress and informational output, e.g.
-          // »Running with `skip-validation`«. That must not turn a successful
-          // publish (exit code 0) into a failure.
+          // `dart pub` uses stderr for progress and informational output,
+          // e.g. »Uploading...«. That must not turn a successful publish
+          // (exit code 0) into a failure.
           mockIsVersionPrepared(true);
           mockProcess(result: 0, force: false);
 
@@ -212,10 +211,7 @@ void main() {
           await Future<void>.delayed(Duration.zero);
 
           // Let the process write a notice to stderr
-          process.pushToStderr.add(
-            'Running with `skip-validation`. '
-            'No client-side validation is done.',
-          );
+          process.pushToStderr.add('Uploading... (0.5s)');
           await Future<void>.delayed(Duration.zero);
 
           // Let the process succeed
@@ -244,7 +240,6 @@ void main() {
             () => processWrapper.start('dart', [
               'pub',
               'publish',
-              '--skip-validation',
             ], workingDirectory: d.path),
           ]);
         });
@@ -267,7 +262,7 @@ void main() {
           when(
             () => processWrapper.start(
               'dart',
-              ['pub', 'publish', '--skip-validation'],
+              ['pub', 'publish'],
               workingDirectory: d.path,
               runInShell: true,
             ),
@@ -344,9 +339,7 @@ void main() {
           // Check the exception
           expect(
             exceptionMessage,
-            contains(
-              '»dart pub publish --skip-validation« failed with exit code 1',
-            ),
+            contains('»dart pub publish« failed with exit code 1'),
           );
 
           expect(exceptionMessage, contains('Error: Something went wrong'));
@@ -370,9 +363,7 @@ void main() {
           // Check the exception
           expect(
             exceptionMessage,
-            contains(
-              '»dart pub publish --skip-validation« failed with exit code 1',
-            ),
+            contains('»dart pub publish« failed with exit code 1'),
           );
         });
 
@@ -493,7 +484,6 @@ void main() {
             () => processWrapper.start('dart', [
               'pub',
               'publish',
-              '--skip-validation',
             ], workingDirectory: d.path),
           );
         });

@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.9.1 - 2026-08-01
+
+### Changed
+
+- Fix: Skipping unchanged repos from publishing does not work
+
 ## 3.9.0 - 2026-08-01
 
 ### Added
