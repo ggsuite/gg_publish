@@ -17,7 +17,7 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 
 void main() {
-  final catalog = LanguageCatalog.fromString(_catalogJson);
+  final catalog = LanguageCatalog.fromString(catalogJson);
 
   final messages = <String>[];
   final ggLog = messages.add;
@@ -56,11 +56,33 @@ void main() {
   }
 
   // ...........................................................................
+  /// Stubs the `--dry-run` validation preceding every Dart publish.
+  void mockDryRun({
+    String stdout = 'Package has 0 warnings.',
+    String stderr = '',
+    int exitCode = 0,
+    String executable = 'dart',
+    bool runInShell = false,
+    Directory? directory,
+  }) {
+    when(
+      () => processWrapper.run(
+        executable,
+        ['pub', 'publish', '--dry-run'],
+        workingDirectory: (directory ?? d).path,
+        runInShell: runInShell,
+      ),
+    ).thenAnswer((_) async => ProcessResult(0, exitCode, stdout, stderr));
+  }
+
+  // ...........................................................................
   void mockProcess({required int result, required bool force}) {
+    mockDryRun();
     when(
       () => processWrapper.start('dart', [
         'pub',
         'publish',
+        '--skip-validation',
         if (force) '--force',
       ], workingDirectory: d.path),
     ).thenAnswer((_) => Future.value(process));
@@ -171,6 +193,39 @@ void main() {
           }
         });
 
+        test('although »dart pub publish« writes notices to stderr', () async {
+          // `dart pub` uses stderr for progress and informational output, e.g.
+          // »Running with `skip-validation`«. That must not turn a successful
+          // publish (exit code 0) into a failure.
+          mockIsVersionPrepared(true);
+          mockProcess(result: 0, force: false);
+
+          bool isDone = false;
+          Object? exception;
+          publish
+              .exec(directory: d, ggLog: ggLog)
+              .then((value) => isDone = true)
+              .onError((error, _) {
+                exception = error;
+                return false;
+              });
+          await Future<void>.delayed(Duration.zero);
+
+          // Let the process write a notice to stderr
+          process.pushToStderr.add(
+            'Running with `skip-validation`. '
+            'No client-side validation is done.',
+          );
+          await Future<void>.delayed(Duration.zero);
+
+          // Let the process succeed
+          process.exit(0);
+          await Future<void>.delayed(Duration.zero);
+
+          expect(exception, isNull);
+          expect(isDone, isTrue);
+        });
+
         test('after removing an already existing version tag', () async {
           // A publish that failed after tagging leaves the tag on a commit
           // this run replaces. It must be gone - locally and on the remote -
@@ -189,6 +244,7 @@ void main() {
             () => processWrapper.start('dart', [
               'pub',
               'publish',
+              '--skip-validation',
             ], workingDirectory: d.path),
           ]);
         });
@@ -201,16 +257,17 @@ void main() {
             isVersionPrepared: isVersionPrepared,
             removeVersionTag: removeVersionTag,
             readLineFromStdIn: () => stdInValue,
-            catalog: LanguageCatalog.fromString(_shellCatalogJson),
+            catalog: LanguageCatalog.fromString(shellCatalogJson),
             publishedVersion: publishedVersion,
           );
           when(
             () => isVersionPrepared.get(ggLog: ggLog, directory: d),
           ).thenAnswer((_) async => true);
+          mockDryRun(runInShell: true);
           when(
             () => processWrapper.start(
               'dart',
-              ['pub', 'publish'],
+              ['pub', 'publish', '--skip-validation'],
               workingDirectory: d.path,
               runInShell: true,
             ),
@@ -264,6 +321,37 @@ void main() {
           );
         });
 
+        test('and reports the stderr of a failing publish', () async {
+          // Setup consistent versions
+          mockIsVersionPrepared(true);
+          mockProcess(result: 0, force: false);
+
+          // Start the process
+          late String exceptionMessage;
+          publish.exec(directory: d, ggLog: ggLog).onError((error, stackTrace) {
+            exceptionMessage = error.toString();
+          });
+          await Future<void>.delayed(Duration.zero);
+
+          // Let the process write an error to stderr
+          process.pushToStderr.add('Error: Something went wrong');
+          await Future<void>.delayed(Duration.zero);
+
+          // Let the process fail
+          process.exit(1);
+          await Future<void>.delayed(Duration.zero);
+
+          // Check the exception
+          expect(
+            exceptionMessage,
+            contains(
+              '»dart pub publish --skip-validation« failed with exit code 1',
+            ),
+          );
+
+          expect(exceptionMessage, contains('Error: Something went wrong'));
+        });
+
         test('if »dart pub publish« has exit code != 0', () async {
           // Setup consistent versions
           mockIsVersionPrepared(true);
@@ -282,37 +370,10 @@ void main() {
           // Check the exception
           expect(
             exceptionMessage,
-            contains('»dart pub publish« failed with exit code 1'),
+            contains(
+              '»dart pub publish --skip-validation« failed with exit code 1',
+            ),
           );
-        });
-
-        test('if »dart pub publish« returns errors', () async {
-          // Setup consistent versions
-          mockIsVersionPrepared(true);
-          mockProcess(result: 0, force: false);
-
-          // Start the process
-          late String exceptionMessage;
-          publish.exec(directory: d, ggLog: ggLog).onError((error, stackTrace) {
-            exceptionMessage = error.toString();
-          });
-          await Future<void>.delayed(Duration.zero);
-
-          // Let the process return errors
-          process.pushToStderr.add('Error: Something went wrong');
-          await Future<void>.delayed(Duration.zero);
-
-          // Let the process not fail
-          process.exit(0);
-          await Future<void>.delayed(Duration.zero);
-
-          // Check the exception
-          expect(
-            exceptionMessage,
-            contains('»dart pub publish« failed with exit code 0'),
-          );
-
-          expect(exceptionMessage, contains('Error: Something went wrong'));
         });
 
         test('and surfaces the output tail when stderr is empty', () async {
@@ -432,6 +493,7 @@ void main() {
             () => processWrapper.start('dart', [
               'pub',
               'publish',
+              '--skip-validation',
             ], workingDirectory: d.path),
           );
         });
@@ -544,6 +606,108 @@ void main() {
             expect(log, isNot(contains('--tag')));
 
             await tsDir.delete(recursive: true);
+          },
+        );
+      });
+
+      group('with »--dry-run«', () {
+        const warning = '''
+Package validation found the following potential issue:
+* 2 checked-in files are ignored by a `.gitignore`.
+
+  Files that are checked in while gitignored:
+
+  .gg/.gg.json
+  .gg/.ticket.json
+
+The server may enforce additional checks.
+
+Package has 1 warning.''';
+
+        test(
+          'breaks the publishing when the dry run reports a warning',
+          () async {
+            mockIsVersionPrepared(true);
+            mockDryRun(stdout: '', stderr: warning, exitCode: 65);
+
+            late String exceptionMessage;
+            await publish
+                .exec(directory: d, ggLog: ggLog)
+                .onError((error, _) => exceptionMessage = error.toString());
+
+            expect(exceptionMessage, contains('reported a warning'));
+
+            // The warning is printed in red, the paths within it in blue.
+            final logged = messages.firstWhere((m) => m.contains('.gg.json'));
+            expect(logged, startsWith('\x1B[31m'));
+            expect(logged, contains('\x1B[34m.gg/.gg.json'));
+            expect(logged, contains('\x1B[34m.gg/.ticket.json'));
+            // The summary line is not part of the printed report.
+            expect(logged, isNot(contains('additional checks')));
+
+            // The real publish must not have been started.
+            verifyNever(
+              () => processWrapper.start(
+                any(),
+                any(),
+                workingDirectory: any(named: 'workingDirectory'),
+              ),
+            );
+          },
+        );
+
+        test(
+          'breaks the publishing on a warning summary without a report',
+          () async {
+            mockIsVersionPrepared(true);
+            mockDryRun(stdout: 'Package has 2 warnings.', exitCode: 65);
+
+            late String exceptionMessage;
+            await publish
+                .exec(directory: d, ggLog: ggLog)
+                .onError((error, _) => exceptionMessage = error.toString());
+
+            expect(exceptionMessage, contains('reported a warning'));
+          },
+        );
+
+        test(
+          'throws when the dry run fails without reporting a warning',
+          () async {
+            mockIsVersionPrepared(true);
+            mockDryRun(stderr: 'Could not resolve dependencies', exitCode: 1);
+
+            late String exceptionMessage;
+            await publish
+                .exec(directory: d, ggLog: ggLog)
+                .onError((error, _) => exceptionMessage = error.toString());
+
+            expect(
+              exceptionMessage,
+              contains('»dart pub publish --dry-run« failed with exit code 1'),
+            );
+            expect(
+              exceptionMessage,
+              contains('Could not resolve dependencies'),
+            );
+          },
+        );
+
+        test(
+          'throws without detail when the failing dry run stays silent',
+          () async {
+            mockIsVersionPrepared(true);
+            mockDryRun(exitCode: 1, stdout: '');
+
+            late String exceptionMessage;
+            await publish
+                .exec(directory: d, ggLog: ggLog)
+                .onError((error, _) => exceptionMessage = error.toString());
+
+            expect(
+              exceptionMessage,
+              contains('»dart pub publish --dry-run« failed with exit code 1'),
+            );
           },
         );
       });
@@ -725,7 +889,7 @@ const _manifest = '''
 
 // A catalog whose Dart publish command asks to run through a shell, so the
 // captured publish path exercises its runInShell branch.
-const _shellCatalogJson =
+const shellCatalogJson =
     '''
 {
   "schemaVersion": 1,
@@ -746,7 +910,7 @@ const _shellCatalogJson =
 }
 ''';
 
-const _catalogJson =
+const catalogJson =
     '''
 {
   "schemaVersion": 1,

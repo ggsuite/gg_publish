@@ -14,6 +14,20 @@ after the package became visible on the registry
 ### Changed
 
 - Make sure package is already published in registry before publishing
+- Merge main
+
+## 3.8.6 - 2026-08-01
+
+### Fixed
+
+- Fix: Publishing fails
+
+## 3.8.5 - 2026-08-01
+
+### Changed
+
+- Stop publishing when warnings happen
+- \#gg: changed references to pub.dev
 
 ## 3.8.4 - 2026-07-30
 
