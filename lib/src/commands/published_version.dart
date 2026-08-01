@@ -85,11 +85,29 @@ class PublishedVersion extends DirCommand<Version> {
     required GgLog ggLog,
     required Directory directory,
   }) async {
-    final resolved = await _resolve(directory: directory);
+    final versions = await registryVersions(directory: directory);
 
     // Not published to a public registry? Return the git version tags.
-    if (resolved == null) {
+    if (versions == null) {
       return _versionFromGit.allVersions(directory: directory, ggLog: ggLog);
+    }
+
+    return versions;
+  }
+
+  // ...........................................................................
+  /// Returns the versions the package in [directory] has published to its
+  /// public registry (pub.dev / npm), including prereleases. Returns null
+  /// for packages without a public registry (`publish_to: none`,
+  /// `private: true` or no manifest at all). An empty list means the
+  /// package was never published to its registry.
+  Future<List<Version>?> registryVersions({
+    required Directory directory,
+  }) async {
+    final resolved = await _resolve(directory: directory);
+
+    if (resolved == null) {
+      return null;
     }
 
     try {

@@ -8,6 +8,7 @@ library;
 
 export 'src/gg_publish.dart';
 export 'src/gg_publish_version.dart';
+export 'src/commands/is_in_registry.dart';
 export 'src/commands/is_published.dart';
 export 'src/commands/is_latest_state_published.dart';
 export 'src/commands/is_upgraded.dart';

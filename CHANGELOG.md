@@ -1,5 +1,21 @@
 # Changelog
 
+## 3.9.0 - 2026-08-01
+
+### Added
+
+- New command »is-in-registry«: checks if at least one version of the
+package is available on its registry (pub.dev / npm)
+- »publish« makes sure at least one version is already on the registry.
+A package that was never published is published manually by the user
+first — the shell commands to execute are shown, the publish continues
+after the package became visible on the registry
+
+### Changed
+
+- Make sure package is already published in registry before publishing
+- Merge main
+
 ## 3.8.6 - 2026-08-01
 
 ### Fixed

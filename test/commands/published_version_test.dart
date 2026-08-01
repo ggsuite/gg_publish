@@ -397,6 +397,83 @@ void main() {
       });
     });
 
+    group('registryVersions(...)', () {
+      test('returns the versions available on the registry', () async {
+        initCommand();
+
+        final uri = Uri.parse('https://pub.dev/api/packages/gg_check');
+        final response = http.Response(
+          '{"latest":{"version":"1.0.2"}, "versions": '
+          '[{"version":"1.0.0"}, {"version":"1.0.2"}]}',
+          200,
+        );
+        when(() => client.get(uri)).thenAnswer((_) async => response);
+
+        final versions = await publishedVersion.registryVersions(directory: d);
+
+        expect(versions, [Version(1, 0, 0), Version(1, 0, 2)]);
+      });
+
+      test('returns an empty list when never published (404)', () async {
+        initCommand();
+
+        final uri = Uri.parse('https://pub.dev/api/packages/gg_check');
+        when(
+          () => client.get(uri),
+        ).thenAnswer((_) async => http.Response('', 404));
+
+        final versions = await publishedVersion.registryVersions(directory: d);
+
+        expect(versions, isEmpty);
+      });
+
+      test('returns null for private packages', () async {
+        initCommand();
+        await initGit(d);
+
+        await addAndCommitVersions(
+          d,
+          pubspec: '1.2.3',
+          changeLog: '1.2.3',
+          gitHead: '2.0.0',
+          appendToPubspec: '\npublish_to: none',
+        );
+
+        final versions = await publishedVersion.registryVersions(directory: d);
+
+        expect(versions, isNull);
+      });
+
+      test('returns null when the directory has no manifest', () async {
+        initCommand();
+        File(join(d.path, 'pubspec.yaml')).deleteSync();
+
+        final versions = await publishedVersion.registryVersions(directory: d);
+
+        expect(versions, isNull);
+      });
+
+      test('wraps registry exceptions', () async {
+        initCommand();
+
+        final uri = Uri.parse('https://pub.dev/api/packages/gg_check');
+        when(() => client.get(uri)).thenThrow(Exception('error'));
+
+        expect(
+          () => publishedVersion.registryVersions(directory: d),
+          throwsA(
+            isA<Exception>().having(
+              (e) => e.toString(),
+              'message',
+              contains(
+                'Exception while getting all versions from the registry',
+              ),
+            ),
+          ),
+        );
+      });
+    });
+
     group('run()', () {
       test('should log the version', () async {
         initCommand();
