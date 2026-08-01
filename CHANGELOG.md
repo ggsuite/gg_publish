@@ -5,6 +5,7 @@
 ### Changed
 
 - Stop publishing when warnings happen
+- \#gg: changed references to pub.dev
 
 ## 3.8.4 - 2026-07-30
 
