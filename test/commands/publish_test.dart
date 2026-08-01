@@ -169,6 +169,39 @@ void main() {
           }
         });
 
+        test('although »dart pub publish« writes notices to stderr', () async {
+          // `dart pub` uses stderr for progress and informational output, e.g.
+          // »Running with `skip-validation`«. That must not turn a successful
+          // publish (exit code 0) into a failure.
+          mockIsVersionPrepared(true);
+          mockProcess(result: 0, force: false);
+
+          bool isDone = false;
+          Object? exception;
+          publish
+              .exec(directory: d, ggLog: ggLog)
+              .then((value) => isDone = true)
+              .onError((error, _) {
+                exception = error;
+                return false;
+              });
+          await Future<void>.delayed(Duration.zero);
+
+          // Let the process write a notice to stderr
+          process.pushToStderr.add(
+            'Running with `skip-validation`. '
+            'No client-side validation is done.',
+          );
+          await Future<void>.delayed(Duration.zero);
+
+          // Let the process succeed
+          process.exit(0);
+          await Future<void>.delayed(Duration.zero);
+
+          expect(exception, isNull);
+          expect(isDone, isTrue);
+        });
+
         test('after removing an already existing version tag', () async {
           // A publish that failed after tagging leaves the tag on a commit
           // this run replaces. It must be gone - locally and on the remote -
@@ -263,6 +296,37 @@ void main() {
           );
         });
 
+        test('and reports the stderr of a failing publish', () async {
+          // Setup consistent versions
+          mockIsVersionPrepared(true);
+          mockProcess(result: 0, force: false);
+
+          // Start the process
+          late String exceptionMessage;
+          publish.exec(directory: d, ggLog: ggLog).onError((error, stackTrace) {
+            exceptionMessage = error.toString();
+          });
+          await Future<void>.delayed(Duration.zero);
+
+          // Let the process write an error to stderr
+          process.pushToStderr.add('Error: Something went wrong');
+          await Future<void>.delayed(Duration.zero);
+
+          // Let the process fail
+          process.exit(1);
+          await Future<void>.delayed(Duration.zero);
+
+          // Check the exception
+          expect(
+            exceptionMessage,
+            contains(
+              '»dart pub publish --skip-validation« failed with exit code 1',
+            ),
+          );
+
+          expect(exceptionMessage, contains('Error: Something went wrong'));
+        });
+
         test('if »dart pub publish« has exit code != 0', () async {
           // Setup consistent versions
           mockIsVersionPrepared(true);
@@ -285,37 +349,6 @@ void main() {
               '»dart pub publish --skip-validation« failed with exit code 1',
             ),
           );
-        });
-
-        test('if »dart pub publish« returns errors', () async {
-          // Setup consistent versions
-          mockIsVersionPrepared(true);
-          mockProcess(result: 0, force: false);
-
-          // Start the process
-          late String exceptionMessage;
-          publish.exec(directory: d, ggLog: ggLog).onError((error, stackTrace) {
-            exceptionMessage = error.toString();
-          });
-          await Future<void>.delayed(Duration.zero);
-
-          // Let the process return errors
-          process.pushToStderr.add('Error: Something went wrong');
-          await Future<void>.delayed(Duration.zero);
-
-          // Let the process not fail
-          process.exit(0);
-          await Future<void>.delayed(Duration.zero);
-
-          // Check the exception
-          expect(
-            exceptionMessage,
-            contains(
-              '»dart pub publish --skip-validation« failed with exit code 0',
-            ),
-          );
-
-          expect(exceptionMessage, contains('Error: Something went wrong'));
         });
 
         test('and surfaces the output tail when stderr is empty', () async {

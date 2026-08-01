@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.8.6 - 2026-08-01
+
+### Fixed
+
+- Fix: Publishing fails
+
 ## 3.8.5 - 2026-08-01
 
 ### Changed
