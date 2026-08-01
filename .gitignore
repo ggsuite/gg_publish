@@ -14,7 +14,7 @@ build
 
 .aicode
 .gg/*
-!.gg/.gg.json
+!.gg/gg.json
 
 # Local cross-repo dev override (not for commit)
 .gg/.gg-publish.json
