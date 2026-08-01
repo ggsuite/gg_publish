@@ -264,17 +264,20 @@ class Publish extends DirCommand<void> {
       final executable = command.exec ?? command.tool!;
 
       // Validate first: a dry run surfaces pub's warnings without uploading
-      // anything. Only when it is clean do we publish for real - and then with
-      // `--skip-validation`, because the validation already happened here and
-      // rerunning it would just repeat the same checks.
+      // anything. Only when it is clean do we publish for real.
       await _dryRun(directory, ggLog, executable, <String>[
         ...command.args,
         '--dry-run',
       ], command.runInShell);
 
+      // The real upload must NOT pass `--skip-validation`. It reads like a
+      // free optimization — the dry run just validated — but it disables
+      // `--force`: pub only publishes unattended »if there are no errors«,
+      // and without validation it cannot establish that, so it asks for
+      // confirmation and an unattended publish hangs on the prompt. Paying
+      // for the second validation is what keeps the publish non-interactive.
       await _publishCaptured(directory, ggLog, executable, <String>[
         ...command.args,
-        '--skip-validation',
         // `dart pub publish` prompts unless forced.
         if (!askBeforePublishing) '--force',
       ], command.runInShell);
