@@ -189,6 +189,31 @@ void main() {
             );
             expect(result, Version(2, 0, 0));
           });
+
+          test('when publish_to: none and head is not tagged', () async {
+            // Typical on a feature branch: the release tag sits on an older
+            // commit. The latest tag of the repo must be used, not only the
+            // tags of head.
+            initCommand();
+            await initGit(d);
+
+            await addAndCommitVersions(
+              d,
+              pubspec: '1.2.3',
+              changeLog: '1.2.3',
+              gitHead: '2.0.0',
+              appendToPubspec: '\npublish_to: none',
+            );
+
+            // Add an untagged commit on top of the tagged one
+            await addAndCommitSampleFile(d, fileName: 'untagged.txt');
+
+            final result = await publishedVersion.get(
+              directory: d,
+              ggLog: messages.add,
+            );
+            expect(result, Version(2, 0, 0));
+          });
         });
 
         group('0.0.0', () {
