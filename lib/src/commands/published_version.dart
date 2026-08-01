@@ -161,7 +161,10 @@ class PublishedVersion extends DirCommand<Version> {
 
   // ...........................................................................
   Future<Version> _versionFromGitTag(Directory directory, GgLog ggLog) async {
-    return await _versionFromGit.fromHead(directory: directory, ggLog: ggLog) ??
+    // Use the highest version tag of the repository and not only the tags of
+    // HEAD: on a feature branch HEAD is usually not tagged, which would make
+    // the already released version look like 0.0.0.
+    return await _versionFromGit.latest(directory: directory, ggLog: ggLog) ??
         Version(0, 0, 0);
   }
 
