@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.9.2 - 2026-08-01
+
+### Changed
+
+- Take base version from git tags when publish_to is none
+
 ## 3.9.1 - 2026-08-01
 
 ### Changed
