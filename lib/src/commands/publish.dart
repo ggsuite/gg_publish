@@ -304,7 +304,11 @@ class Publish extends DirCommand<void> {
     await s0.cancel();
     await s1.cancel();
 
-    if (exitCode != 0 || errors.isNotEmpty) {
+    // Only the exit code decides success. `dart pub` writes progress and
+    // informational notices to stderr - e.g. »Running with `skip-validation`«
+    // - so a non-empty stderr on its own must not turn a successful publish
+    // into a failure.
+    if (exitCode != 0) {
       // Never swallow the cause: report the command, its exit code, and the
       // captured output (stderr, or the stdout tail when stderr is empty).
       final detail = errors.isNotEmpty
