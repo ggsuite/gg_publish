@@ -36,10 +36,7 @@ void main() {
         );
         expect(
           messages.last,
-          contains(
-            'Checks if the current directory has been published '
-            'to pub.dev before.',
-          ),
+          contains('Check if the package was published before'),
         );
       });
 

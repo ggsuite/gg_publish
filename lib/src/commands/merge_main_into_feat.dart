@@ -23,9 +23,7 @@ class MergeMainIntoFeat extends DirCommand<void> {
        _processWrapper = processWrapper,
        super(
          name: 'merge-main-into-feat',
-         description:
-             'Fetches origin and merges the remote '
-             'main branch into the current branch.',
+         description: 'Merge the remote main branch into this branch',
        );
 
   final MainBranch _mainBranch;

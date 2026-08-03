@@ -312,7 +312,7 @@ class PrepareNextVersion extends DirCommand<void> {
     argParser.addOption(
       'version-increment',
       abbr: 'n',
-      help: 'The increment the next version is compared to the current one.',
+      help: 'The increment applied to the current version',
       allowed: VersionIncrement.values.map((e) => e.name),
       mandatory: true,
     );

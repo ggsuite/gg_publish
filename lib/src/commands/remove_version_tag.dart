@@ -40,9 +40,7 @@ class RemoveVersionTag extends DirCommand<bool> {
            hasRemote ?? HasRemote(ggLog: ggLog, processWrapper: processWrapper),
        super(
          name: 'remove-version-tag',
-         description:
-             'Removes an existing tag of the version to be published, '
-             'locally as well as on the remote.',
+         description: 'Remove the version tag locally and on origin',
        );
 
   // ...........................................................................

@@ -16,9 +16,7 @@ class MainBranch extends DirCommand<String> {
     : _processRunner = processRunner ?? Process.run,
       super(
         name: 'main-branch',
-        description:
-            'Returns the name of the current main branch '
-            '(main or master).',
+        description: 'Return the name of the main branch',
       );
 
   final ProcessRunner _processRunner;

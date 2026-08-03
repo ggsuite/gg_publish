@@ -26,9 +26,7 @@ class WaitUntilPublished extends DirCommand<void> {
   WaitUntilPublished({
     required super.ggLog,
     super.name = 'wait-until-published',
-    super.description =
-        'Waits until the current version is visible '
-        'on the registry (pub.dev / npm).',
+    super.description = 'Wait until the version is on the registry',
     PublishTo? publishTo,
     LanguageCatalog? catalog,
     RegistryWaiter? waiter,
