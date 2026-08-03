@@ -14,6 +14,7 @@ import 'package:gg_process/gg_process.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 void main() {
   final catalog = LanguageCatalog.fromString(_catalogJson);
@@ -267,9 +268,9 @@ void main() {
             () => command.get(directory: local, ggLog: ggLog),
             throwsA(
               isA<Exception>().having(
-                (e) => e.toString(),
+                (e) => rmC(e.toString()),
                 'message',
-                allOf(contains('Could not list the tags'), contains('Ooops')),
+                contains('Failed to list the tags.'),
               ),
             ),
           );
@@ -287,12 +288,9 @@ void main() {
             () => command.get(directory: local, ggLog: ggLog),
             throwsA(
               isA<Exception>().having(
-                (e) => e.toString(),
+                (e) => rmC(e.toString()),
                 'message',
-                allOf(
-                  contains('Could not remove the local tag 1.0.0'),
-                  contains('Ooops'),
-                ),
+                contains('Failed to remove the local tag.'),
               ),
             ),
           );
@@ -312,12 +310,9 @@ void main() {
             () => command.get(directory: local, ggLog: ggLog),
             throwsA(
               isA<Exception>().having(
-                (e) => e.toString(),
+                (e) => rmC(e.toString()),
                 'message',
-                allOf(
-                  contains('Could not list the remote tags'),
-                  contains('Ooops'),
-                ),
+                contains('Failed to list the remote tags.'),
               ),
             ),
           );
@@ -343,12 +338,9 @@ void main() {
             () => command.get(directory: local, ggLog: ggLog),
             throwsA(
               isA<Exception>().having(
-                (e) => e.toString(),
+                (e) => rmC(e.toString()),
                 'message',
-                allOf(
-                  contains('Could not remove the remote tag 1.0.0'),
-                  contains('Ooops'),
-                ),
+                contains('Failed to remove the remote tag.'),
               ),
             ),
           );

@@ -15,6 +15,7 @@ import 'package:gg_publish/gg_publish.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 void main() {
   final catalog = LanguageCatalog.fromString(catalogJson);
@@ -289,13 +290,10 @@ void main() {
           try {
             await publish.exec(directory: d, ggLog: ggLog);
           } on Exception catch (e) {
-            exceptionMessage = e.toString();
+            exceptionMessage = rmC(e.toString());
           }
 
-          expect(
-            exceptionMessage,
-            contains('there is no registry to publish to'),
-          );
+          expect(exceptionMessage, contains('No registry to publish to.'));
         });
 
         test('if versions are not consistent', () async {
@@ -307,7 +305,7 @@ void main() {
           try {
             await publish.exec(directory: d, ggLog: ggLog);
           } on Exception catch (e) {
-            exceptionMessage = e.toString();
+            exceptionMessage = rmC(e.toString());
           }
 
           expect(
@@ -324,7 +322,7 @@ void main() {
           // Start the process
           late String exceptionMessage;
           publish.exec(directory: d, ggLog: ggLog).onError((error, stackTrace) {
-            exceptionMessage = error.toString();
+            exceptionMessage = rmC(error.toString());
           });
           await Future<void>.delayed(Duration.zero);
 
@@ -337,12 +335,9 @@ void main() {
           await Future<void>.delayed(Duration.zero);
 
           // Check the exception
-          expect(
-            exceptionMessage,
-            contains('»dart pub publish« failed with exit code 1'),
-          );
-
-          expect(exceptionMessage, contains('Error: Something went wrong'));
+          expect(exceptionMessage, contains('Publishing failed.'));
+          // The cause is printed once, not packed into the exception.
+          expect(messages.join('\n'), contains('Error: Something went wrong'));
         });
 
         test('if »dart pub publish« has exit code != 0', () async {
@@ -353,7 +348,7 @@ void main() {
           // Start the process
           late String exceptionMessage;
           publish.exec(directory: d, ggLog: ggLog).onError((error, stackTrace) {
-            exceptionMessage = error.toString();
+            exceptionMessage = rmC(error.toString());
           });
 
           // Let the process fail
@@ -361,10 +356,7 @@ void main() {
           await Future<void>.delayed(Duration.zero);
 
           // Check the exception
-          expect(
-            exceptionMessage,
-            contains('»dart pub publish« failed with exit code 1'),
-          );
+          expect(exceptionMessage, contains('Publishing failed.'));
         });
 
         test('and surfaces the output tail when stderr is empty', () async {
@@ -375,7 +367,7 @@ void main() {
 
           late String exceptionMessage;
           publish.exec(directory: d, ggLog: ggLog).onError((error, _) {
-            exceptionMessage = error.toString();
+            exceptionMessage = rmC(error.toString());
           });
           await Future<void>.delayed(Duration.zero);
 
@@ -385,8 +377,9 @@ void main() {
           process.exit(1);
           await Future<void>.delayed(Duration.zero);
 
-          expect(exceptionMessage, contains('failed with exit code 1'));
-          expect(exceptionMessage, contains('npm error 404 Not Found'));
+          expect(exceptionMessage, contains('Publishing failed.'));
+          // The cause is printed once, not packed into the exception.
+          expect(messages.join('\n'), contains('npm error 404 Not Found'));
         });
 
         test('keeps only the most recent output in the failure tail', () async {
@@ -395,7 +388,7 @@ void main() {
 
           late String exceptionMessage;
           publish.exec(directory: d, ggLog: ggLog).onError((error, _) {
-            exceptionMessage = error.toString();
+            exceptionMessage = rmC(error.toString());
           });
           await Future<void>.delayed(Duration.zero);
 
@@ -410,8 +403,10 @@ void main() {
           await Future<void>.delayed(Duration.zero);
 
           // The bounded tail drops the earliest output, keeps the latest.
-          expect(exceptionMessage, contains('VERY-LAST-LINE'));
-          expect(exceptionMessage, isNot(contains('VERY-FIRST-LINE')));
+          expect(exceptionMessage, contains('Publishing failed.'));
+          final report = messages.firstWhere((m) => m.contains('exit code'));
+          expect(report, contains('VERY-LAST-LINE'));
+          expect(report, isNot(contains('VERY-FIRST-LINE')));
         });
       });
 
@@ -529,11 +524,9 @@ void main() {
             publishWithAnswers(['q']).exec(directory: d, ggLog: ggLog),
             throwsA(
               isA<Exception>().having(
-                (e) => e.toString(),
+                (e) => rmC(e.toString()),
                 'message',
-                contains(
-                  'Publishing aborted: »test« has no version on pub.dev.',
-                ),
+                contains('Publishing aborted.'),
               ),
             ),
           );
@@ -623,13 +616,20 @@ Package has 1 warning.''';
             late String exceptionMessage;
             await publish
                 .exec(directory: d, ggLog: ggLog)
-                .onError((error, _) => exceptionMessage = error.toString());
+                .onError(
+                  (error, _) => exceptionMessage = rmC(error.toString()),
+                );
 
-            expect(exceptionMessage, contains('reported a warning'));
+            expect(
+              exceptionMessage,
+              contains('Publishing was stopped by a warning.'),
+            );
 
-            // The warning is printed in red, the paths within it in blue.
+            // The warning carries the red — the ✗ line above it is a detail.
+            // The paths within it stay blue.
             final logged = messages.firstWhere((m) => m.contains('.gg.json'));
             expect(logged, startsWith('\x1B[31m'));
+            expect(messages.any((m) => m.startsWith('\x1B[90m✗ ')), isTrue);
             expect(logged, contains('\x1B[34m.gg/.gg.json'));
             expect(logged, contains('\x1B[34m.gg/.ticket.json'));
             // The summary line is not part of the printed report.
@@ -655,9 +655,14 @@ Package has 1 warning.''';
             late String exceptionMessage;
             await publish
                 .exec(directory: d, ggLog: ggLog)
-                .onError((error, _) => exceptionMessage = error.toString());
+                .onError(
+                  (error, _) => exceptionMessage = rmC(error.toString()),
+                );
 
-            expect(exceptionMessage, contains('reported a warning'));
+            expect(
+              exceptionMessage,
+              contains('Publishing was stopped by a warning.'),
+            );
           },
         );
 
@@ -670,14 +675,14 @@ Package has 1 warning.''';
             late String exceptionMessage;
             await publish
                 .exec(directory: d, ggLog: ggLog)
-                .onError((error, _) => exceptionMessage = error.toString());
+                .onError(
+                  (error, _) => exceptionMessage = rmC(error.toString()),
+                );
 
+            expect(exceptionMessage, contains('Publishing failed.'));
+            // The cause is printed once, not packed into the exception.
             expect(
-              exceptionMessage,
-              contains('»dart pub publish --dry-run« failed with exit code 1'),
-            );
-            expect(
-              exceptionMessage,
+              messages.join('\n'),
               contains('Could not resolve dependencies'),
             );
           },
@@ -692,12 +697,11 @@ Package has 1 warning.''';
             late String exceptionMessage;
             await publish
                 .exec(directory: d, ggLog: ggLog)
-                .onError((error, _) => exceptionMessage = error.toString());
+                .onError(
+                  (error, _) => exceptionMessage = rmC(error.toString()),
+                );
 
-            expect(
-              exceptionMessage,
-              contains('»dart pub publish --dry-run« failed with exit code 1'),
-            );
+            expect(exceptionMessage, contains('Publishing failed.'));
           },
         );
       });
@@ -813,14 +817,11 @@ Package has 1 warning.''';
           String? exceptionMessage;
           final future = publish
               .exec(directory: pnpmDir, ggLog: ggLog)
-              .onError((error, _) => exceptionMessage = error.toString());
+              .onError((error, _) => exceptionMessage = rmC(error.toString()));
           process.exit(1);
           await future;
 
-          expect(
-            exceptionMessage,
-            contains('»pnpm publish --no-git-checks« failed with exit code 1'),
-          );
+          expect(exceptionMessage, contains('Publishing failed.'));
           await pnpmDir.delete(recursive: true);
         });
       });

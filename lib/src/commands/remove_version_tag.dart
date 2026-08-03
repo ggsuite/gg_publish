@@ -11,6 +11,7 @@ import 'package:gg_git/gg_git.dart';
 import 'package:gg_lang/gg_lang.dart';
 import 'package:gg_log/gg_log.dart';
 import 'package:gg_process/gg_process.dart';
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 // #############################################################################
 /// Removes the git tag of the version that is about to be published — locally
@@ -120,10 +121,13 @@ class RemoveVersionTag extends DirCommand<bool> {
     ], workingDirectory: directory.path);
 
     if (existing.exitCode != 0) {
-      throw Exception(
-        'Could not list the tags of "${dirName(directory)}": '
-        '${existing.stderr}',
+      ggLog(
+        [
+          cDetail('✗ Failed to list the tags of ${dirName(directory)}'),
+          cError('${existing.stderr}'),
+        ].join('\n'),
       );
+      throw Exception(cDetail('Failed to list the tags.'));
     }
 
     final exists = (existing.stdout as String)
@@ -142,9 +146,13 @@ class RemoveVersionTag extends DirCommand<bool> {
     ], workingDirectory: directory.path);
 
     if (result.exitCode != 0) {
-      throw Exception(
-        'Could not remove the local tag $version: ${result.stderr}',
+      ggLog(
+        [
+          cDetail('✗ Failed to remove the local tag $version'),
+          cError('${result.stderr}'),
+        ].join('\n'),
       );
+      throw Exception(cDetail('Failed to remove the local tag.'));
     }
 
     ggLog('Removed the local tag $version.');
@@ -174,10 +182,13 @@ class RemoveVersionTag extends DirCommand<bool> {
     ], workingDirectory: directory.path);
 
     if (remoteTags.exitCode != 0) {
-      throw Exception(
-        'Could not list the remote tags of "${dirName(directory)}": '
-        '${remoteTags.stderr}',
+      ggLog(
+        [
+          cDetail('✗ Failed to list the remote tags of ${dirName(directory)}'),
+          cError('${remoteTags.stderr}'),
+        ].join('\n'),
       );
+      throw Exception(cDetail('Failed to list the remote tags.'));
     }
 
     // Each line is "<hash>\t<ref>". An annotated tag adds a second line for
@@ -201,9 +212,13 @@ class RemoveVersionTag extends DirCommand<bool> {
     ], workingDirectory: directory.path);
 
     if (result.exitCode != 0) {
-      throw Exception(
-        'Could not remove the remote tag $version: ${result.stderr}',
+      ggLog(
+        [
+          cDetail('✗ Failed to remove the remote tag $version'),
+          cError('${result.stderr}'),
+        ].join('\n'),
       );
+      throw Exception(cDetail('Failed to remove the remote tag.'));
     }
 
     ggLog('Removed the remote tag $version.');

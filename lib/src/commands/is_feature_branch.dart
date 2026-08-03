@@ -10,6 +10,7 @@ import 'package:gg_args/gg_args.dart';
 import 'package:gg_git/gg_git.dart' as gg_git;
 import 'package:gg_log/gg_log.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 // #############################################################################
 /// Checks if the current git branch is a feature branch.
@@ -35,6 +36,7 @@ class IsFeatureBranch extends DirCommand<bool> {
     final printer = GgStatusPrinter<bool>(
       message: 'Current branch is feature branch',
       ggLog: ggLog,
+      dark: true,
     );
 
     final isFeatureBranch = await printer.logTask(
@@ -43,7 +45,9 @@ class IsFeatureBranch extends DirCommand<bool> {
     );
 
     if (!isFeatureBranch) {
-      throw Exception('Current branch is not a feature branch');
+      // The status printer already marked the step as failed — the exception
+      // only ends the run.
+      throw Exception(cDetail('Current branch is not a feature branch.'));
     }
 
     return isFeatureBranch;

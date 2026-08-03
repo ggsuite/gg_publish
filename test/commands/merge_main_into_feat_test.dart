@@ -10,7 +10,10 @@ import 'package:gg_git/gg_git_test_helpers.dart';
 import 'package:gg_process/gg_process.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:gg_log/gg_log.dart';
+import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:test/test.dart';
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 void main() {
   late Directory d;
@@ -18,10 +21,14 @@ void main() {
   late MockMainBranch mainBranch;
   late MergeMainIntoFeat command;
   final messages = <String>[];
+  // Strip the colors and the overwrite sequence so the expectations assert
+  // the text. One closure instance — mocktail matches ggLog by identity.
+  // ignore: prefer_function_declarations_over_variables
+  final GgLog ggLog = (String msg) => messages.add(rmControls(msg));
 
   void initCommand() {
     command = MergeMainIntoFeat(
-      ggLog: messages.add,
+      ggLog: ggLog,
       mainBranch: mainBranch,
       processWrapper: processWrapper,
     );
@@ -44,7 +51,7 @@ void main() {
   group('MergeMainIntoFeat', () {
     group('constructor', () {
       test('should create default dependencies', () {
-        expect(() => MergeMainIntoFeat(ggLog: messages.add), returnsNormally);
+        expect(() => MergeMainIntoFeat(ggLog: ggLog), returnsNormally);
       });
     });
 
@@ -75,7 +82,7 @@ void main() {
           ),
         ).thenAnswer((_) async => ProcessResult(0, 0, '', ''));
 
-        await command.get(directory: d, ggLog: messages.add);
+        await command.get(directory: d, ggLog: ggLog);
 
         verify(
           () => processWrapper.run(
@@ -129,7 +136,7 @@ void main() {
           ),
         ).thenAnswer((_) async => ProcessResult(0, 0, '', ''));
 
-        await command.get(directory: d, ggLog: messages.add);
+        await command.get(directory: d, ggLog: ggLog);
 
         verify(
           () => processWrapper.run(
@@ -152,12 +159,12 @@ void main() {
         ).thenAnswer((_) async => ProcessResult(1, 1, '', 'fetch failed'));
 
         await expectLater(
-          () => command.get(directory: d, ggLog: messages.add),
+          () => command.get(directory: d, ggLog: ggLog),
           throwsA(
             isA<Exception>().having(
-              (e) => e.toString(),
+              (e) => rmC(e.toString()),
               'message',
-              contains('Failed to fetch from origin: fetch failed'),
+              contains('Failed to fetch from origin.'),
             ),
           ),
         );
@@ -190,12 +197,12 @@ void main() {
         ).thenAnswer((_) async => ProcessResult(1, 1, '', 'merge conflict'));
 
         await expectLater(
-          () => command.get(directory: d, ggLog: messages.add),
+          () => command.get(directory: d, ggLog: ggLog),
           throwsA(
             isA<Exception>().having(
-              (e) => e.toString(),
+              (e) => rmC(e.toString()),
               'message',
-              contains('Failed to merge origin/main: merge conflict'),
+              contains('Failed to merge origin/main.'),
             ),
           ),
         );
@@ -229,10 +236,10 @@ void main() {
           ),
         ).thenAnswer((_) async => ProcessResult(0, 0, '', ''));
 
-        await command.exec(directory: d, ggLog: messages.add);
+        await command.exec(directory: d, ggLog: ggLog);
 
         expect(messages.first, contains('⌛️ Merge main into feature branch'));
-        expect(messages.last, contains('✅ Merge main into feature branch'));
+        expect(messages.last, contains('✓ Merge main into feature branch'));
       });
     });
   });

@@ -1,10 +1,15 @@
 # Changelog
 
-## Unreleased
+## 3.9.3 - 2026-08-03
 
 ### Changed
 
 - refactor: shorten all CLI help texts to 60 chars
+- Improve cli log
+
+### Fixed
+
+- Fix unit test errors
 
 ## 3.9.2 - 2026-08-01
 

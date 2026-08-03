@@ -10,7 +10,10 @@ import 'package:args/command_runner.dart';
 import 'package:gg_process/gg_process.dart';
 import 'package:gg_publish/src/commands/is_upgraded.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:gg_log/gg_log.dart';
+import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:test/test.dart';
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 void main() {
   // ...........................................................................
@@ -19,6 +22,10 @@ void main() {
   late MockGgProcessWrapper mockProcessWrapper;
   late CommandRunner<dynamic> runner;
   final messages = <String>[];
+  // Strip the colors and the overwrite sequence so the expectations assert
+  // the text. One closure instance — mocktail matches ggLog by identity.
+  // ignore: prefer_function_declarations_over_variables
+  final GgLog ggLog = (String msg) => messages.add(rmControls(msg));
   const sampleDir = 'test/sample_package/';
 
   String read(String file) => File('$sampleDir/$file').readAsStringSync();
@@ -61,7 +68,7 @@ void main() {
   // ...........................................................................
   void initCommand({GgProcessWrapper? processWrapper}) {
     isUpgraded = IsUpgraded(
-      ggLog: messages.add,
+      ggLog: ggLog,
       processWrapper: processWrapper ?? mockProcessWrapper,
     );
 
@@ -99,13 +106,13 @@ void main() {
   // ...........................................................................
   void expectSuccess() {
     expect(messages.first, contains('⌛️ Everything is upgraded.'));
-    expect(messages.last, contains('✅ Everything is upgraded.'));
+    expect(messages.last, contains('✓ Everything is upgraded.'));
   }
 
   // ...........................................................................
   void expectFail() {
     expect(messages.first, contains('⌛️ Everything is upgraded.'));
-    expect(messages.last, contains('❌ Everything is upgraded.'));
+    expect(messages.last, contains('✗ Everything is upgraded.'));
   }
 
   // ...........................................................................
@@ -122,7 +129,7 @@ void main() {
   Future<void> viaExec({bool? majorVersions}) async {
     await isUpgraded.exec(
       directory: d,
-      ggLog: messages.add,
+      ggLog: ggLog,
       majorVersions: majorVersions,
     );
   }
@@ -130,7 +137,7 @@ void main() {
   // ...........................................................................
   group('IsUpgraded', () {
     group('- without a pubspec.yaml', () {
-      test('should skip the check and print ✅', () async {
+      test('should skip the check and print ✓', () async {
         File('${d.path}/pubspec.yaml').deleteSync();
         await viaCli();
         expectSuccess();
@@ -144,7 +151,7 @@ void main() {
         });
 
         group('with --major-versions', () {
-          group('should print ✅', () {
+          group('should print ✓', () {
             test('- with CLI', () async {
               await viaCli(majorVersions: true);
               expectSuccess();
@@ -156,7 +163,7 @@ void main() {
         });
 
         group('without --major-versions', () {
-          group('should print ✅', () {
+          group('should print ✓', () {
             test('- with CLI', () async {
               await viaCli();
               expectSuccess();
@@ -173,7 +180,7 @@ void main() {
           });
 
           group('with --major-versions', () {
-            group('should print ❌', () {
+            group('should print ✗', () {
               test('- with CLI', () async {
                 await viaCli(majorVersions: true);
                 expectFail();
@@ -185,7 +192,7 @@ void main() {
             });
           });
           group('without --major-versions', () {
-            group('should print ✅', () {
+            group('should print ✓', () {
               test('- with CLI', () async {
                 await viaCli(majorVersions: false);
                 expectSuccess();
@@ -204,7 +211,7 @@ void main() {
           });
 
           group('with --major-versions', () {
-            group('should print ❌', () {
+            group('should print ✗', () {
               test('- with CLI', () async {
                 await viaCli(majorVersions: true);
                 expectFail();
@@ -216,7 +223,7 @@ void main() {
             });
           });
           group('without --major-versions', () {
-            group('should print ❌', () {
+            group('should print ✗', () {
               test('- with CLI', () async {
                 await viaCli(majorVersions: false);
                 expectFail();
@@ -235,7 +242,7 @@ void main() {
           });
 
           group('with --major-versions', () {
-            group('should print ✅', () {
+            group('should print ✓', () {
               test('- with CLI', () async {
                 await viaCli(majorVersions: true);
                 expectSuccess();
@@ -247,7 +254,7 @@ void main() {
             });
           });
           group('without --major-versions', () {
-            group('should print ✅', () {
+            group('should print ✓', () {
               test('- with CLI', () async {
                 await viaCli(majorVersions: false);
                 expectSuccess();
@@ -270,9 +277,9 @@ void main() {
           try {
             await viaExec(majorVersions: false);
           } catch (e) {
-            exception = e.toString();
+            exception = rmC(e.toString());
           }
-          expect(exception, contains('Error while parsing the response'));
+          expect(exception, contains('Could not parse the response'));
         });
 
         test('if the process fails', () async {
@@ -281,12 +288,9 @@ void main() {
           try {
             await viaExec(majorVersions: false);
           } catch (e) {
-            exception = e.toString();
+            exception = rmC(e.toString());
           }
-          expect(
-            exception,
-            contains('Error while checking for outdated packages'),
-          );
+          expect(exception, contains('Failed to check for outdated packages.'));
         });
       });
     });

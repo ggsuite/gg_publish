@@ -12,6 +12,7 @@ import 'package:gg_lang/gg_lang.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 void main() {
   late Directory d;
@@ -96,7 +97,7 @@ void main() {
           waitUntilPublished.get(directory: d, ggLog: ggLog),
           throwsA(
             isA<Exception>().having(
-              (e) => e.toString(),
+              (e) => rmC(e.toString()),
               'message',
               contains('Timed out'),
             ),

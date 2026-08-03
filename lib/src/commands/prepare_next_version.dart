@@ -13,6 +13,7 @@ import 'package:gg_publish/gg_publish.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:gg_version/gg_version.dart';
 import 'package:pub_semver/pub_semver.dart';
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 // .............................................................................
 /// Version increments
@@ -217,11 +218,17 @@ class PrepareNextVersion extends DirCommand<void> {
     var maxRc = 0;
     for (final version in sameRelease) {
       if (version.preRelease.isEmpty) {
-        throw Exception(
-          'Cannot prepare an rc for $target: $target is already published as '
-          'a stable version. That version number is spent (this also applies '
-          'to a retracted release) — choose a higher increment.',
+        ggLog(
+          [
+            cDetail('✗ Cannot prepare an rc for $target'),
+            cDetail(
+              '$target is already published as a stable version. That version '
+              'number is spent — a retracted release counts as well.',
+            ),
+          ].join('\n'),
         );
+        ggLog(cAction('Choose a higher increment.'));
+        throw Exception(cDetail('The version is already published.'));
       }
 
       final pre = version.preRelease;
@@ -288,7 +295,7 @@ class PrepareNextVersion extends DirCommand<void> {
       version = null;
     }
     if (version == null) {
-      throw Exception('"version:" not found in ${spec.file}');
+      throw Exception(cDetail('"version:" not found in ${spec.file}'));
     }
 
     return manifest;

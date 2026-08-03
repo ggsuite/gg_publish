@@ -11,8 +11,11 @@ import 'package:gg_capture_print/gg_capture_print.dart';
 import 'package:gg_git/gg_git_test_helpers.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:gg_log/gg_log.dart';
+import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:test/test.dart';
 import 'package:http/http.dart' as http;
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 // .............................................................................
 /// A Mock for the http.Client class using Mocktail
@@ -20,6 +23,10 @@ class MockClient extends Mock implements http.Client {}
 
 void main() {
   final messages = <String>[];
+  // Strip the colors and the overwrite sequence so the expectations assert
+  // the text. One closure instance — mocktail matches ggLog by identity.
+  // ignore: prefer_function_declarations_over_variables
+  final GgLog ggLog = (String msg) => messages.add(rmControls(msg));
   late CommandRunner<dynamic> runner;
   late IsPublished isPublished;
   late Directory tmp;
@@ -29,11 +36,8 @@ void main() {
   // ...........................................................................
   Future<void> initIsPublished() async {
     isPublished = IsPublished(
-      ggLog: messages.add,
-      publishedVersion: PublishedVersion(
-        ggLog: messages.add,
-        httpClient: httpClient,
-      ),
+      ggLog: ggLog,
+      publishedVersion: PublishedVersion(ggLog: ggLog, httpClient: httpClient),
     );
     runner.addCommand(isPublished);
   }
@@ -75,10 +79,7 @@ void main() {
           ).thenAnswer((_) async => http.Response(responseContent, 404));
 
           // Check if the package is published
-          final result = await isPublished.get(
-            directory: d,
-            ggLog: messages.add,
-          );
+          final result = await isPublished.get(directory: d, ggLog: ggLog);
 
           // Package should not be published
           expect(result, isFalse);
@@ -103,10 +104,7 @@ void main() {
           ).thenAnswer((_) async => http.Response(responseContent, 200));
 
           // Call isPublished.get()
-          final result = await isPublished.get(
-            directory: d,
-            ggLog: messages.add,
-          );
+          final result = await isPublished.get(directory: d, ggLog: ggLog);
 
           expect(result, isTrue);
         });
@@ -116,10 +114,7 @@ void main() {
       group('should print', () {
         group('a usage description', () {
           test('when called with --help', () async {
-            capturePrint(
-              ggLog: messages.add,
-              code: () => runner.run(['--help']),
-            );
+            capturePrint(ggLog: ggLog, code: () => runner.run(['--help']));
 
             expect(messages.last, contains('Available commands:'));
             expect(messages.last, contains(isPublished.name));
@@ -152,7 +147,7 @@ void main() {
 
             expect(
               messages.last,
-              contains('✅ Was published to pub.dev before.'),
+              contains('✓ Was published to pub.dev before.'),
             );
           });
         });
@@ -165,7 +160,7 @@ void main() {
               runner.run(['is-published', '--input', 'xyz']),
               throwsA(
                 isA<ArgumentError>().having(
-                  (e) => e.toString(),
+                  (e) => rmC(e.toString()),
                   'toString()',
                   contains(
                     'Invalid argument(s): Directory "xyz" does not exist.',
@@ -179,7 +174,7 @@ void main() {
     });
 
     test('should have a coverage of 100%', () {
-      expect(IsPublished(ggLog: messages.add), isNotNull);
+      expect(IsPublished(ggLog: ggLog), isNotNull);
     });
   });
 }

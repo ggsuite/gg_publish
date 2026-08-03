@@ -109,7 +109,7 @@ class Publish extends DirCommand<void> {
       directory: directory,
     );
     if (!isVersionPrepared) {
-      throw Exception('Version is not prepared.');
+      throw Exception(cDetail('Version is not prepared.'));
     }
 
     // At least one version must already be on the registry: a first-time
@@ -174,9 +174,8 @@ class Publish extends DirCommand<void> {
       ggLog(yellow('Press ⏎ once the package is published, »q« + ⏎ to abort.'));
       final answer = (_readLineFromStdIn() ?? '').trim().toLowerCase();
       if (answer == 'q') {
-        throw Exception(
-          'Publishing aborted: »$name« has no version on $registry.',
-        );
+        ggLog(cDetail('✗ »$name« has no version on $registry'));
+        throw Exception(cDetail('Publishing aborted.'));
       }
 
       final versionsNow =
@@ -252,10 +251,13 @@ class Publish extends DirCommand<void> {
     final type = checkProjectType(directory);
 
     if (type == ProjectType.none) {
-      throw Exception(
-        'A project without a manifest publishes to git only — '
-        'there is no registry to publish to.',
+      ggLog(
+        cDetail(
+          'A project without a manifest publishes to git only — there is no '
+          'registry to publish to.',
+        ),
       );
+      throw Exception(cDetail('No registry to publish to.'));
     }
 
     if (type.isDartFamily) {
@@ -320,20 +322,26 @@ class Publish extends DirCommand<void> {
     final warning = _extractWarning(output);
 
     if (warning != null) {
-      ggLog(red(_highlightPaths(warning)));
-      throw Exception(
-        'Publishing was stopped because »$executable ${args.join(' ')}« '
-        'reported a warning. Fix it, or exclude the files using a '
-        '.pubignore.',
-      );
+      // The warning is the actionable part — print it once and keep the
+      // exception short.
+      ggLog(cDetail('✗ »$executable ${args.join(' ')}« reported a warning'));
+      ggLog(cError(_highlightPaths(warning)));
+      ggLog(cAction('Fix it, or exclude the files using a .pubignore.'));
+      throw Exception(cDetail('Publishing was stopped by a warning.'));
     }
 
     if (result.exitCode != 0) {
       final detail = output.trim();
-      throw Exception(
-        '»$executable ${args.join(' ')}« failed with exit code '
-        '${result.exitCode}${detail.isEmpty ? '' : ':\n$detail'}',
+      ggLog(
+        [
+          cError(
+            '✗ »$executable ${args.join(' ')}« failed with exit code '
+            '${result.exitCode}',
+          ),
+          if (detail.isNotEmpty) cDetail(detail),
+        ].join('\n'),
       );
+      throw Exception(cDetail('Publishing failed.'));
     }
   }
 
@@ -441,10 +449,15 @@ class Publish extends DirCommand<void> {
       final detail = errors.isNotEmpty
           ? errors.join('\n')
           : outputTail.join().trim();
-      throw Exception(
-        '»$executable ${args.join(' ')}« failed with exit code $exitCode'
-        '${detail.isEmpty ? '' : ':\n$detail'}',
+      ggLog(
+        [
+          cError(
+            '✗ »$executable ${args.join(' ')}« failed with exit code $exitCode',
+          ),
+          if (detail.isNotEmpty) cDetail(detail),
+        ].join('\n'),
       );
+      throw Exception(cDetail('Publishing failed.'));
     }
   }
 
@@ -468,9 +481,13 @@ class Publish extends DirCommand<void> {
 
     final exitCode = await process.exitCode;
     if (exitCode != 0) {
-      throw Exception(
-        '»$executable ${args.join(' ')}« failed with exit code $exitCode',
+      ggLog(
+        cError(
+          '✗ »$executable ${args.join(' ')}« failed with exit code '
+          '$exitCode',
+        ),
       );
+      throw Exception(cDetail('Publishing failed.'));
     }
   }
 

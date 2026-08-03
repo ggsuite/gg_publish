@@ -13,6 +13,7 @@ import 'package:gg_version/gg_version.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 void main() async {
   final messages = <String>[];
@@ -96,7 +97,7 @@ void main() async {
                 increment: VersionIncrement.patch,
               );
             } catch (e) {
-              exception = e.toString();
+              exception = rmC(e.toString());
             }
 
             // Check exception
@@ -231,7 +232,7 @@ void main() async {
             try {
               await runner.run(['prepare-next-version']);
             } catch (e) {
-              exception = e.toString();
+              exception = rmC(e.toString());
             }
 
             // Check exception
@@ -411,9 +412,9 @@ void main() async {
             ),
             throwsA(
               isA<Exception>().having(
-                (e) => e.toString(),
+                (e) => rmC(e.toString()),
                 'message',
-                contains('1.3.0 is already published as a stable version'),
+                contains('The version is already published.'),
               ),
             ),
           );

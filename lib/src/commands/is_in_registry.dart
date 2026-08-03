@@ -35,6 +35,7 @@ class IsInRegistry extends DirCommand<bool> {
     final printer = GgStatusPrinter<bool>(
       message: 'Is available on the registry.',
       ggLog: ggLog,
+      dark: true,
     );
 
     return await printer.logTask(

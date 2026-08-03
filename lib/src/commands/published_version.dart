@@ -13,6 +13,7 @@ import 'package:gg_version/gg_version.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart' as mocktail;
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 // .............................................................................
 /// Returns the version a package has published to its registry (pub.dev for
@@ -67,9 +68,13 @@ class PublishedVersion extends DirCommand<Version> {
         packageName: resolved.name,
       );
     } on RegistryException catch (e) {
-      throw Exception(
-        'Exception while getting the latest version from the registry:\n$e',
+      ggLog(
+        [
+          cDetail('✗ Failed to read the latest version from the registry'),
+          cError('$e'),
+        ].join('\n'),
       );
+      throw Exception(cDetail('Failed to read the registry.'));
     }
 
     return latest ?? await _versionFromGitTag(directory, ggLog);
@@ -111,9 +116,7 @@ class PublishedVersion extends DirCommand<Version> {
     try {
       return await resolved.registry.allVersions(packageName: resolved.name);
     } on RegistryException catch (e) {
-      throw Exception(
-        'Exception while getting all versions from the registry:\n$e',
-      );
+      throw Exception(cDetail('Failed to read the registry: $e'));
     }
   }
 

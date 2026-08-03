@@ -11,6 +11,7 @@ import 'package:gg_log/gg_log.dart';
 import 'package:gg_process/gg_process.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 /// Fetches origin and merges the remote main branch into the current branch.
 class MergeMainIntoFeat extends DirCommand<void> {
@@ -51,6 +52,7 @@ class MergeMainIntoFeat extends DirCommand<void> {
       directory: directory,
       arguments: const ['fetch', 'origin'],
       actionDescription: 'fetch from origin',
+      ggLog: ggLog,
     );
 
     final mainBranchName = await _mainBranch.get(
@@ -62,6 +64,7 @@ class MergeMainIntoFeat extends DirCommand<void> {
       directory: directory,
       arguments: ['merge', 'origin/$mainBranchName'],
       actionDescription: 'merge origin/$mainBranchName',
+      ggLog: ggLog,
     );
   }
 
@@ -70,6 +73,7 @@ class MergeMainIntoFeat extends DirCommand<void> {
     required Directory directory,
     required List<String> arguments,
     required String actionDescription,
+    required GgLog ggLog,
   }) async {
     final result = await _processWrapper.run(
       'git',
@@ -82,7 +86,11 @@ class MergeMainIntoFeat extends DirCommand<void> {
       final stderr = result.stderr.toString().trim();
       final stdout = result.stdout.toString().trim();
       final details = stderr.isNotEmpty ? stderr : stdout;
-      throw Exception('Failed to $actionDescription: $details');
+      // The reason is printed once; the exception only ends the run.
+      ggLog(
+        [cDetail('✗ Failed to $actionDescription'), cError(details)].join('\n'),
+      );
+      throw Exception(cDetail('Failed to $actionDescription.'));
     }
   }
 }

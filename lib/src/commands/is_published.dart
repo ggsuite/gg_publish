@@ -35,6 +35,7 @@ class IsPublished extends DirCommand<bool> {
     final printer = GgStatusPrinter<bool>(
       message: 'Was published to pub.dev before.',
       ggLog: ggLog,
+      dark: true,
     );
 
     return await printer.logTask(

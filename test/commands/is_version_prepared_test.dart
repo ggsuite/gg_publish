@@ -14,6 +14,8 @@ import 'package:gg_publish/gg_publish.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
+import 'package:gg_log/gg_log.dart';
+import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:test/test.dart';
 
 void main() async {
@@ -21,7 +23,10 @@ void main() async {
   late Directory d;
 
   final messages = <String>[];
-  final ggLog = messages.add;
+  // Strip the colors and the overwrite sequence so the expectations assert
+  // the text. One closure instance — mocktail matches ggLog by identity.
+  // ignore: prefer_function_declarations_over_variables
+  final GgLog ggLog = (String msg) => messages.add(rmControls(msg));
   late IsVersionPrepared isVersionPrepared;
   final versions = IsVersionPrepared.messagePrefix;
   late PublishedVersion publishedVersion;
@@ -109,7 +114,7 @@ void main() async {
               expect(result, isFalse);
               expect(
                 messages.last,
-                darkGray(
+                rmC(
                   '$versions must be one of the following:'
                   '\n- 2.0.1'
                   '\n- 2.1.0'
@@ -146,7 +151,7 @@ void main() async {
               expect(result, isFalse);
               expect(
                 messages.last,
-                darkGray(
+                rmC(
                   '$versions must be one of the following:'
                   '\n- 3.0.3'
                   '\n- 3.1.0'
@@ -578,7 +583,7 @@ void main() async {
             try {
               await isVersionPrepared.get(ggLog: ggLog, directory: d);
             } catch (e) {
-              exceptionMessage = e.toString();
+              exceptionMessage = rmC(e.toString());
             }
 
             expect(
@@ -593,7 +598,7 @@ void main() async {
     });
 
     group('exec(direcotry, ggLog)', () {
-      group('should print »✅ Version is prepared«', () {
+      group('should print »✓ Version is prepared«', () {
         test('when the versions match', () async {
           // Assume the published version is 2.0.0
           when(
@@ -612,11 +617,11 @@ void main() async {
 
           await runner.run(['is-version-prepared', '-i', d.path]);
           expect(messages[0], contains('⌛️ Version is prepared'));
-          expect(messages[1], contains('✅ Version is prepared'));
+          expect(messages[1], contains('✓ Version is prepared'));
         });
       });
 
-      group('should print »❌ Version is prepared«', () {
+      group('should print »✗ Version is prepared«', () {
         group('and throw an error description', () {
           test('when the version in pubspec is not an increment', () async {
             // Assume the published version is 2.0.0
@@ -640,16 +645,20 @@ void main() async {
             try {
               await runner.run(['is-version-prepared', '-i', d.path]);
             } catch (e) {
-              exceptionMessage = e.toString();
+              exceptionMessage = rmC(e.toString());
             }
 
             expect(messages[0], contains('⌛️ Version is prepared'));
-            expect(messages[1], contains('❌ Version is prepared'));
+            expect(messages[1], contains('✗ Version is prepared'));
 
-            expect(exceptionMessage, contains('must be one of the following'));
-            expect(exceptionMessage, contains('2.0.1'));
-            expect(exceptionMessage, contains('2.1.0'));
-            expect(exceptionMessage, contains('3.0.0'));
+            expect(exceptionMessage, contains('Version is not prepared.'));
+
+            // The reason is printed once, under the failed step.
+            final log = messages.join('\n');
+            expect(log, contains('must be one of the following'));
+            expect(log, contains('2.0.1'));
+            expect(log, contains('2.1.0'));
+            expect(log, contains('3.0.0'));
           });
         });
       });

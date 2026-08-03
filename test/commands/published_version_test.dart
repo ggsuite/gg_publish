@@ -14,8 +14,10 @@ import 'package:gg_publish/gg_publish.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
+import 'package:gg_log/gg_log.dart';
 import 'package:test/test.dart';
 import 'package:http/http.dart' as http;
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 import '../test_helpers.dart';
 
@@ -27,6 +29,9 @@ void main() {
   late CommandRunner<dynamic> runner;
   late PublishedVersion publishedVersion;
   final messages = <String>[];
+  // Strip the colors so the expectations assert the text.
+  // ignore: prefer_function_declarations_over_variables
+  final GgLog ggLog = (String msg) => messages.add(rmC(msg));
 
   // ...........................................................................
   void initCommand() {
@@ -136,10 +141,7 @@ void main() {
             // Throws when no internet is available
             catch (e) {
               expect(
-                e.toString().contains(
-                  'Exception while getting the latest version from the '
-                  'registry',
-                ),
+                rmC(e.toString()).contains('Failed to read the registry.'),
                 true,
               );
 
@@ -287,34 +289,34 @@ void main() {
             () => publishedVersion.get(directory: d, ggLog: messages.add),
             throwsA(
               isA<Exception>().having(
-                (e) => e.toString(),
+                (e) => rmC(e.toString()),
                 'message',
-                contains(
-                  'Exception while getting the latest version from the '
-                  'registry',
-                ),
+                contains('Failed to read the registry.'),
               ),
             ),
           );
         });
 
-        test('when the http response status code is not 200', () {
+        test('when the http response status code is not 200', () async {
           initCommand();
 
           final uri = Uri.parse('https://pub.dev/api/packages/gg_check');
           final response = http.Response('', 406);
           when(() => client.get(uri)).thenAnswer((_) async => response);
 
-          expect(
-            () => publishedVersion.get(directory: d, ggLog: messages.add),
+          await expectLater(
+            () => publishedVersion.get(directory: d, ggLog: ggLog),
             throwsA(
               isA<Exception>().having(
-                (e) => e.toString(),
+                (e) => rmC(e.toString()),
                 'message',
-                allOf(contains('registry'), contains('406')),
+                contains('Failed to read the registry.'),
               ),
             ),
           );
+
+          // The cause is printed once, not packed into the exception.
+          expect(messages.join('\n'), contains('406'));
         });
 
         test('when the response body does not contain the version', () {
@@ -327,12 +329,9 @@ void main() {
             () => publishedVersion.get(directory: d, ggLog: messages.add),
             throwsA(
               isA<Exception>().having(
-                (e) => e.toString(),
+                (e) => rmC(e.toString()),
                 'message',
-                contains(
-                  'Exception while getting the latest version from the '
-                  'registry',
-                ),
+                contains('Failed to read the registry.'),
               ),
             ),
           );
@@ -411,11 +410,9 @@ void main() {
           () => publishedVersion.allVersions(directory: d, ggLog: messages.add),
           throwsA(
             isA<Exception>().having(
-              (e) => e.toString(),
+              (e) => rmC(e.toString()),
               'message',
-              contains(
-                'Exception while getting all versions from the registry',
-              ),
+              contains('Failed to read the registry'),
             ),
           ),
         );
@@ -488,11 +485,9 @@ void main() {
           () => publishedVersion.registryVersions(directory: d),
           throwsA(
             isA<Exception>().having(
-              (e) => e.toString(),
+              (e) => rmC(e.toString()),
               'message',
-              contains(
-                'Exception while getting all versions from the registry',
-              ),
+              contains('Failed to read the registry'),
             ),
           ),
         );
