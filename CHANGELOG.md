@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Prevent pubspec.lock interrupting publishing
+
 ## 3.9.3 - 2026-08-03
 
 ### Changed
