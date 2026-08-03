@@ -20,9 +20,7 @@ class IsPublished extends DirCommand<bool> {
     : _publishedVersion = publishedVersion ?? PublishedVersion(ggLog: ggLog),
       super(
         name: 'is-published',
-        description:
-            'Checks if the current directory has been published to '
-            'pub.dev before.',
+        description: 'Check if the package was published before',
       );
 
   // ...........................................................................

@@ -20,9 +20,7 @@ class IsInRegistry extends DirCommand<bool> {
     : _publishedVersion = publishedVersion ?? PublishedVersion(ggLog: ggLog),
       super(
         name: 'is-in-registry',
-        description:
-            'Checks if at least one version of the package is available '
-            'on its registry (pub.dev / npm).',
+        description: 'Check if the package is on its registry',
       );
 
   // ...........................................................................

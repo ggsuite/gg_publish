@@ -31,9 +31,7 @@ class PublishedVersion extends DirCommand<Version> {
        _versionFromGit = versionFromGit ?? FromGit(ggLog: ggLog),
        super(
          name: 'published-version',
-         description:
-             'Returns the version published to the package registry '
-             '(pub.dev / npm).',
+         description: 'Return the version published to the registry',
        );
 
   // ...........................................................................

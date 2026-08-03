@@ -23,8 +23,7 @@ class IsUpgraded extends DirCommand<bool> {
     this.processWrapper = const GgProcessWrapper(),
   }) : super(
          name: 'is-upgraded',
-         description:
-             'Checks if all dependencies have upgraded to the latest state.',
+         description: 'Check if all dependencies are up to date',
        ) {
     _addArgs();
   }
