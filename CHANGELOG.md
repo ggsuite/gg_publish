@@ -5,6 +5,7 @@
 ### Changed
 
 - refactor: shorten all CLI help texts to 60 chars
+- Improve cli log
 
 ### Fixed
 
