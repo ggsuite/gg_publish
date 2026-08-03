@@ -4,5 +4,7 @@
 # change-refs-to-git-feature-branch and change-refs-to-pub-dev
 # remove it again.
 dependency_overrides:
+  gg_lang:
+    path: ../gg_lang
   gg_version:
     path: ../gg_version
