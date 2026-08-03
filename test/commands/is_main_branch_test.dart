@@ -14,6 +14,7 @@ import 'package:gg_log/gg_log.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:test/test.dart';
 import 'package:gg_git/gg_git.dart' as gg_git;
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 void main() {
   late Directory d;
@@ -114,7 +115,7 @@ void main() {
           try {
             await isMainBranchCommand.exec(directory: d, ggLog: ggLog);
           } catch (e) {
-            exceptionMessage = e.toString();
+            exceptionMessage = rmC(e.toString());
           }
 
           expect(messages.first, contains('⌛️ Current branch is main branch'));

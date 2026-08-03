@@ -15,6 +15,7 @@ import 'package:gg_log/gg_log.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:test/test.dart';
 import 'package:http/http.dart' as http;
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 // .............................................................................
 /// A Mock for the http.Client class using Mocktail
@@ -159,7 +160,7 @@ void main() {
               runner.run(['is-published', '--input', 'xyz']),
               throwsA(
                 isA<ArgumentError>().having(
-                  (e) => e.toString(),
+                  (e) => rmC(e.toString()),
                   'toString()',
                   contains(
                     'Invalid argument(s): Directory "xyz" does not exist.',

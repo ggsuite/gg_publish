@@ -13,6 +13,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:gg_log/gg_log.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:test/test.dart';
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 void main() {
   // ...........................................................................
@@ -276,9 +277,9 @@ void main() {
           try {
             await viaExec(majorVersions: false);
           } catch (e) {
-            exception = e.toString();
+            exception = rmC(e.toString());
           }
-          expect(exception, contains('Error while parsing the response'));
+          expect(exception, contains('Could not parse the response'));
         });
 
         test('if the process fails', () async {
@@ -287,12 +288,9 @@ void main() {
           try {
             await viaExec(majorVersions: false);
           } catch (e) {
-            exception = e.toString();
+            exception = rmC(e.toString());
           }
-          expect(
-            exception,
-            contains('Error while checking for outdated packages'),
-          );
+          expect(exception, contains('Failed to check for outdated packages.'));
         });
       });
     });

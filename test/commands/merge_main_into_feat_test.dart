@@ -13,6 +13,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:gg_log/gg_log.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:test/test.dart';
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 void main() {
   late Directory d;
@@ -161,9 +162,9 @@ void main() {
           () => command.get(directory: d, ggLog: ggLog),
           throwsA(
             isA<Exception>().having(
-              (e) => e.toString(),
+              (e) => rmC(e.toString()),
               'message',
-              contains('Failed to fetch from origin: fetch failed'),
+              contains('Failed to fetch from origin.'),
             ),
           ),
         );
@@ -199,9 +200,9 @@ void main() {
           () => command.get(directory: d, ggLog: ggLog),
           throwsA(
             isA<Exception>().having(
-              (e) => e.toString(),
+              (e) => rmC(e.toString()),
               'message',
-              contains('Failed to merge origin/main: merge conflict'),
+              contains('Failed to merge origin/main.'),
             ),
           ),
         );

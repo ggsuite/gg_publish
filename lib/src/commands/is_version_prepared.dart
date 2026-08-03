@@ -55,7 +55,9 @@ class IsVersionPrepared extends DirCommand<bool> {
     );
 
     if (!ok) {
-      throw Exception(messages.join('\n'));
+      // The reason is printed once, right under the failed step.
+      ggLog(cDetail(messages.join('\n')));
+      throw Exception(cDetail('Version is not prepared.'));
     }
 
     return ok;

@@ -10,6 +10,7 @@ import 'package:args/command_runner.dart';
 import 'package:gg_git/gg_git_test_helpers.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:test/test.dart';
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 void main() {
   late Directory d;
@@ -103,9 +104,9 @@ void main() {
           () => command.get(directory: d, ggLog: messages.add),
           throwsA(
             isA<Exception>().having(
-              (e) => e.toString(),
+              (e) => rmC(e.toString()),
               'message',
-              contains('Failed to read git branches: git failed'),
+              contains('Failed to read the git branches: git failed'),
             ),
           ),
         );

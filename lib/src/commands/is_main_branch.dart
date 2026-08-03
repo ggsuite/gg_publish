@@ -10,6 +10,7 @@ import 'package:gg_args/gg_args.dart';
 import 'package:gg_git/gg_git.dart' as gg_git;
 import 'package:gg_log/gg_log.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 /// Checks if the current git branch is the main branch.
 class IsMainBranch extends DirCommand<bool> {
@@ -41,7 +42,7 @@ class IsMainBranch extends DirCommand<bool> {
     );
 
     if (!isMainBranch) {
-      throw Exception('Current branch is not the main branch');
+      throw Exception(cDetail('Current branch is not the main branch.'));
     }
 
     return isMainBranch;

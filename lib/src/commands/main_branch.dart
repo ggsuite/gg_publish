@@ -8,6 +8,7 @@ import 'dart:io';
 
 import 'package:gg_args/gg_args.dart';
 import 'package:gg_log/gg_log.dart';
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 /// Returns the name of the repository's main branch.
 class MainBranch extends DirCommand<String> {
@@ -65,7 +66,9 @@ class MainBranch extends DirCommand<String> {
     );
 
     if (result.exitCode != 0) {
-      throw Exception('Failed to read git branches: ${result.stderr}'.trim());
+      throw Exception(
+        cDetail('Failed to read the git branches: ${result.stderr}'.trim()),
+      );
     }
 
     final stdoutContent = result.stdout.toString();

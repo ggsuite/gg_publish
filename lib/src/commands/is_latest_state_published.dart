@@ -11,6 +11,7 @@ import 'package:gg_log/gg_log.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:gg_version/gg_version.dart';
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 // #############################################################################
 /// Checks if the latest state is published
@@ -66,11 +67,13 @@ class IsLatestStatePublished extends DirCommand<bool> {
 
     // Throw if latest version is bigger than the current version
     if (publishedVersion > localVersion) {
-      throw Exception(
-        'The local version "$localVersion" '
-        'is behind published version $publishedVersion. '
-        'Update and try again.',
+      ggLog(
+        [
+          cError('✗ The local version is behind the published one'),
+          cDetail('Local: $localVersion, published: $publishedVersion'),
+        ].join('\n'),
       );
+      throw Exception(cDetail('The local version is outdated.'));
     }
 
     // Return true if the current version matches the published version

@@ -583,7 +583,7 @@ void main() async {
             try {
               await isVersionPrepared.get(ggLog: ggLog, directory: d);
             } catch (e) {
-              exceptionMessage = e.toString();
+              exceptionMessage = rmC(e.toString());
             }
 
             expect(
@@ -645,16 +645,20 @@ void main() async {
             try {
               await runner.run(['is-version-prepared', '-i', d.path]);
             } catch (e) {
-              exceptionMessage = e.toString();
+              exceptionMessage = rmC(e.toString());
             }
 
             expect(messages[0], contains('⌛️ Version is prepared'));
             expect(messages[1], contains('✗ Version is prepared'));
 
-            expect(exceptionMessage, contains('must be one of the following'));
-            expect(exceptionMessage, contains('2.0.1'));
-            expect(exceptionMessage, contains('2.1.0'));
-            expect(exceptionMessage, contains('3.0.0'));
+            expect(exceptionMessage, contains('Version is not prepared.'));
+
+            // The reason is printed once, under the failed step.
+            final log = messages.join('\n');
+            expect(log, contains('must be one of the following'));
+            expect(log, contains('2.0.1'));
+            expect(log, contains('2.1.0'));
+            expect(log, contains('3.0.0'));
           });
         });
       });

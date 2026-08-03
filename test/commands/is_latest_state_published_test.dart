@@ -16,6 +16,7 @@ import 'package:gg_log/gg_log.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:test/test.dart';
 import 'package:http/http.dart' as http;
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 // .............................................................................
 /// A Mock for the http.Client class using Mocktail
@@ -79,7 +80,7 @@ void main() {
               isLatestStatePublished.get(directory: d, ggLog: ggLog),
               throwsA(
                 isA<ArgumentError>().having(
-                  (e) => e.toString(),
+                  (e) => rmC(e.toString()),
                   'toString()',
                   contains('Directory "test" is not a git repository.'),
                 ),
@@ -103,7 +104,7 @@ void main() {
                 isLatestStatePublished.get(directory: d, ggLog: ggLog),
                 throwsA(
                   isA<Exception>().having(
-                    (e) => e.toString(),
+                    (e) => rmC(e.toString()),
                     'toString()',
                     contains(
                       'Versions are not consistent: '
@@ -144,13 +145,9 @@ void main() {
               // Should throw
               throwsA(
                 isA<Exception>().having(
-                  (e) => e.toString(),
+                  (e) => rmC(e.toString()),
                   'toString()',
-                  contains(
-                    'The local version "1.0.0" '
-                    'is behind published version 1.0.2. '
-                    'Update and try again.',
-                  ),
+                  contains('The local version is outdated.'),
                 ),
               ),
             );
@@ -236,7 +233,7 @@ void main() {
               runner.run(['is-latest-state-published', '--input', 'xyz']),
               throwsA(
                 isA<ArgumentError>().having(
-                  (e) => e.toString(),
+                  (e) => rmC(e.toString()),
                   'toString()',
                   contains(
                     'Invalid argument(s): Directory "xyz" does not exist.',

@@ -13,6 +13,7 @@ import 'package:gg_process/gg_process.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:gg_is_flutter/gg_is_flutter.dart';
 import 'package:pub_semver/pub_semver.dart';
+import 'package:gg_console_colors/gg_console_colors.dart';
 
 // #############################################################################
 /// Base class for all ggGit commands
@@ -88,9 +89,13 @@ class IsUpgraded extends DirCommand<bool> {
     if (result.exitCode == 0) {
       return _evalResponse(result.stdout.toString(), majorVersions);
     } else {
-      throw Exception(
-        'Error while checking for outdated packages: ${result.stderr}',
+      ggLog(
+        [
+          cError('✗ Failed to check for outdated packages'),
+          cDetail('${result.stderr}'),
+        ].join('\n'),
       );
+      throw Exception(cDetail('Failed to check for outdated packages.'));
     }
   }
 
@@ -138,7 +143,7 @@ class IsUpgraded extends DirCommand<bool> {
 
       return true;
     } catch (e) {
-      throw Exception('Error while parsing the response: $e');
+      throw Exception(cDetail('Could not parse the response: $e'));
     }
   }
 
