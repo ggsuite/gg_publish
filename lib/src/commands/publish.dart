@@ -174,7 +174,7 @@ class Publish extends DirCommand<void> {
       ggLog(yellow('Press ⏎ once the package is published, »q« + ⏎ to abort.'));
       final answer = (_readLineFromStdIn() ?? '').trim().toLowerCase();
       if (answer == 'q') {
-        ggLog(cError('✗ »$name« has no version on $registry'));
+        ggLog(cDetail('✗ »$name« has no version on $registry'));
         throw Exception(cDetail('Publishing aborted.'));
       }
 
@@ -324,8 +324,8 @@ class Publish extends DirCommand<void> {
     if (warning != null) {
       // The warning is the actionable part — print it once and keep the
       // exception short.
-      ggLog(cError('✗ »$executable ${args.join(' ')}« reported a warning'));
-      ggLog(cDetail(_highlightPaths(warning)));
+      ggLog(cDetail('✗ »$executable ${args.join(' ')}« reported a warning'));
+      ggLog(cError(_highlightPaths(warning)));
       ggLog(cAction('Fix it, or exclude the files using a .pubignore.'));
       throw Exception(cDetail('Publishing was stopped by a warning.'));
     }

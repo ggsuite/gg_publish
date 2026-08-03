@@ -91,8 +91,8 @@ class IsUpgraded extends DirCommand<bool> {
     } else {
       ggLog(
         [
-          cError('✗ Failed to check for outdated packages'),
-          cDetail('${result.stderr}'),
+          cDetail('✗ Failed to check for outdated packages'),
+          cError('${result.stderr}'),
         ].join('\n'),
       );
       throw Exception(cDetail('Failed to check for outdated packages.'));

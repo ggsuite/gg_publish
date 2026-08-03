@@ -69,8 +69,8 @@ class IsLatestStatePublished extends DirCommand<bool> {
     if (publishedVersion > localVersion) {
       ggLog(
         [
-          cError('✗ The local version is behind the published one'),
-          cDetail('Local: $localVersion, published: $publishedVersion'),
+          cDetail('✗ The local version is behind the published one'),
+          cError('Local: $localVersion, published: $publishedVersion'),
         ].join('\n'),
       );
       throw Exception(cDetail('The local version is outdated.'));

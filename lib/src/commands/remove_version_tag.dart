@@ -123,8 +123,8 @@ class RemoveVersionTag extends DirCommand<bool> {
     if (existing.exitCode != 0) {
       ggLog(
         [
-          cError('✗ Failed to list the tags of ${dirName(directory)}'),
-          cDetail('${existing.stderr}'),
+          cDetail('✗ Failed to list the tags of ${dirName(directory)}'),
+          cError('${existing.stderr}'),
         ].join('\n'),
       );
       throw Exception(cDetail('Failed to list the tags.'));
@@ -148,8 +148,8 @@ class RemoveVersionTag extends DirCommand<bool> {
     if (result.exitCode != 0) {
       ggLog(
         [
-          cError('✗ Failed to remove the local tag $version'),
-          cDetail('${result.stderr}'),
+          cDetail('✗ Failed to remove the local tag $version'),
+          cError('${result.stderr}'),
         ].join('\n'),
       );
       throw Exception(cDetail('Failed to remove the local tag.'));
@@ -184,8 +184,8 @@ class RemoveVersionTag extends DirCommand<bool> {
     if (remoteTags.exitCode != 0) {
       ggLog(
         [
-          cError('✗ Failed to list the remote tags of ${dirName(directory)}'),
-          cDetail('${remoteTags.stderr}'),
+          cDetail('✗ Failed to list the remote tags of ${dirName(directory)}'),
+          cError('${remoteTags.stderr}'),
         ].join('\n'),
       );
       throw Exception(cDetail('Failed to list the remote tags.'));
@@ -214,8 +214,8 @@ class RemoveVersionTag extends DirCommand<bool> {
     if (result.exitCode != 0) {
       ggLog(
         [
-          cError('✗ Failed to remove the remote tag $version'),
-          cDetail('${result.stderr}'),
+          cDetail('✗ Failed to remove the remote tag $version'),
+          cError('${result.stderr}'),
         ].join('\n'),
       );
       throw Exception(cDetail('Failed to remove the remote tag.'));

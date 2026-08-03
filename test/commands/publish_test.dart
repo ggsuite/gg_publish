@@ -526,9 +526,7 @@ void main() {
               isA<Exception>().having(
                 (e) => rmC(e.toString()),
                 'message',
-                contains(
-                  'Publishing aborted.',
-                ),
+                contains('Publishing aborted.'),
               ),
             ),
           );
@@ -627,14 +625,11 @@ Package has 1 warning.''';
               contains('Publishing was stopped by a warning.'),
             );
 
-            // The warning itself is a detail — the ✗ line above it carries
-            // the red. The paths within it stay blue.
+            // The warning carries the red — the ✗ line above it is a detail.
+            // The paths within it stay blue.
             final logged = messages.firstWhere((m) => m.contains('.gg.json'));
-            expect(logged, startsWith('\x1B[90m'));
-            expect(
-              messages.any((m) => m.startsWith('\x1B[31m✗ ')),
-              isTrue,
-            );
+            expect(logged, startsWith('\x1B[31m'));
+            expect(messages.any((m) => m.startsWith('\x1B[90m✗ ')), isTrue);
             expect(logged, contains('\x1B[34m.gg/.gg.json'));
             expect(logged, contains('\x1B[34m.gg/.ticket.json'));
             // The summary line is not part of the printed report.

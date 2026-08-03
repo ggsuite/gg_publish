@@ -70,8 +70,8 @@ class PublishedVersion extends DirCommand<Version> {
     } on RegistryException catch (e) {
       ggLog(
         [
-          cError('✗ Failed to read the latest version from the registry'),
-          cDetail('$e'),
+          cDetail('✗ Failed to read the latest version from the registry'),
+          cError('$e'),
         ].join('\n'),
       );
       throw Exception(cDetail('Failed to read the registry.'));

@@ -88,7 +88,7 @@ class MergeMainIntoFeat extends DirCommand<void> {
       final details = stderr.isNotEmpty ? stderr : stdout;
       // The reason is printed once; the exception only ends the run.
       ggLog(
-        [cError('✗ Failed to $actionDescription'), cDetail(details)].join('\n'),
+        [cDetail('✗ Failed to $actionDescription'), cError(details)].join('\n'),
       );
       throw Exception(cDetail('Failed to $actionDescription.'));
     }

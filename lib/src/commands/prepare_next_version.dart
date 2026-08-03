@@ -220,7 +220,7 @@ class PrepareNextVersion extends DirCommand<void> {
       if (version.preRelease.isEmpty) {
         ggLog(
           [
-            cError('✗ Cannot prepare an rc for $target'),
+            cDetail('✗ Cannot prepare an rc for $target'),
             cDetail(
               '$target is already published as a stable version. That version '
               'number is spent — a retracted release counts as well.',
