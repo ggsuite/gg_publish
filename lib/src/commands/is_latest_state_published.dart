@@ -39,6 +39,7 @@ class IsLatestStatePublished extends DirCommand<bool> {
     final printer = GgStatusPrinter<bool>(
       message: 'Latest state is on pub.dev.',
       ggLog: ggLog,
+      dark: true,
     );
 
     return await printer.logTask(

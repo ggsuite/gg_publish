@@ -10,10 +10,16 @@ import 'package:args/command_runner.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pub_semver/pub_semver.dart';
+import 'package:gg_log/gg_log.dart';
+import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:test/test.dart';
 
 void main() {
   final messages = <String>[];
+  // Strip the colors and the overwrite sequence so the expectations assert
+  // the text. One closure instance — mocktail matches ggLog by identity.
+  // ignore: prefer_function_declarations_over_variables
+  final GgLog ggLog = (String msg) => messages.add(rmControls(msg));
   late Directory d;
   late CommandRunner<dynamic> runner;
   late MockPublishedVersion publishedVersion;
@@ -34,7 +40,7 @@ void main() {
     publishedVersion = MockPublishedVersion();
     registerFallbackValue(d);
     isInRegistry = IsInRegistry(
-      ggLog: messages.add,
+      ggLog: ggLog,
       publishedVersion: publishedVersion,
     );
     runner = CommandRunner<dynamic>('test', 'test')..addCommand(isInRegistry);
@@ -51,10 +57,7 @@ void main() {
       test('returns true when the registry has at least one version', () async {
         mockRegistryVersions([Version(1, 0, 0)]);
 
-        final result = await isInRegistry.get(
-          directory: d,
-          ggLog: messages.add,
-        );
+        final result = await isInRegistry.get(directory: d, ggLog: ggLog);
 
         expect(result, isTrue);
       });
@@ -62,10 +65,7 @@ void main() {
       test('returns false when the package was never published', () async {
         mockRegistryVersions(<Version>[]);
 
-        final result = await isInRegistry.get(
-          directory: d,
-          ggLog: messages.add,
-        );
+        final result = await isInRegistry.get(directory: d, ggLog: ggLog);
 
         expect(result, isFalse);
       });
@@ -73,10 +73,7 @@ void main() {
       test('returns false when the package has no public registry', () async {
         mockRegistryVersions(null);
 
-        final result = await isInRegistry.get(
-          directory: d,
-          ggLog: messages.add,
-        );
+        final result = await isInRegistry.get(directory: d, ggLog: ggLog);
 
         expect(result, isFalse);
       });
@@ -88,7 +85,7 @@ void main() {
 
         final result = await isInRegistry.inRegistry(
           directory: d,
-          ggLog: messages.add,
+          ggLog: ggLog,
         );
 
         expect(result, isNull);
@@ -99,7 +96,7 @@ void main() {
 
         final result = await isInRegistry.inRegistry(
           directory: d,
-          ggLog: messages.add,
+          ggLog: ggLog,
         );
 
         expect(result, isFalse);
@@ -110,7 +107,7 @@ void main() {
 
         final result = await isInRegistry.inRegistry(
           directory: d,
-          ggLog: messages.add,
+          ggLog: ggLog,
         );
 
         expect(result, isTrue);
@@ -124,24 +121,21 @@ void main() {
         await runner.run(['is-in-registry', '--input', d.path]);
 
         expect(messages.first, contains('⌛️ Is available on the registry.'));
-        expect(messages.last, contains('✅ Is available on the registry.'));
+        expect(messages.last, contains('✓ Is available on the registry.'));
       });
 
       test('logs a failure when the package is not in the registry', () async {
         mockRegistryVersions(<Version>[]);
 
-        final result = await isInRegistry.exec(
-          directory: d,
-          ggLog: messages.add,
-        );
+        final result = await isInRegistry.exec(directory: d, ggLog: ggLog);
 
         expect(result, isFalse);
-        expect(messages.last, contains('❌ Is available on the registry.'));
+        expect(messages.last, contains('✗ Is available on the registry.'));
       });
     });
 
     test('has a code coverage of 100%', () {
-      expect(IsInRegistry(ggLog: messages.add), isNotNull);
+      expect(IsInRegistry(ggLog: ggLog), isNotNull);
     });
   });
 }

@@ -33,6 +33,7 @@ class IsOnPubDev extends DirCommand<bool> {
     final printer = GgStatusPrinter<bool>(
       message: 'Package is on pub.dev.',
       ggLog: ggLog,
+      dark: true,
     );
 
     return printer.logTask(

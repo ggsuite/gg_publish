@@ -32,6 +32,7 @@ class IsMainBranch extends DirCommand<bool> {
     final printer = GgStatusPrinter<bool>(
       message: 'Current branch is main branch',
       ggLog: ggLog,
+      dark: true,
     );
 
     final isMainBranch = await printer.logTask(

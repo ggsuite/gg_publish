@@ -6,6 +6,10 @@
 
 - refactor: shorten all CLI help texts to 60 chars
 
+### Fixed
+
+- Fix unit test errors
+
 ## 3.9.2 - 2026-08-01
 
 ### Changed

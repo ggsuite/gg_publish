@@ -40,6 +40,7 @@ class IsUpgraded extends DirCommand<bool> {
     final printer = GgStatusPrinter<bool>(
       message: 'Everything is upgraded.',
       ggLog: ggLog,
+      dark: true,
     );
 
     return await printer.logTask(

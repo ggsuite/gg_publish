@@ -46,6 +46,7 @@ class IsVersionPrepared extends DirCommand<bool> {
     final printer = GgStatusPrinter<bool>(
       message: 'Version is prepared',
       ggLog: ggLog,
+      dark: true,
     );
 
     final ok = await printer.logTask(

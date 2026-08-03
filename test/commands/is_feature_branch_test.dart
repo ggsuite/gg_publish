@@ -10,6 +10,8 @@ import 'package:args/command_runner.dart';
 import 'package:gg_git/gg_git_test_helpers.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:gg_log/gg_log.dart';
+import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:test/test.dart';
 import 'package:gg_git/gg_git.dart' as gg_git;
 
@@ -18,13 +20,17 @@ void main() {
   late IsFeatureBranch isFeatureBranchCommand;
   late CommandRunner<dynamic> runner;
   final messages = <String>[];
+  // Strip the colors and the overwrite sequence so the expectations assert
+  // the text. One closure instance — mocktail matches ggLog by identity.
+  // ignore: prefer_function_declarations_over_variables
+  final GgLog ggLog = (String msg) => messages.add(rmControls(msg));
 
   setUp(() async {
     messages.clear();
     d = await initTestDir();
     await initGit(d);
 
-    isFeatureBranchCommand = IsFeatureBranch(ggLog: messages.add);
+    isFeatureBranchCommand = IsFeatureBranch(ggLog: ggLog);
 
     runner = CommandRunner<dynamic>('test', 'test')
       ..addCommand(isFeatureBranchCommand);
@@ -39,7 +45,7 @@ void main() {
   group('IsFeatureBranch', () {
     group('constructor', () {
       test('should create wrapped gg_git command by default', () {
-        expect(() => IsFeatureBranch(ggLog: messages.add), returnsNormally);
+        expect(() => IsFeatureBranch(ggLog: ggLog), returnsNormally);
       });
     });
 
@@ -49,7 +55,7 @@ void main() {
 
         final result = await isFeatureBranchCommand.get(
           directory: d,
-          ggLog: messages.add,
+          ggLog: ggLog,
         );
 
         expect(result, isTrue);
@@ -58,7 +64,7 @@ void main() {
       test('should return false for a real non-feature branch', () async {
         final result = await isFeatureBranchCommand.get(
           directory: d,
-          ggLog: messages.add,
+          ggLog: ggLog,
         );
 
         expect(result, isFalse);
@@ -73,12 +79,9 @@ void main() {
           ),
         ).thenAnswer((_) async => true);
 
-        final command = IsFeatureBranch(
-          ggLog: messages.add,
-          isFeatureBranch: mock,
-        );
+        final command = IsFeatureBranch(ggLog: ggLog, isFeatureBranch: mock);
 
-        final result = await command.get(directory: d, ggLog: messages.add);
+        final result = await command.get(directory: d, ggLog: ggLog);
 
         expect(result, isTrue);
         verify(
@@ -96,24 +99,21 @@ void main() {
 
         final result = await isFeatureBranchCommand.exec(
           directory: d,
-          ggLog: messages.add,
+          ggLog: ggLog,
         );
 
         expect(result, isTrue);
         expect(messages.first, contains('⌛️ Current branch is feature branch'));
-        expect(messages.last, contains('✅ Current branch is feature branch'));
+        expect(messages.last, contains('✓ Current branch is feature branch'));
       });
 
       test(
-        'should print ❌ and throw when branch is not a feature branch',
+        'should print ✗ and throw when branch is not a feature branch',
         () async {
           late String exceptionMessage;
 
           try {
-            await isFeatureBranchCommand.exec(
-              directory: d,
-              ggLog: messages.add,
-            );
+            await isFeatureBranchCommand.exec(directory: d, ggLog: ggLog);
           } catch (e) {
             exceptionMessage = e.toString();
           }
@@ -122,7 +122,7 @@ void main() {
             messages.first,
             contains('⌛️ Current branch is feature branch'),
           );
-          expect(messages.last, contains('❌ Current branch is feature branch'));
+          expect(messages.last, contains('✗ Current branch is feature branch'));
           print(exceptionMessage);
           expect(exceptionMessage, isNotEmpty);
           expect(
@@ -139,7 +139,7 @@ void main() {
 
         await runner.run(['is-feature-branch', '--input', d.path]);
 
-        expect(messages.last, contains('✅ Current branch is feature branch'));
+        expect(messages.last, contains('✓ Current branch is feature branch'));
       });
 
       test(
@@ -154,7 +154,7 @@ void main() {
             messages.first,
             contains('⌛️ Current branch is feature branch'),
           );
-          expect(messages.last, contains('❌ Current branch is feature branch'));
+          expect(messages.last, contains('✗ Current branch is feature branch'));
         },
       );
     });

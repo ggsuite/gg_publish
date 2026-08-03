@@ -35,6 +35,7 @@ class IsFeatureBranch extends DirCommand<bool> {
     final printer = GgStatusPrinter<bool>(
       message: 'Current branch is feature branch',
       ggLog: ggLog,
+      dark: true,
     );
 
     final isFeatureBranch = await printer.logTask(

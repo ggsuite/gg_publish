@@ -10,6 +10,8 @@ import 'package:args/command_runner.dart';
 import 'package:gg_git/gg_git_test_helpers.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:gg_log/gg_log.dart';
+import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:test/test.dart';
 import 'package:gg_git/gg_git.dart' as gg_git;
 
@@ -18,13 +20,17 @@ void main() {
   late IsMainBranch isMainBranchCommand;
   late CommandRunner<dynamic> runner;
   final messages = <String>[];
+  // Strip the colors and the overwrite sequence so the expectations assert
+  // the text. One closure instance — mocktail matches ggLog by identity.
+  // ignore: prefer_function_declarations_over_variables
+  final GgLog ggLog = (String msg) => messages.add(rmControls(msg));
 
   setUp(() async {
     messages.clear();
     d = await initTestDir();
     await initGit(d);
 
-    isMainBranchCommand = IsMainBranch(ggLog: messages.add);
+    isMainBranchCommand = IsMainBranch(ggLog: ggLog);
 
     runner = CommandRunner<dynamic>('test', 'test')
       ..addCommand(isMainBranchCommand);
@@ -39,7 +45,7 @@ void main() {
   group('IsMainBranch', () {
     group('constructor', () {
       test('should create wrapped gg_git command by default', () {
-        expect(() => IsMainBranch(ggLog: messages.add), returnsNormally);
+        expect(() => IsMainBranch(ggLog: ggLog), returnsNormally);
       });
     });
 
@@ -49,7 +55,7 @@ void main() {
 
         final result = await isMainBranchCommand.get(
           directory: d,
-          ggLog: messages.add,
+          ggLog: ggLog,
         );
 
         expect(result, isFalse);
@@ -58,7 +64,7 @@ void main() {
       test('should return true for a real non-feature branch', () async {
         final result = await isMainBranchCommand.get(
           directory: d,
-          ggLog: messages.add,
+          ggLog: ggLog,
         );
 
         expect(result, isTrue);
@@ -73,12 +79,9 @@ void main() {
           ),
         ).thenAnswer((_) async => false);
 
-        final command = IsMainBranch(
-          ggLog: messages.add,
-          isFeatureBranch: mock,
-        );
+        final command = IsMainBranch(ggLog: ggLog, isFeatureBranch: mock);
 
-        final result = await command.get(directory: d, ggLog: messages.add);
+        final result = await command.get(directory: d, ggLog: ggLog);
 
         expect(result, isTrue);
         verify(
@@ -94,28 +97,28 @@ void main() {
       test('should print when branch is the main branch', () async {
         final result = await isMainBranchCommand.exec(
           directory: d,
-          ggLog: messages.add,
+          ggLog: ggLog,
         );
 
         expect(result, isTrue);
         expect(messages.first, contains('⌛️ Current branch is main branch'));
-        expect(messages.last, contains('✅ Current branch is main branch'));
+        expect(messages.last, contains('✓ Current branch is main branch'));
       });
 
       test(
-        'should print ❌ and throw when branch is not the main branch',
+        'should print ✗ and throw when branch is not the main branch',
         () async {
           await createBranch(d, 'feature/test-branch');
           late String exceptionMessage;
 
           try {
-            await isMainBranchCommand.exec(directory: d, ggLog: messages.add);
+            await isMainBranchCommand.exec(directory: d, ggLog: ggLog);
           } catch (e) {
             exceptionMessage = e.toString();
           }
 
           expect(messages.first, contains('⌛️ Current branch is main branch'));
-          expect(messages.last, contains('❌ Current branch is main branch'));
+          expect(messages.last, contains('✗ Current branch is main branch'));
           expect(exceptionMessage, isNotEmpty);
           expect(
             exceptionMessage,
@@ -129,7 +132,7 @@ void main() {
       test('should allow to run command from CLI', () async {
         await runner.run(['is-main-branch', '--input', d.path]);
 
-        expect(messages.last, contains('✅ Current branch is main branch'));
+        expect(messages.last, contains('✓ Current branch is main branch'));
       });
 
       test(
@@ -143,7 +146,7 @@ void main() {
           );
 
           expect(messages.first, contains('⌛️ Current branch is main branch'));
-          expect(messages.last, contains('❌ Current branch is main branch'));
+          expect(messages.last, contains('✗ Current branch is main branch'));
         },
       );
     });

@@ -12,6 +12,8 @@ import 'package:gg_git/gg_git_test_helpers.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:gg_version/gg_version.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:gg_log/gg_log.dart';
+import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:test/test.dart';
 import 'package:http/http.dart' as http;
 
@@ -21,6 +23,10 @@ class MockClient extends Mock implements http.Client {}
 
 void main() {
   final messages = <String>[];
+  // Strip the colors and the overwrite sequence so the expectations assert
+  // the text. One closure instance — mocktail matches ggLog by identity.
+  // ignore: prefer_function_declarations_over_variables
+  final GgLog ggLog = (String msg) => messages.add(rmControls(msg));
   late CommandRunner<dynamic> runner;
   late IsLatestStatePublished isLatestStatePublished;
   late Directory tmp;
@@ -30,12 +36,9 @@ void main() {
   // ...........................................................................
   Future<void> initIsLatestStatePublished() async {
     isLatestStatePublished = IsLatestStatePublished(
-      ggLog: messages.add,
-      publishedVersion: PublishedVersion(
-        ggLog: messages.add,
-        httpClient: httpClient,
-      ),
-      consistentVersion: ConsistentVersion(ggLog: messages.add),
+      ggLog: ggLog,
+      publishedVersion: PublishedVersion(ggLog: ggLog, httpClient: httpClient),
+      consistentVersion: ConsistentVersion(ggLog: ggLog),
     );
     runner.addCommand(isLatestStatePublished);
   }
@@ -62,7 +65,7 @@ void main() {
       test(
         'should create instances of PublishedVersion and ConsistentVersion',
         () {
-          IsLatestStatePublished(ggLog: messages.add);
+          IsLatestStatePublished(ggLog: ggLog);
         },
       );
     });
@@ -73,7 +76,7 @@ void main() {
         group('and log the reason', () {
           test('when the directory is not a git repo', () async {
             await expectLater(
-              isLatestStatePublished.get(directory: d, ggLog: messages.add),
+              isLatestStatePublished.get(directory: d, ggLog: ggLog),
               throwsA(
                 isA<ArgumentError>().having(
                   (e) => e.toString(),
@@ -97,7 +100,7 @@ void main() {
               );
 
               await expectLater(
-                isLatestStatePublished.get(directory: d, ggLog: messages.add),
+                isLatestStatePublished.get(directory: d, ggLog: ggLog),
                 throwsA(
                   isA<Exception>().having(
                     (e) => e.toString(),
@@ -136,7 +139,7 @@ void main() {
 
             // Call isPublished.get()
             await expectLater(
-              isLatestStatePublished.get(directory: d, ggLog: messages.add),
+              isLatestStatePublished.get(directory: d, ggLog: ggLog),
 
               // Should throw
               throwsA(
@@ -179,7 +182,7 @@ void main() {
           // Call isPublished.get()
           final result = await isLatestStatePublished.get(
             directory: d,
-            ggLog: messages.add,
+            ggLog: ggLog,
           );
 
           expect(result, isTrue);
@@ -190,10 +193,7 @@ void main() {
       group('should print', () {
         group('a usage description', () {
           test('when called with --help', () async {
-            capturePrint(
-              ggLog: messages.add,
-              code: () => runner.run(['--help']),
-            );
+            capturePrint(ggLog: ggLog, code: () => runner.run(['--help']));
 
             expect(messages.last, contains('Available commands:'));
             expect(messages.last, contains(isLatestStatePublished.name));
@@ -224,7 +224,7 @@ void main() {
             // Call isPublished.run()
             await runner.run(['is-latest-state-published', '--input', d.path]);
 
-            expect(messages.last, contains('✅ Latest state is on pub.dev.'));
+            expect(messages.last, contains('✓ Latest state is on pub.dev.'));
           });
         });
       });
