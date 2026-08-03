@@ -188,10 +188,9 @@ packages:
   gg_lang:
     dependency: "direct main"
     description:
-      name: gg_lang
-      sha256: "38a1cc9119aca83ffee493c84062aada09f34d06a1836c3cf5f0bbdf432cc593"
-      url: "https://pub.dev"
-    source: hosted
+      path: "../gg_lang"
+      relative: true
+    source: path
     version: "0.3.2"
   gg_log:
     dependency: "direct main"
@@ -228,10 +227,9 @@ packages:
   gg_version:
     dependency: "direct main"
     description:
-      name: gg_version
-      sha256: bac5841f20991227bed6bad115bea02b557d2b32ed89b97c411937a305df23e4
-      url: "https://pub.dev"
-    source: hosted
+      path: "../gg_version"
+      relative: true
+    source: path
     version: "4.5.1"
   glob:
     dependency: transitive

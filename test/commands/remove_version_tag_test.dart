@@ -216,7 +216,9 @@ void main() {
           expect(removed, isFalse);
           expect(await localTags(local), ['0.9.0']);
           expect(await remoteTags(local), contains('refs/tags/0.9.0'));
-          expect(messages, contains('No tag 1.0.0 to be removed.'));
+          // Nothing was removed and nothing is reported — a tag that does
+          // not exist is a non-event.
+          expect(messages, isEmpty);
         });
 
         test('when the project has no manifest', () async {

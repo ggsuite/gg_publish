@@ -69,8 +69,9 @@ class RemoveVersionTag extends DirCommand<bool> {
     final removedLocally = await _removeLocalTag(directory, version, ggLog);
     final removedRemotely = await _removeRemoteTag(directory, version, ggLog);
 
+    // Nothing removed means there was no tag in the first place — a non-event
+    // the user does not need to read about.
     if (!removedLocally && !removedRemotely) {
-      ggLog('No tag $version to be removed.');
       return false;
     }
 

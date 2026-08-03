@@ -71,20 +71,29 @@ class Publish extends DirCommand<void> {
   }) async {
     // final messages = <String>[];
 
+    // The publish itself logs what it does, so only the announcement is
+    // printed — dimmed, because it is not the line the user has to read. A
+    // success line would repeat the announcement without adding anything;
+    // only a failure is worth its own mark.
     final printer = GgStatusPrinter<void>(
       message: 'Publishing',
       ggLog: ggLog,
       useCarriageReturn: false,
+      dark: true,
     );
 
-    await printer.logTask(
-      task: () => _exec(
+    printer.logStatus(GgStatusPrinterStatus.running);
+
+    try {
+      await _exec(
         ggLog: ggLog,
         directory: directory,
         askBeforePublishing: askBeforePublishing ?? _askBeforePublishing,
-      ),
-      success: (success) => true,
-    );
+      );
+    } catch (e) {
+      printer.logStatus(GgStatusPrinterStatus.error);
+      rethrow;
+    }
   }
 
   // ######################
