@@ -91,6 +91,7 @@ class PrepareNextVersion extends DirCommand<void> {
     await GgStatusPrinter<void>(
       message: 'Increase version',
       ggLog: ggLog,
+      dark: true,
     ).logTask(
       task: () => apply(
         ggLog: ggLog,
