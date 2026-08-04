@@ -9,4 +9,4 @@
 // coverage:ignore-file
 
 /// The version of the `gg_publish` package.
-const String ggPublishVersion = '3.10.0';
+const String ggPublishVersion = '3.10.1';
