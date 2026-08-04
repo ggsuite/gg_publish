@@ -157,10 +157,10 @@ packages:
     dependency: "direct main"
     description:
       name: gg_git
-      sha256: "8333a25884135b3a9d9bb7370ced70cff67a93caa931dbe42492c2a20fa65394"
+      sha256: "24186fc47fb915f8528bac4c2e7770fcba42f0ff1e76365ce987e607c8aaf173"
       url: "https://pub.dev"
     source: hosted
-    version: "3.2.1"
+    version: "3.2.2"
   gg_hash:
     dependency: transitive
     description:
@@ -229,10 +229,10 @@ packages:
     dependency: "direct main"
     description:
       name: gg_version
-      sha256: adeed5dd3cc9bda898fc13aa97f6b91e3e9c416e767b4508d35c8905bbfc954c
+      sha256: bb0c4b86c73803780cfa766bf2784c62dbdc214e0bd02e3068bb627d241c9e4b
       url: "https://pub.dev"
     source: hosted
-    version: "4.6.0"
+    version: "4.6.1"
   glob:
     dependency: transitive
     description:
