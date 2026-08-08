@@ -71,6 +71,7 @@ class PrepareNextVersion extends DirCommand<void> {
     VersionIncrement? increment,
     ReleaseChannel? channel,
     Version? publishedVersion,
+    Map<String, dynamic> options = const {},
   }) => get(
     directory: directory,
     ggLog: ggLog,

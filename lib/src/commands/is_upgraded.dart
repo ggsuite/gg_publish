@@ -35,6 +35,7 @@ class IsUpgraded extends DirCommand<bool> {
     required Directory directory,
     required GgLog ggLog,
     bool? majorVersions,
+    Map<String, dynamic> options = const {},
   }) async {
     final messages = <String>[];
 

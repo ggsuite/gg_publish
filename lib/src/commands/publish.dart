@@ -56,6 +56,7 @@ class Publish extends DirCommand<void> {
     required Directory directory,
     required GgLog ggLog,
     bool? askBeforePublishing,
+    Map<String, dynamic> options = const {},
   }) async => get(
     directory: directory,
     ggLog: ggLog,

@@ -40,6 +40,7 @@ class PublishedVersion extends DirCommand<Version> {
   Future<Version> exec({
     required Directory directory,
     required GgLog ggLog,
+    Map<String, dynamic> options = const {},
   }) async {
     final version = await get(directory: directory, ggLog: ggLog);
     ggLog(version.toString());
