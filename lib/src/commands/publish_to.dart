@@ -10,11 +10,12 @@ import 'package:gg_args/gg_args.dart';
 import 'package:gg_lang/gg_lang.dart';
 import 'package:gg_log/gg_log.dart';
 
-/// Returns the publish target of a package's manifest.
+/// Returns the registries a package publishes to.
 ///
-/// For Dart/Flutter this is the value of `pubspec.yaml`'s `publish_to` field
-/// (defaulting to `pub.dev`). For TypeScript it is derived from
-/// `package.json`'s `private` field: `none` when private, otherwise `npm`.
+/// The Dart side is described by `pubspec.yaml`'s `publish_to` field
+/// (defaulting to pub.dev), the npm side by `package.json`'s `private` field. A
+/// *hybrid* carries both manifests and can therefore have both targets — see
+/// [targets], which is what every publishing decision uses.
 class PublishTo extends DirCommand<void> {
   /// Constructor
   PublishTo({
@@ -36,36 +37,26 @@ class PublishTo extends DirCommand<void> {
   }
 
   // ...........................................................................
-  /// Returns the publish target of the manifest in [directory].
-  Future<String> fromDirectory(Directory directory) async {
-    // Bridges (pubspec + package.json) publish as TypeScript → npm target.
-    final type = checkProjectType(directory);
+  /// Returns the registries the package in [directory] publishes to.
+  ///
+  /// An empty set means the package has no public registry and is released
+  /// through git tags only.
+  Future<Set<PublishTarget>> targets(Directory directory) async =>
+      publishTargetsOf(
+        directory,
+        catalog: _catalog ?? await LanguageCatalog.load(),
+      );
 
-    // Without a manifest there is no registry — such projects publish to
-    // git only.
-    if (type == ProjectType.none) {
-      return 'none';
-    }
-
-    final catalog = _catalog ?? await LanguageCatalog.load();
-    final manifest = Manifest(
-      directory: directory,
-      spec: catalog.spec(type).manifest,
-    );
-
-    switch (type) {
-      case ProjectType.dart:
-      case ProjectType.flutter:
-        return await manifest.readPublishTargetMarker() ?? 'pub.dev';
-      case ProjectType.typescript:
-        return await manifest.isPrivate() ? 'none' : 'npm';
-      // coverage:ignore-start
-      case ProjectType.none:
-        // Handled above — kept for exhaustiveness.
-        return 'none';
-      // coverage:ignore-end
-    }
-  }
+  // ...........................................................................
+  /// Returns the publish target of the manifest in [directory] as a label:
+  /// `none`, `pub.dev`, `npm` or `pub.dev+npm`.
+  ///
+  /// Kept for messages and for the CLI output. Decisions must use [targets] —
+  /// no single string can answer »run pana?«, »check the npm login?« and »is
+  /// there any registry?« at once for a hybrid, and pretending otherwise is
+  /// what made hybrids npm-only.
+  Future<String> fromDirectory(Directory directory) async =>
+      (await targets(directory)).label;
 }
 
 /// Mock implementation of PublishTo

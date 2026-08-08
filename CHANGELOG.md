@@ -1,5 +1,49 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `SyncHybridVersions` — writes the higher of `pubspec.yaml` and
+`package.json` into both manifests and regenerates the version files. A hybrid
+has two version numbers describing one artifact, and nothing kept them
+together, so they drifted.
+- `PublishTo.targets` — the registries a package publishes to, as a set.
+`fromDirectory` stays, but only as a label for messages (`pub.dev+npm` for a
+hybrid): no single string can answer "run pana?", "check the npm login?" and
+"is there any registry?" at once, and pretending otherwise is what made
+hybrids npm-only.
+- `Publish` takes `targets` and an `onPublished` callback. A resumed publish
+passes the registries that are still open, and the callback runs *between* the
+uploads, so a registry that already accepted the version is recorded before
+the next one can fail.
+- `PublishedVersion.latestVersionFor` / `registryVersionsFor` answer per
+registry; `IsInRegistry.missingTargets` names the registries a package has
+never been released on.
+
+### Changed
+
+- A hybrid is published to **both** of its registries. Each manifest decides
+for its own side: `publish_to: none` takes the Dart side out without touching
+the npm side, and `private: true` does the reverse. pub.dev is uploaded first
+because `dart pub publish --dry-run` is the only pre-upload validation gate.
+- When one registry fails after another succeeded, the failure now says which
+registry is already done — reporting "nothing happened" made users restart
+instead of continue, and the restart was then rejected by the registry.
+- `PublishedVersion.get` returns the **highest** version across all registries
+of a package, and `allVersions`/`registryVersions` their union. The bump has to
+clear every registry the package is on.
+- `IsInRegistry` reports true only when **every** registry has the package, and
+the first-publish prompt asks per registry, naming that registry's package name
+and publish command.
+- The npm wait prints the status page of the **resolved** registry. A scoped
+package on a private feed is not on npmjs.com, and that link sent users to a
+- `publish_to:` naming a custom pub server is treated as a pub.dev target
+instead of raising `UnimplementedError`. Only `none` takes a package off its
+registry. Note the version lookup still queries pub.dev itself — the registry
+url comes from the language catalog, not from the manifest.
+- Allow to publish hybrid packages
+
 ## 4.0.0 - 2026-08-08
 
 ### Changed

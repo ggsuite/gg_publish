@@ -510,5 +510,212 @@ void main() {
         expect(messages.last, '1.0.2');
       });
     });
+
+    // .........................................................................
+    group('for a hybrid publishing to both registries', () {
+      late MockGgProcessWrapper wrapper;
+      late PublishedVersion hybrid;
+
+      /// Makes pub.dev answer with [pubDev] and npm with [npm]. A null list
+      /// means »never published there«.
+      void mockRegistries({List<String>? pubDev, List<String>? npm}) {
+        final uri = Uri.parse('https://pub.dev/api/packages/gg_check');
+        when(() => client.get(uri)).thenAnswer(
+          (_) async => pubDev == null
+              ? http.Response('', 404)
+              : http.Response(
+                  '{"latest":{"version":"${pubDev.last}"}, "versions": '
+                  '[${pubDev.map((v) => '{"version":"$v"}').join(',')}]}',
+                  200,
+                ),
+        );
+        when(
+          () => wrapper.run(
+            any(),
+            any(),
+            runInShell: any(named: 'runInShell'),
+            workingDirectory: any(named: 'workingDirectory'),
+          ),
+        ).thenAnswer(
+          (_) async => npm == null
+              ? ProcessResult(0, 1, '', 'npm error code E404')
+              : ProcessResult(
+                  0,
+                  0,
+                  '[${npm.map((v) => '"$v"').join(',')}]\n',
+                  '',
+                ),
+        );
+      }
+
+      setUp(() {
+        client = MockClient();
+        wrapper = MockGgProcessWrapper();
+        // The sample package is a Dart package named gg_check; adding a
+        // package.json turns it into a hybrid.
+        File(
+          '${d.path}/package.json',
+        ).writeAsStringSync('{"name": "@org/gg-check", "version": "1.0.0"}');
+        hybrid = PublishedVersion(
+          ggLog: messages.add,
+          httpClient: client,
+          registryFactory: RegistryFactory(
+            httpClient: client,
+            processWrapper: wrapper,
+          ),
+        );
+      });
+
+      test('get() returns the highest version across registries', () async {
+        // The bump has to clear every registry the package is on, not just
+        // whichever one happens to be asked first.
+        mockRegistries(pubDev: ['1.0.0', '1.0.1'], npm: ['1.0.0', '2.0.0']);
+
+        expect(
+          await hybrid.get(directory: d, ggLog: messages.add),
+          Version(2, 0, 0),
+        );
+      });
+
+      test('get() ignores a registry that has nothing', () async {
+        mockRegistries(pubDev: null, npm: ['1.0.0', '1.0.1']);
+
+        expect(
+          await hybrid.get(directory: d, ggLog: messages.add),
+          Version(1, 0, 1),
+        );
+      });
+
+      test('get() falls back to the git tag when both are empty', () async {
+        await initGit(d);
+        await addAndCommitVersions(
+          d,
+          pubspec: '1.2.3',
+          changeLog: '1.2.3',
+          gitHead: '2.0.0',
+        );
+        File(
+          '${d.path}/package.json',
+        ).writeAsStringSync('{"name": "@org/gg-check", "version": "1.0.0"}');
+        mockRegistries(pubDev: null, npm: null);
+
+        expect(
+          await hybrid.get(directory: d, ggLog: messages.add),
+          Version(2, 0, 0),
+        );
+      });
+
+      test('registryVersions() unions both registries', () async {
+        // An rc number spent on either registry must not be handed out again.
+        mockRegistries(pubDev: ['1.0.0', '1.0.1'], npm: ['1.0.1', '2.0.0']);
+
+        final versions = await hybrid.registryVersions(directory: d);
+
+        expect(
+          versions,
+          containsAll(<Version>[
+            Version(1, 0, 0),
+            Version(1, 0, 1),
+            Version(2, 0, 0),
+          ]),
+        );
+        expect(versions, hasLength(3));
+      });
+
+      test('registryVersionsFor() asks exactly one registry', () async {
+        mockRegistries(pubDev: ['1.0.0', '1.0.1'], npm: ['2.0.0']);
+
+        expect(
+          await hybrid.registryVersionsFor(
+            target: PublishTarget.pubDev,
+            directory: d,
+          ),
+          [Version(1, 0, 0), Version(1, 0, 1)],
+        );
+        expect(
+          await hybrid.registryVersionsFor(
+            target: PublishTarget.npm,
+            directory: d,
+          ),
+          [Version(2, 0, 0)],
+        );
+      });
+
+      test('registryVersionsFor() returns null for a non-target', () async {
+        mockRegistries(pubDev: ['1.0.0'], npm: ['2.0.0']);
+        // publish_to: none takes the Dart side out.
+        final pubspec = File('${d.path}/pubspec.yaml');
+        pubspec.writeAsStringSync(
+          '${pubspec.readAsStringSync()}\npublish_to: none',
+        );
+
+        expect(
+          await hybrid.registryVersionsFor(
+            target: PublishTarget.pubDev,
+            directory: d,
+          ),
+          isNull,
+        );
+      });
+
+      test('latestVersionFor() answers per registry', () async {
+        mockRegistries(pubDev: ['1.0.0', '1.0.1'], npm: ['2.0.0']);
+
+        expect(
+          await hybrid.latestVersionFor(
+            target: PublishTarget.pubDev,
+            directory: d,
+            ggLog: messages.add,
+          ),
+          Version(1, 0, 1),
+        );
+        expect(
+          await hybrid.latestVersionFor(
+            target: PublishTarget.npm,
+            directory: d,
+            ggLog: messages.add,
+          ),
+          Version(2, 0, 0),
+        );
+      });
+
+      test('latestVersionFor() returns null for a non-target', () async {
+        mockRegistries(pubDev: ['1.0.0'], npm: ['2.0.0']);
+        final pubspec = File('${d.path}/pubspec.yaml');
+        pubspec.writeAsStringSync(
+          '${pubspec.readAsStringSync()}\npublish_to: none',
+        );
+
+        expect(
+          await hybrid.latestVersionFor(
+            target: PublishTarget.pubDev,
+            directory: d,
+            ggLog: messages.add,
+          ),
+          isNull,
+        );
+      });
+
+      test('throws when a manifest has no name', () async {
+        mockRegistries(pubDev: ['1.0.0'], npm: ['1.0.0']);
+        File(
+          '${d.path}/package.json',
+        ).writeAsStringSync('{"version": "1.0.0"}');
+
+        expect(
+          () => hybrid.registryVersionsFor(
+            target: PublishTarget.npm,
+            directory: d,
+          ),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.toString(),
+              'message',
+              contains('name not found in package.json'),
+            ),
+          ),
+        );
+      });
+    });
   });
 }

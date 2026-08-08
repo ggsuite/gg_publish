@@ -561,39 +561,35 @@ void main() async {
       });
 
       group('should throw', () {
-        test(
-          'when pubspec.yaml contains an unsupported publish_to: value',
-          () async {
-            // Setup a version in pubspec.yaml and CHANGELOG.md
-            await addAndCommitVersions(
-              d,
-              pubspec: '1.0.0',
-              changeLog: '1.0.0',
-              gitHead: '1.0.0',
-            );
+        test('when pubspec.yaml names a custom pub server', () async {
+          // Setup a version in pubspec.yaml and CHANGELOG.md
+          await addAndCommitVersions(
+            d,
+            pubspec: '1.0.0',
+            changeLog: '1.0.0',
+            gitHead: '1.0.0',
+          );
 
-            // Write a publishTo: https://xyz into pubspec.yaml
-            final pubspec = File(join(d.path, 'pubspec.yaml'));
-            pubspec.writeAsStringSync(
-              'name: gg_publish\nversion: 1.0.0\npublish_to: https://xyz',
-            );
+          // Write a publishTo: https://xyz into pubspec.yaml
+          final pubspec = File(join(d.path, 'pubspec.yaml'));
+          pubspec.writeAsStringSync(
+            'name: gg_publish\nversion: 1.0.0\npublish_to: https://xyz',
+          );
 
-            // Publishing to https://xyz should not be supported
-            String exceptionMessage = '';
-            try {
-              await isVersionPrepared.get(ggLog: ggLog, directory: d);
-            } catch (e) {
-              exceptionMessage = rmC(e.toString());
-            }
+          // A custom pub server is a pub.dev-family target: only »none«
+          // takes the Dart side off the registry, so the version is checked
+          // against the published one exactly as usual. (The version lookup
+          // still queries pub.dev - the registry url comes from the language
+          // catalog, not from the manifest.)
+          when(
+            () => publishedVersion.get(ggLog: ggLog, directory: d),
+          ).thenAnswer((_) async => Version(1, 0, 0));
 
-            expect(
-              exceptionMessage,
-              contains(
-                'UnimplementedError: Publishing to https://xyz is not supported.',
-              ),
-            );
-          },
-        );
+          expect(
+            await isVersionPrepared.get(ggLog: ggLog, directory: d),
+            isFalse,
+          );
+        });
       });
     });
 

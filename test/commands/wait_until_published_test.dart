@@ -19,6 +19,7 @@ void main() {
   final messages = <String>[];
   final ggLog = messages.add;
   late MockRegistryWaiter waiter;
+  late MockNpmRegistryResolver npmRegistryResolver;
   late WaitUntilPublished waitUntilPublished;
 
   // ...........................................................................
@@ -31,17 +32,36 @@ void main() {
   }
 
   // ...........................................................................
-  setUp(() async {
-    d = await initTestDir();
-    messages.clear();
-    waiter = MockRegistryWaiter();
+  MockRegistryWaiter mockWaiter() {
+    final result = MockRegistryWaiter();
     when(
-      () => waiter.waitUntilVersionAvailable(
+      () => result.waitUntilVersionAvailable(
         packageName: any(named: 'packageName'),
         version: any(named: 'version'),
       ),
     ).thenAnswer((_) async {});
-    waitUntilPublished = WaitUntilPublished(ggLog: ggLog, waiter: waiter);
+    return result;
+  }
+
+  // ...........................................................................
+  setUp(() async {
+    d = await initTestDir();
+    messages.clear();
+    waiter = mockWaiter();
+    npmRegistryResolver = MockNpmRegistryResolver();
+    registerFallbackValue(d);
+    when(
+      () => npmRegistryResolver.statusUrlTemplateOf(
+        directory: any(named: 'directory'),
+        fallback: any(named: 'fallback'),
+        packageManager: any(named: 'packageManager'),
+      ),
+    ).thenAnswer((_) async => 'https://resolved.example/{name}');
+    waitUntilPublished = WaitUntilPublished(
+      ggLog: ggLog,
+      waiter: waiter,
+      npmRegistryResolver: npmRegistryResolver,
+    );
   });
 
   tearDown(() async {
@@ -123,6 +143,80 @@ void main() {
         final command = WaitUntilPublished(ggLog: ggLog);
         expect(command.timeout, const Duration(minutes: 15));
         expect(command.pollInterval, const Duration(seconds: 10));
+      });
+    });
+
+    // .........................................................................
+    group('for a hybrid', () {
+      late MockRegistryWaiter pubDevWaiter;
+      late MockRegistryWaiter npmWaiter;
+
+      setUp(() async {
+        pubDevWaiter = mockWaiter();
+        npmWaiter = mockWaiter();
+        await initPubspec();
+        File(
+          '${d.path}/package.json',
+        ).writeAsStringSync('{"name": "@scope/ts_pkg", "version": "1.2.3"}');
+        waitUntilPublished = WaitUntilPublished(
+          ggLog: ggLog,
+          waiters: {
+            PublishTarget.pubDev: pubDevWaiter,
+            PublishTarget.npm: npmWaiter,
+          },
+          npmRegistryResolver: npmRegistryResolver,
+        );
+      });
+
+      test('waits on both registries, each under its own name', () async {
+        await waitUntilPublished.get(directory: d, ggLog: ggLog);
+
+        verify(
+          () => pubDevWaiter.waitUntilVersionAvailable(
+            packageName: 'test_pkg',
+            version: '1.2.3',
+          ),
+        ).called(1);
+        verify(
+          () => npmWaiter.waitUntilVersionAvailable(
+            packageName: '@scope/ts_pkg',
+            version: '1.2.3',
+          ),
+        ).called(1);
+      });
+
+      test('waits only on the requested registry', () async {
+        await waitUntilPublished.get(
+          directory: d,
+          ggLog: ggLog,
+          targets: {PublishTarget.npm},
+        );
+
+        verifyNever(
+          () => pubDevWaiter.waitUntilVersionAvailable(
+            packageName: any(named: 'packageName'),
+            version: any(named: 'version'),
+          ),
+        );
+        verify(
+          () => npmWaiter.waitUntilVersionAvailable(
+            packageName: '@scope/ts_pkg',
+            version: '1.2.3',
+          ),
+        ).called(1);
+      });
+
+      test('resolves the npm status url, but not the pub.dev one', () async {
+        // The npm side may sit on a private feed, where the npmjs.com link
+        // from the catalog is simply wrong. pub.dev has no such ambiguity.
+        await waitUntilPublished.get(directory: d, ggLog: ggLog);
+
+        verify(
+          () => npmRegistryResolver.statusUrlTemplateOf(
+            directory: any(named: 'directory'),
+            fallback: 'https://www.npmjs.com/package/{name}?activeTab=versions',
+          ),
+        ).called(1);
       });
     });
   });

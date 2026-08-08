@@ -6,6 +6,7 @@
 
 // ignore_for_file: unawaited_futures
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:gg_git/gg_git_test_helpers.dart';
@@ -30,6 +31,7 @@ void main() {
   late MockRemoveVersionTag removeVersionTag;
   late MockPublishedVersion publishedVersion;
   late String? stdInValue;
+  late Completer<void> started;
 
   // ...........................................................................
   void mockIsVersionPrepared(bool value) {
@@ -46,14 +48,26 @@ void main() {
   /// has no public registry«.
   void mockRegistryVersions(List<List<Version>?> results) {
     var call = 0;
-    when(
-      () =>
-          publishedVersion.registryVersions(directory: any(named: 'directory')),
-    ).thenAnswer((_) async {
+    List<Version>? next() {
       final result = results[call < results.length ? call : results.length - 1];
       call++;
       return result;
-    });
+    }
+
+    when(
+      () =>
+          publishedVersion.registryVersions(directory: any(named: 'directory')),
+    ).thenAnswer((_) async => next());
+
+    // The publish flow asks per registry, so a hybrid consumes one entry per
+    // target. Both methods share the counter — only one of them is used per
+    // flow.
+    when(
+      () => publishedVersion.registryVersionsFor(
+        target: any(named: 'target'),
+        directory: any(named: 'directory'),
+      ),
+    ).thenAnswer((_) async => next());
   }
 
   // ...........................................................................
@@ -77,6 +91,28 @@ void main() {
   }
 
   // ...........................................................................
+  /// Lets the publish make progress until it is waiting on the fake process.
+  ///
+  /// The publish reads both manifests to resolve its registries before it
+  /// uploads anything, so the real file I/O needs more event-loop turns than
+  /// the default of `pumpEventQueue`.
+  Future<void> settle() => pumpEventQueue(times: 200);
+
+  // ...........................................................................
+  /// Waits until the publish actually started the fake process.
+  ///
+  /// Deterministic on purpose: a fixed number of event-queue pumps is a race
+  /// against the manifest reads that precede the upload, and losing it made
+  /// these tests assert against output that had not been produced yet.
+  Future<void> untilStarted() async {
+    await started.future.timeout(
+      const Duration(seconds: 10),
+      onTimeout: () => fail('The publish never started a process.'),
+    );
+    await settle();
+  }
+
+  // ...........................................................................
   void mockProcess({required int result, required bool force}) {
     mockDryRun();
     when(
@@ -85,7 +121,10 @@ void main() {
         'publish',
         if (force) '--force',
       ], workingDirectory: d.path),
-    ).thenAnswer((_) => Future.value(process));
+    ).thenAnswer((_) {
+      if (!started.isCompleted) started.complete();
+      return Future.value(process);
+    });
   }
 
   // ...........................................................................
@@ -99,11 +138,13 @@ void main() {
       '${d.path}/pubspec.yaml',
     ).writeAsStringSync('name: test\nversion: 1.0.0\n');
     process = GgFakeProcess();
+    started = Completer<void>();
     isVersionPrepared = MockIsVersionPrepared();
     processWrapper = MockGgProcessWrapper();
     removeVersionTag = MockRemoveVersionTag();
     publishedVersion = MockPublishedVersion();
     registerFallbackValue(d);
+    registerFallbackValue(PublishTarget.pubDev);
     removeVersionTag.mockGet(result: false, ggLog: ggLog);
     // By default the package is already available on the registry.
     mockRegistryVersions([
@@ -139,18 +180,18 @@ void main() {
           publish
               .exec(directory: d, ggLog: ggLog)
               .then((value) => isDone = true);
-          await Future<void>.delayed(Duration.zero);
+          await untilStarted();
 
           // Let the process output some message
           process.pushToStdout.add('Something happens.');
-          await Future<void>.delayed(Duration.zero);
+          await settle();
 
           // It should be logged
           expect(messages.last, contains('Something happens.'));
 
           // Let the process not fail
           process.exit(0);
-          await Future<void>.delayed(Duration.zero);
+          await settle();
 
           expect(isDone, isTrue);
         });
@@ -169,7 +210,7 @@ void main() {
               publish
                   .exec(directory: d, ggLog: ggLog, askBeforePublishing: ask)
                   .then((value) => isDone = true);
-              await Future<void>.delayed(Duration.zero);
+              await untilStarted();
 
               if (shouldAsk) {
                 // Answer the next question with y
@@ -178,7 +219,7 @@ void main() {
                 // Let the process output some message
                 process.pushToStdout.add('Do you want to publish');
 
-                await Future<void>.delayed(Duration.zero);
+                await settle();
 
                 // It should be logged
                 expect(messages.last, contains('Do you want to publish'));
@@ -186,7 +227,7 @@ void main() {
 
               // Let the process not fail
               process.exit(0);
-              await Future<void>.delayed(Duration.zero);
+              await settle();
 
               expect(isDone, isTrue);
             });
@@ -209,15 +250,15 @@ void main() {
                 exception = error;
                 return false;
               });
-          await Future<void>.delayed(Duration.zero);
+          await untilStarted();
 
           // Let the process write a notice to stderr
           process.pushToStderr.add('Uploading... (0.5s)');
-          await Future<void>.delayed(Duration.zero);
+          await settle();
 
           // Let the process succeed
           process.exit(0);
-          await Future<void>.delayed(Duration.zero);
+          await settle();
 
           expect(exception, isNull);
           expect(isDone, isTrue);
@@ -232,7 +273,7 @@ void main() {
           removeVersionTag.mockGet(result: true, ggLog: ggLog);
 
           final future = publish.exec(directory: d, ggLog: ggLog);
-          await Future<void>.delayed(Duration.zero);
+          await untilStarted();
           process.exit(0);
           await future;
 
@@ -267,15 +308,18 @@ void main() {
               workingDirectory: d.path,
               runInShell: true,
             ),
-          ).thenAnswer((_) => Future.value(process));
+          ).thenAnswer((_) {
+            if (!started.isCompleted) started.complete();
+            return Future.value(process);
+          });
 
           bool isDone = false;
           shellPublish
               .exec(directory: d, ggLog: ggLog)
               .then((_) => isDone = true);
-          await Future<void>.delayed(Duration.zero);
+          await untilStarted();
           process.exit(0);
-          await Future<void>.delayed(Duration.zero);
+          await settle();
 
           expect(isDone, isTrue);
         });
@@ -324,15 +368,15 @@ void main() {
           publish.exec(directory: d, ggLog: ggLog).onError((error, stackTrace) {
             exceptionMessage = rmC(error.toString());
           });
-          await Future<void>.delayed(Duration.zero);
+          await untilStarted();
 
           // Let the process write an error to stderr
           process.pushToStderr.add('Error: Something went wrong');
-          await Future<void>.delayed(Duration.zero);
+          await settle();
 
           // Let the process fail
           process.exit(1);
-          await Future<void>.delayed(Duration.zero);
+          await settle();
 
           // Check the exception
           expect(exceptionMessage, contains('Publishing failed.'));
@@ -353,7 +397,7 @@ void main() {
 
           // Let the process fail
           process.exit(1);
-          await Future<void>.delayed(Duration.zero);
+          await untilStarted();
 
           // Check the exception
           expect(exceptionMessage, contains('Publishing failed.'));
@@ -369,13 +413,13 @@ void main() {
           publish.exec(directory: d, ggLog: ggLog).onError((error, _) {
             exceptionMessage = rmC(error.toString());
           });
-          await Future<void>.delayed(Duration.zero);
+          await untilStarted();
 
           process.pushToStdout.add('npm error 404 Not Found - PUT ...');
-          await Future<void>.delayed(Duration.zero);
+          await settle();
 
           process.exit(1);
-          await Future<void>.delayed(Duration.zero);
+          await settle();
 
           expect(exceptionMessage, contains('Publishing failed.'));
           // The cause is printed once, not packed into the exception.
@@ -390,17 +434,17 @@ void main() {
           publish.exec(directory: d, ggLog: ggLog).onError((error, _) {
             exceptionMessage = rmC(error.toString());
           });
-          await Future<void>.delayed(Duration.zero);
+          await untilStarted();
 
           process.pushToStdout.add('VERY-FIRST-LINE');
           for (var i = 0; i < 60; i++) {
             process.pushToStdout.add('filler $i');
           }
           process.pushToStdout.add('VERY-LAST-LINE');
-          await Future<void>.delayed(Duration.zero);
+          await settle();
 
           process.exit(1);
-          await Future<void>.delayed(Duration.zero);
+          await settle();
 
           // The bounded tail drops the earliest output, keeps the latest.
           expect(exceptionMessage, contains('Publishing failed.'));
@@ -469,7 +513,7 @@ void main() {
           final future = publishWithAnswers([
             '',
           ]).exec(directory: d, ggLog: ggLog);
-          await Future<void>.delayed(Duration.zero);
+          await untilStarted();
           process.exit(0);
           await future;
 
@@ -859,6 +903,183 @@ Package has 1 warning.''';
 
           await bridgeDir.delete(recursive: true);
         });
+      });
+
+      // .......................................................................
+      group('for a hybrid publishing to both registries', () {
+        late Directory h;
+        late GgFakeProcess npmProcess;
+
+        setUp(() async {
+          h = await Directory.systemTemp.createTemp('gg_hybrid_publish_');
+          npmProcess = GgFakeProcess();
+          // No »publish_to«, no »private«: both registries are targets.
+          File(
+            '${h.path}/pubspec.yaml',
+          ).writeAsStringSync('name: hybrid\nversion: 1.0.0\n');
+          File(
+            '${h.path}/package.json',
+          ).writeAsStringSync('{"name": "@org/hybrid", "version": "1.0.0"}');
+
+          when(
+            () => isVersionPrepared.get(ggLog: ggLog, directory: h),
+          ).thenAnswer((_) async => true);
+          when(
+            () => processWrapper.run(
+              'dart',
+              ['pub', 'publish', '--dry-run'],
+              workingDirectory: h.path,
+              runInShell: false,
+            ),
+          ).thenAnswer(
+            (_) async => ProcessResult(0, 0, 'Package has 0 warnings.', ''),
+          );
+          when(
+            () => processWrapper.start('dart', [
+              'pub',
+              'publish',
+              '--force',
+            ], workingDirectory: h.path),
+          ).thenAnswer((_) {
+            if (!started.isCompleted) started.complete();
+            return Future.value(process);
+          });
+          when(
+            () => processWrapper.start(
+              'npm',
+              ['publish'],
+              workingDirectory: h.path,
+              runInShell: true,
+              mode: ProcessStartMode.inheritStdio,
+            ),
+          ).thenAnswer((_) => Future.value(npmProcess));
+        });
+
+        tearDown(() async {
+          if (h.existsSync()) await h.delete(recursive: true);
+        });
+
+        test('uploads to pub.dev first, then npm', () async {
+          final order = <PublishTarget>[];
+
+          final future = publish.exec(
+            directory: h,
+            ggLog: ggLog,
+            askBeforePublishing: false,
+            onPublished: (target) async => order.add(target),
+          );
+          await untilStarted();
+          process.exit(0);
+          await settle();
+          npmProcess.exit(0);
+          await future;
+
+          // pub.dev goes first because »dart pub publish --dry-run« is the
+          // only pre-upload validation gate in the flow.
+          expect(order, [PublishTarget.pubDev, PublishTarget.npm]);
+        });
+
+        test('publishes only the requested registry', () async {
+          final order = <PublishTarget>[];
+
+          final future = publish.exec(
+            directory: h,
+            ggLog: ggLog,
+            askBeforePublishing: false,
+            targets: {PublishTarget.npm},
+            onPublished: (target) async => order.add(target),
+          );
+          npmProcess.exit(0);
+          await future;
+
+          expect(order, [PublishTarget.npm]);
+          verifyNever(
+            () => processWrapper.start('dart', any(), workingDirectory: h.path),
+          );
+        });
+
+        test('throws when no requested registry is a target', () async {
+          late String exceptionMessage;
+          try {
+            await publish.exec(
+              directory: h,
+              ggLog: ggLog,
+              targets: <PublishTarget>{},
+            );
+          } on Exception catch (e) {
+            exceptionMessage = rmC(e.toString());
+          }
+          expect(exceptionMessage, contains('No registry to publish to.'));
+        });
+
+        test('keeps the pub.dev upload when npm fails', () async {
+          // Reporting »nothing happened« would make the user restart instead
+          // of continuing — and the restart would be rejected by pub.dev.
+          final order = <PublishTarget>[];
+          late String exceptionMessage;
+
+          final future = publish
+              .exec(
+                directory: h,
+                ggLog: ggLog,
+                askBeforePublishing: false,
+                onPublished: (target) async => order.add(target),
+              )
+              .onError((error, _) {
+                exceptionMessage = rmC(error.toString());
+              });
+          await untilStarted();
+          process.exit(0);
+          await settle();
+          npmProcess.exit(1);
+          await future;
+
+          expect(order, [PublishTarget.pubDev]);
+          expect(exceptionMessage, contains('Publishing failed.'));
+          expect(
+            rmC(messages.join('\n')),
+            contains('Already uploaded to pub.dev'),
+          );
+        });
+      });
+    });
+
+    // .........................................................................
+    group('the manual first-publish command', () {
+      test('names a private registry explicitly', () async {
+        // Without »--registry« the manual publish silently goes to npmjs.com.
+        final tsDir = await Directory.systemTemp.createTemp('gg_npm_registry_');
+        File('${tsDir.path}/package.json').writeAsStringSync(
+          '{"name": "@carat-ds/ds-dna", "version": "1.0.0", '
+          '"publishConfig": {"registry": "https://azure.example/feed/"}}',
+        );
+        File('${tsDir.path}/tsconfig.json').writeAsStringSync('{}');
+
+        when(
+          () => isVersionPrepared.get(ggLog: ggLog, directory: tsDir),
+        ).thenAnswer((_) async => true);
+        // The package has never been published — the prompt appears, and the
+        // user aborts with »q«.
+        mockRegistryVersions([<Version>[]]);
+        stdInValue = 'q';
+
+        late String exceptionMessage;
+        try {
+          await publish.exec(directory: tsDir, ggLog: ggLog);
+        } on Exception catch (e) {
+          exceptionMessage = rmC(e.toString());
+        }
+
+        expect(exceptionMessage, contains('Publishing aborted.'));
+        expect(
+          rmC(messages.join('\n')),
+          contains(
+            'pnpm publish --no-git-checks --access public '
+            '--registry=https://azure.example/feed/',
+          ),
+        );
+
+        await tsDir.delete(recursive: true);
       });
     });
 
