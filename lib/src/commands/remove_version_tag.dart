@@ -46,8 +46,11 @@ class RemoveVersionTag extends DirCommand<bool> {
 
   // ...........................................................................
   @override
-  Future<bool> exec({required Directory directory, required GgLog ggLog}) =>
-      get(directory: directory, ggLog: ggLog);
+  Future<bool> exec({
+    required Directory directory,
+    required GgLog ggLog,
+    Map<String, dynamic> options = const {},
+  }) => get(directory: directory, ggLog: ggLog);
 
   // ...........................................................................
   /// Removes the tag of the version in the manifest locally and on the remote.

@@ -28,6 +28,7 @@ class IsPublished extends DirCommand<bool> {
   Future<bool> exec({
     required Directory directory,
     required GgLog ggLog,
+    Map<String, dynamic> options = const {},
   }) async {
     await check(directory: directory);
     final messages = <String>[];

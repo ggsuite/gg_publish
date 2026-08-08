@@ -34,6 +34,7 @@ class MergeMainIntoFeat extends DirCommand<void> {
   Future<void> exec({
     required Directory directory,
     required GgLog ggLog,
+    Map<String, dynamic> options = const {},
   }) async {
     await GgStatusPrinter<void>(
       message: 'Merge main into feature branch',
