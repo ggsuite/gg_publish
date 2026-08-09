@@ -10,7 +10,6 @@ import 'package:gg_git/gg_git_test_helpers.dart';
 import 'package:gg_process/gg_process.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:gg_git/gg_git.dart' show ggCommitPrefix;
 import 'package:gg_log/gg_log.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:test/test.dart';
@@ -77,12 +76,7 @@ void main() {
         when(
           () => processWrapper.run(
             'git',
-            [
-              'merge',
-              '-m',
-              '${ggCommitPrefix}merge origin/main into the feature branch',
-              'origin/main',
-            ],
+            ['merge', 'origin/main'],
             runInShell: true,
             workingDirectory: d.path,
           ),
@@ -109,12 +103,7 @@ void main() {
         verify(
           () => processWrapper.run(
             'git',
-            [
-              'merge',
-              '-m',
-              '${ggCommitPrefix}merge origin/main into the feature branch',
-              'origin/main',
-            ],
+            ['merge', 'origin/main'],
             runInShell: true,
             workingDirectory: d.path,
           ),
@@ -141,12 +130,7 @@ void main() {
         when(
           () => processWrapper.run(
             'git',
-            [
-              'merge',
-              '-m',
-              '${ggCommitPrefix}merge origin/master into the feature branch',
-              'origin/master',
-            ],
+            ['merge', 'origin/master'],
             runInShell: true,
             workingDirectory: d.path,
           ),
@@ -157,12 +141,7 @@ void main() {
         verify(
           () => processWrapper.run(
             'git',
-            [
-              'merge',
-              '-m',
-              '${ggCommitPrefix}merge origin/master into the feature branch',
-              'origin/master',
-            ],
+            ['merge', 'origin/master'],
             runInShell: true,
             workingDirectory: d.path,
           ),
@@ -211,12 +190,7 @@ void main() {
         when(
           () => processWrapper.run(
             'git',
-            [
-              'merge',
-              '-m',
-              '${ggCommitPrefix}merge origin/main into the feature branch',
-              'origin/main',
-            ],
+            ['merge', 'origin/main'],
             runInShell: true,
             workingDirectory: d.path,
           ),
@@ -256,12 +230,7 @@ void main() {
         when(
           () => processWrapper.run(
             'git',
-            [
-              'merge',
-              '-m',
-              '${ggCommitPrefix}merge origin/main into the feature branch',
-              'origin/main',
-            ],
+            ['merge', 'origin/main'],
             runInShell: true,
             workingDirectory: d.path,
           ),
