@@ -28,6 +28,30 @@ Entry point `bin/gg_publish.dart` wires a `GgCommandRunner` (from `gg_args`) to 
 - Query commands: `is_in_registry`, `is_published`, `is_latest_state_published`, `is_upgraded`, `is_version_prepared`, `is_feature_branch`, `is_main_branch`, `is_on_pub_dev`, `published_version`, `main_branch`
 - Action commands: `publish`, `publish_to`, `prepare_next_version`, `merge_main_into_feat`
 
+### Hybrid packages publish to two registries
+
+A repository carrying both a `pubspec.yaml` and a `package.json` publishes to
+pub.dev **and** npm, and each manifest decides for its own side. Every decision
+site asks `PublishTo.targets` (a `Set<PublishTarget>` from gg_lang) rather than
+the single-string `fromDirectory`, which survives only as a label for messages
+(`pub.dev+npm`). `Publish` loops over the active targets — pub.dev first,
+because `dart pub publish --dry-run` is the only pre-upload validation gate —
+and awaits an `onPublished` callback **between** the uploads, so the publish
+flow can record the successful registry before the next one can fail. A partial
+failure says which registry is already done; reporting "nothing happened" made
+users restart, and the restart was then rejected by the registry.
+
+`PublishedVersion.get` returns the **highest** version across all registries and
+`allVersions`/`registryVersions` their union (an rc number spent on either
+registry must not be reused); `latestVersionFor`/`registryVersionsFor` answer
+per registry, which is what the per-registry resume needs. `IsInRegistry` is
+true only when **every** registry has the package, and `missingTargets` names
+the ones that need a manual first publish.
+
+`SyncHybridVersions` writes the higher of the two manifest versions into both
+and regenerates the version files. Nothing kept them together before, so they
+drifted and a publish released two different versions of one artifact.
+
 `publish` requires at least one version of the package to be on its registry already: a package that was never published (checked via `PublishedVersion.registryVersions` / `IsInRegistry`) has to be published manually by the user — the command prints the shell commands (blue), waits for confirmation on stdin, re-checks the registry and continues; the automated upload is skipped when the user published the current version manually. Packages without a public registry (`publish_to: none`, `private: true`) are not checked.
 
 Each command lives in its own file under `lib/src/commands/` and extends `DirCommand<T>` from `gg_args`. Commands follow a consistent shape: a constructor that accepts injectable collaborators (e.g. `GgProcessWrapper`, other command instances, `readLineFromStdIn`) for testability, an `exec` override that delegates to a `get` method holding the real logic, and a `ggLog` sink for output. When adding or modifying a command, preserve this injection pattern — tests rely on substituting `GgProcessWrapper`, stdin readers, and sibling commands with mocks/fakes (`mocktail`).
