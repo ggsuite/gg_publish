@@ -7,6 +7,7 @@
 import 'dart:io';
 
 import 'package:gg_args/gg_args.dart';
+import 'package:gg_git/gg_git.dart' show ggCommitPrefix;
 import 'package:gg_log/gg_log.dart';
 import 'package:gg_process/gg_process.dart';
 import 'package:gg_publish/gg_publish.dart';
@@ -61,9 +62,19 @@ class MergeMainIntoFeat extends DirCommand<void> {
       ggLog: <String>[].add,
     );
 
+    // The merge message carries the gg prefix so the commit is recognizable
+    // as gg's own bookkeeping — »do push«'s obsolete-branch check reads the
+    // subjects of the feature branch without filtering merges out, and a
+    // default »Merge remote-tracking branch …« reads like manual work there.
+    // A fast-forward creates no commit at all, where -m is simply ignored.
     await _runGitCommand(
       directory: directory,
-      arguments: ['merge', 'origin/$mainBranchName'],
+      arguments: [
+        'merge',
+        '-m',
+        '${ggCommitPrefix}merge origin/$mainBranchName into the feature branch',
+        'origin/$mainBranchName',
+      ],
       actionDescription: 'merge origin/$mainBranchName',
       ggLog: ggLog,
     );
