@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Provide gg via npm
+
 ## 4.3.1 - 2026-08-10
 
 ### Fixed
