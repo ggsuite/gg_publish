@@ -13,7 +13,6 @@ import 'package:gg_lang/gg_lang.dart';
 import 'package:gg_log/gg_log.dart';
 import 'package:gg_process/gg_process.dart';
 import 'package:gg_publish/gg_publish.dart';
-import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:pub_semver/pub_semver.dart';
 
 // #############################################################################
@@ -90,31 +89,18 @@ class Publish extends DirCommand<void> {
     Set<PublishTarget>? targets,
     Future<void> Function(PublishTarget target)? onPublished,
   }) async {
-    // The publish itself logs what it does, so only the announcement is
-    // printed — dimmed, because it is not the line the user has to read. A
-    // success line would repeat the announcement without adding anything;
-    // only a failure is worth its own mark.
-    final printer = GgStatusPrinter<void>(
-      message: 'Publishing',
+    // The publish itself logs what it does, so this is a plain announcement
+    // rather than a status line: there is no spinner to overwrite, and a
+    // failure speaks through its exception.
+    ggLog(cDetail('✓ Publishing'));
+
+    await _exec(
       ggLog: ggLog,
-      useCarriageReturn: false,
-      dark: true,
+      directory: directory,
+      askBeforePublishing: askBeforePublishing ?? _askBeforePublishing,
+      requested: targets,
+      onPublished: onPublished,
     );
-
-    printer.logStatus(GgStatusPrinterStatus.running);
-
-    try {
-      await _exec(
-        ggLog: ggLog,
-        directory: directory,
-        askBeforePublishing: askBeforePublishing ?? _askBeforePublishing,
-        requested: targets,
-        onPublished: onPublished,
-      );
-    } catch (e) {
-      printer.logStatus(GgStatusPrinterStatus.error);
-      rethrow;
-    }
   }
 
   // ######################
