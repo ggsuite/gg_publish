@@ -9,12 +9,13 @@ import 'dart:io';
 import 'package:gg_args/gg_args.dart';
 import 'package:gg_log/gg_log.dart';
 import 'package:gg_console_colors/gg_console_colors.dart';
+import 'package:gg_process/gg_process.dart';
 
 /// Returns the name of the repository's main branch.
 class MainBranch extends DirCommand<String> {
   /// Creates the command instance.
   MainBranch({required super.ggLog, ProcessRunner? processRunner})
-    : _processRunner = processRunner ?? Process.run,
+    : _processRunner = processRunner ?? ggRunProcess,
       super(
         name: 'main-branch',
         description: 'Return the name of the main branch',
