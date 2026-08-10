@@ -7,6 +7,7 @@
 import 'dart:io';
 
 import 'package:gg_args/gg_args.dart';
+import 'package:gg_lang/gg_lang.dart';
 import 'package:gg_log/gg_log.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
@@ -27,6 +28,7 @@ class IsOnPubDev extends DirCommand<bool> {
   Future<bool> exec({
     required Directory directory,
     required GgLog ggLog,
+    Map<String, dynamic> options = const {},
   }) async {
     final messages = <String>[];
 
@@ -43,10 +45,14 @@ class IsOnPubDev extends DirCommand<bool> {
   }
 
   /// Returns `true` when the package publishes to pub.dev.
+  ///
+  /// A hybrid answers `true` as soon as its `pubspec.yaml` has no
+  /// `publish_to: none` — the `package.json` next to it does not take it off
+  /// pub.dev.
   @override
   Future<bool> get({required GgLog ggLog, required Directory directory}) async {
-    final publishTarget = await _publishTo.fromDirectory(directory);
-    return publishTarget == 'pub.dev';
+    final targets = await _publishTo.targets(directory);
+    return targets.contains(PublishTarget.pubDev);
   }
 }
 

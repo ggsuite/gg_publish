@@ -16,8 +16,19 @@ import 'package:mocktail/mocktail.dart' as mocktail;
 import 'package:gg_console_colors/gg_console_colors.dart';
 
 // .............................................................................
-/// Returns the version a package has published to its registry (pub.dev for
-/// Dart/Flutter, npm for TypeScript).
+/// One registry a package publishes to, together with the manifest describing
+/// it. A hybrid resolves to two of these.
+typedef _ResolvedRegistry = ({
+  PublishTarget target,
+  Registry registry,
+  Manifest manifest,
+  String manifestFile,
+});
+
+// .............................................................................
+/// Returns the version a package has published to its registries (pub.dev for
+/// the `pubspec.yaml` side, npm for the `package.json` side — a hybrid has
+/// both).
 class PublishedVersion extends DirCommand<Version> {
   /// Constructor
   PublishedVersion({
@@ -40,6 +51,7 @@ class PublishedVersion extends DirCommand<Version> {
   Future<Version> exec({
     required Directory directory,
     required GgLog ggLog,
+    Map<String, dynamic> options = const {},
   }) async {
     final version = await get(directory: directory, ggLog: ggLog);
     ggLog(version.toString());
@@ -48,40 +60,54 @@ class PublishedVersion extends DirCommand<Version> {
 
   // ...........................................................................
   /// Returns the version the package in [directory] has published to its
-  /// registry. If the package cannot be found there, the version from the git
-  /// tags is treated as the published version.
+  /// registries — the **highest** across all of them for a hybrid that
+  /// publishes to both. If the package cannot be found anywhere, the version
+  /// from the git tags is treated as the published version.
+  ///
+  /// The maximum is what makes the version bump correct for a hybrid: the next
+  /// version has to clear every registry the package is on, not just one.
   @override
   Future<Version> get({
     required GgLog ggLog,
     required Directory directory,
   }) async {
-    final resolved = await _resolve(directory: directory);
+    final resolved = await _resolveAll(directory: directory);
 
-    // Not published to a public registry? Return the version from the git tag.
-    if (resolved == null) {
+    // Not published to any public registry? Use the version from the git tag.
+    if (resolved.isEmpty) {
       return _versionFromGitTag(directory, ggLog);
     }
 
-    final Version? latest;
-    try {
-      latest = await resolved.registry.latestVersion(
-        packageName: resolved.name,
-      );
-    } on RegistryException catch (e) {
-      ggLog(
-        [
-          cDetail('✗ Failed to read the latest version from the registry'),
-          cError('$e'),
-        ].join('\n'),
-      );
-      throw Exception(cDetail('Failed to read the registry.'));
+    Version? highest;
+    for (final entry in resolved) {
+      final latest = await _latestOf(entry, ggLog);
+      if (latest != null && (highest == null || latest > highest)) {
+        highest = latest;
+      }
     }
 
-    return latest ?? await _versionFromGitTag(directory, ggLog);
+    return highest ?? await _versionFromGitTag(directory, ggLog);
   }
 
   // ...........................................................................
-  /// Returns all versions the package has published to its registry,
+  /// Returns the version the package in [directory] has published to
+  /// [target], or null when it was never published there.
+  ///
+  /// Unlike [get] this never falls back to a git tag and never mixes the two
+  /// registries of a hybrid — the publish flow uses it to decide, per registry,
+  /// whether an upload is still outstanding.
+  Future<Version?> latestVersionFor({
+    required PublishTarget target,
+    required GgLog ggLog,
+    required Directory directory,
+  }) async {
+    final resolved = await _resolveFor(target: target, directory: directory);
+    if (resolved == null) return null;
+    return _latestOf(resolved, ggLog);
+  }
+
+  // ...........................................................................
+  /// Returns all versions the package has published to its registries,
   /// including prereleases. For private packages, the git version tags are
   /// returned instead. Empty when nothing has been published yet.
   Future<List<Version>> allVersions({
@@ -100,64 +126,132 @@ class PublishedVersion extends DirCommand<Version> {
 
   // ...........................................................................
   /// Returns the versions the package in [directory] has published to its
-  /// public registry (pub.dev / npm), including prereleases. Returns null
-  /// for packages without a public registry (`publish_to: none`,
-  /// `private: true` or no manifest at all). An empty list means the
-  /// package was never published to its registry.
+  /// public registries (pub.dev / npm), including prereleases — the **union**
+  /// across every registry it publishes to. Returns null for packages without
+  /// any public registry (`publish_to: none` and `private: true`, or no
+  /// manifest at all). An empty list means the package was never published.
+  ///
+  /// The union is what the rc numbering needs: a prerelease number spent on
+  /// either registry must not be handed out again.
   Future<List<Version>?> registryVersions({
     required Directory directory,
   }) async {
-    final resolved = await _resolve(directory: directory);
+    final resolved = await _resolveAll(directory: directory);
 
-    if (resolved == null) {
+    if (resolved.isEmpty) {
       return null;
     }
 
+    final versions = <Version>{};
+    for (final entry in resolved) {
+      versions.addAll(await _allOf(entry));
+    }
+    return versions.toList();
+  }
+
+  // ...........................................................................
+  /// Returns the versions the package in [directory] has published to
+  /// [target], or null when it does not publish there at all.
+  Future<List<Version>?> registryVersionsFor({
+    required PublishTarget target,
+    required Directory directory,
+  }) async {
+    final resolved = await _resolveFor(target: target, directory: directory);
+    if (resolved == null) return null;
+    return _allOf(resolved);
+  }
+
+  // ...........................................................................
+  /// Resolves the registry and package name for every target [directory]
+  /// publishes to. Empty for packages without any public registry.
+  Future<List<_ResolvedRegistry>> _resolveAll({
+    required Directory directory,
+  }) async {
+    final catalog = _catalog ?? await LanguageCatalog.load();
+    final targets = await publishTargetsOf(directory, catalog: catalog);
+
+    return <_ResolvedRegistry>[
+      for (final target in targets.ordered)
+        _resolveTarget(target: target, directory: directory, catalog: catalog),
+    ];
+  }
+
+  // ...........................................................................
+  /// Resolves one target, or null when [directory] does not publish there.
+  Future<_ResolvedRegistry?> _resolveFor({
+    required PublishTarget target,
+    required Directory directory,
+  }) async {
+    final catalog = _catalog ?? await LanguageCatalog.load();
+    final targets = await publishTargetsOf(directory, catalog: catalog);
+    if (!targets.contains(target)) {
+      return null;
+    }
+    return _resolveTarget(
+      target: target,
+      directory: directory,
+      catalog: catalog,
+    );
+  }
+
+  // ...........................................................................
+  _ResolvedRegistry _resolveTarget({
+    required PublishTarget target,
+    required Directory directory,
+    required LanguageCatalog catalog,
+  }) {
+    final type = target.projectTypeIn(directory);
+    final spec = target.specIn(directory, catalog);
+
+    // The package directory matters for npm lookups: npm resolves the
+    // project-level .npmrc (scoped/private registries) from its CWD.
+    return (
+      target: target,
+      registry: _registryFactory.forProjectType(
+        type,
+        spec: spec,
+        workingDirectory: directory.path,
+      ),
+      manifest: target.manifestIn(directory, catalog),
+      manifestFile: spec.manifest.file,
+    );
+  }
+
+  // ...........................................................................
+  Future<String> _nameOf(_ResolvedRegistry resolved) async {
     try {
-      return await resolved.registry.allVersions(packageName: resolved.name);
-    } on RegistryException catch (e) {
-      throw Exception(cDetail('Failed to read the registry: $e'));
+      return await resolved.manifest.readName();
+    } on ManifestException {
+      throw ArgumentError('name not found in ${resolved.manifestFile}');
     }
   }
 
   // ...........................................................................
-  /// Resolves the registry and package name for [directory]. Returns null
-  /// for private packages that are not published to a public registry.
-  Future<({Registry registry, String name})?> _resolve({
-    required Directory directory,
-  }) async {
-    // Bridges resolve to npm (published as TypeScript), so query npm.
-    final type = checkProjectType(directory);
-
-    // Without a manifest there is no registry — versions live in git tags
-    // only, exactly like for private packages.
-    if (type == ProjectType.none) {
-      return null;
-    }
-
-    final catalog = _catalog ?? await LanguageCatalog.load();
-    final spec = catalog.spec(type);
-    final manifest = Manifest(directory: directory, spec: spec.manifest);
-
-    if (await manifest.isPrivate()) {
-      return null;
-    }
-
-    final String name;
+  Future<Version?> _latestOf(_ResolvedRegistry resolved, GgLog ggLog) async {
     try {
-      name = await manifest.readName();
-    } on ManifestException {
-      throw ArgumentError('name not found in ${spec.manifest.file}');
+      return await resolved.registry.latestVersion(
+        packageName: await _nameOf(resolved),
+      );
+    } on RegistryException catch (e) {
+      ggLog(
+        [
+          cDetail('✗ Failed to read the latest version from the registry'),
+          cError('$e'),
+        ].join('\n'),
+      );
+      throw Exception(cDetail('Failed to read the registry.'));
     }
+  }
 
-    // The package directory matters for npm lookups: npm resolves the
-    // project-level .npmrc (scoped/private registries) from its CWD.
-    final registry = _registryFactory.forProjectType(
-      type,
-      spec: spec,
-      workingDirectory: directory.path,
-    );
-    return (registry: registry, name: name);
+  // ...........................................................................
+  Future<List<Version>> _allOf(_ResolvedRegistry resolved) async {
+    try {
+      return await resolved.registry.allVersions(
+        packageName: await _nameOf(resolved),
+      );
+    } on RegistryException catch (e) {
+      throw Exception(cDetail('Failed to read the registry: $e'));
+    }
   }
 
   // ...........................................................................

@@ -40,6 +40,7 @@ class IsVersionPrepared extends DirCommand<bool> {
   Future<bool> exec({
     required Directory directory,
     required GgLog ggLog,
+    Map<String, dynamic> options = const {},
   }) async {
     final messages = <String>[];
 
@@ -142,16 +143,14 @@ class IsVersionPrepared extends DirCommand<bool> {
       ).readVersion();
     }
 
-    // Where is the package published to?
-    final publishTo = await PublishTo(
+    // Where is the package published to? A hybrid can have both registries;
+    // the published baseline below is then the maximum across them.
+    final publishTargets = await PublishTo(
       ggLog: ggLog,
       catalog: _catalog,
-    ).fromDirectory(directory);
-    final publishToRegistry = publishTo == 'pub.dev' || publishTo == 'npm';
-    final publishToGit = publishTo == 'none';
-    if (!publishToRegistry && !publishToGit) {
-      throw UnimplementedError('Publishing to $publishTo is not supported.');
-    }
+    ).targets(directory);
+    final publishToRegistry = publishTargets.isNotEmpty;
+    final publishToGit = publishTargets.isEmpty;
 
     // Publish to a public registry (pub.dev / npm)?
     // Get the published version from there.
