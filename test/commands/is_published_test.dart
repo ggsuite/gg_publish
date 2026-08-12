@@ -149,10 +149,7 @@ void main() {
         registerFallbackValue(d);
         registerFallbackValue(PublishTarget.pubDev);
         registerFallbackValue(ggLog);
-        command = IsPublished(
-          ggLog: ggLog,
-          publishedVersion: publishedVersion,
-        );
+        command = IsPublished(ggLog: ggLog, publishedVersion: publishedVersion);
       });
 
       test('returns true for an npm-only hybrid published as 0.0.0', () async {
