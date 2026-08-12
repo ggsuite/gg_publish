@@ -13,15 +13,19 @@ import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:pub_semver/pub_semver.dart';
 
 // #############################################################################
-/// Checks if a package was published to pub.dev before.
+/// Checks if a package was published to its registries before.
 class IsPublished extends DirCommand<bool> {
   /// Constructor
-  IsPublished({required super.ggLog, PublishedVersion? publishedVersion})
-    : _publishedVersion = publishedVersion ?? PublishedVersion(ggLog: ggLog),
-      super(
-        name: 'is-published',
-        description: 'Check if the package was published before',
-      );
+  IsPublished({
+    required super.ggLog,
+    PublishedVersion? publishedVersion,
+    PublishTo? publishTo,
+  }) : _publishedVersion = publishedVersion ?? PublishedVersion(ggLog: ggLog),
+       _publishTo = publishTo ?? PublishTo(ggLog: ggLog),
+       super(
+         name: 'is-published',
+         description: 'Check if the package was published before',
+       );
 
   // ...........................................................................
   @override
@@ -34,7 +38,7 @@ class IsPublished extends DirCommand<bool> {
     final messages = <String>[];
 
     final printer = GgStatusPrinter<bool>(
-      message: 'Was published to pub.dev before.',
+      message: 'Was published before.',
       ggLog: ggLog,
       dark: true,
     );
@@ -46,20 +50,39 @@ class IsPublished extends DirCommand<bool> {
   }
 
   // ...........................................................................
-  /// Returns true if the current directory state is published to pub.dev
+  /// Returns true if the package was published to one of its registries.
+  ///
+  /// The registries are asked one by one: [PublishedVersion.latestVersionFor]
+  /// answers null exactly when the package is unknown there, which is the only
+  /// reliable "never published" signal. Deriving it from the highest published
+  /// version instead reported a package sitting at `0.0.0` — a legitimate
+  /// version an npm-only hybrid starts its life with — as never published.
   @override
   Future<bool> get({required GgLog ggLog, required Directory directory}) async {
-    // Get the latest version from pub.dev
+    final targets = await _publishTo.targets(directory);
+
+    if (targets.isNotEmpty) {
+      for (final target in targets) {
+        final version = await _publishedVersion.latestVersionFor(
+          target: target,
+          ggLog: ggLog,
+          directory: directory,
+        );
+        if (version != null) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // No public registry: the git version tags are the only record of a
+    // release, and PublishedVersion falls back to them.
     final version = await _publishedVersion.get(
       ggLog: ggLog,
       directory: directory,
     );
 
-    if (version == Version(0, 0, 0)) {
-      return false;
-    }
-
-    return true;
+    return version != Version(0, 0, 0);
   }
 
   // ######################
@@ -67,6 +90,7 @@ class IsPublished extends DirCommand<bool> {
   // ######################
 
   final PublishedVersion _publishedVersion;
+  final PublishTo _publishTo;
 }
 
 // .............................................................................

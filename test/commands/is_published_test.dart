@@ -9,7 +9,9 @@ import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:gg_capture_print/gg_capture_print.dart';
 import 'package:gg_git/gg_git_test_helpers.dart';
+import 'package:gg_lang/gg_lang.dart';
 import 'package:gg_publish/gg_publish.dart';
+import 'package:pub_semver/pub_semver.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:gg_log/gg_log.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
@@ -110,6 +112,95 @@ void main() {
         });
       });
     });
+    group('get(...) asks every registry the package publishes to', () {
+      late MockPublishedVersion publishedVersion;
+      late IsPublished command;
+
+      /// Writes the manifests that decide which registries the package has.
+      void writeManifests({String? publishTo, bool packageJson = false}) {
+        File('${d.path}/pubspec.yaml').writeAsStringSync(
+          'name: foo\n'
+          'version: 0.0.0\n'
+          '${publishTo == null ? '' : 'publish_to: $publishTo\n'}',
+        );
+        if (packageJson) {
+          File(
+            '${d.path}/package.json',
+          ).writeAsStringSync('{"name": "@org/foo", "version": "0.0.0"}');
+        }
+      }
+
+      /// Makes [target] report [version]; every other registry reports null.
+      void mockLatestVersionFor(PublishTarget? target, Version? version) {
+        when(
+          () => publishedVersion.latestVersionFor(
+            target: any(named: 'target'),
+            ggLog: any(named: 'ggLog'),
+            directory: any(named: 'directory'),
+          ),
+        ).thenAnswer((invocation) async {
+          final asked = invocation.namedArguments[#target] as PublishTarget;
+          return asked == target ? version : null;
+        });
+      }
+
+      setUp(() {
+        publishedVersion = MockPublishedVersion();
+        registerFallbackValue(d);
+        registerFallbackValue(PublishTarget.pubDev);
+        registerFallbackValue(ggLog);
+        command = IsPublished(
+          ggLog: ggLog,
+          publishedVersion: publishedVersion,
+        );
+      });
+
+      test('returns true for an npm-only hybrid published as 0.0.0', () async {
+        // A package starting its life at 0.0.0 *is* published. Deriving the
+        // answer from the version number reported it as never published and
+        // made »gg do publish« demand a first-publish confirmation forever.
+        writeManifests(publishTo: 'none', packageJson: true);
+        mockLatestVersionFor(PublishTarget.npm, Version(0, 0, 0));
+
+        expect(await command.get(directory: d, ggLog: ggLog), isTrue);
+      });
+
+      test('returns false when no registry knows the package', () async {
+        writeManifests(publishTo: 'none', packageJson: true);
+        mockLatestVersionFor(null, null);
+
+        expect(await command.get(directory: d, ggLog: ggLog), isFalse);
+      });
+
+      group('and falls back to the git tags without a public registry', () {
+        setUp(() {
+          // publish_to: none and no package.json -> no registry at all.
+          writeManifests(publishTo: 'none');
+        });
+
+        void mockVersionFromGitTag(Version version) {
+          when(
+            () => publishedVersion.get(
+              ggLog: any(named: 'ggLog'),
+              directory: any(named: 'directory'),
+            ),
+          ).thenAnswer((_) async => version);
+        }
+
+        test('returns true when a version tag exists', () async {
+          mockVersionFromGitTag(Version(1, 0, 0));
+
+          expect(await command.get(directory: d, ggLog: ggLog), isTrue);
+        });
+
+        test('returns false when no version tag exists', () async {
+          mockVersionFromGitTag(Version(0, 0, 0));
+
+          expect(await command.get(directory: d, ggLog: ggLog), isFalse);
+        });
+      });
+    });
+
     group('run()', () {
       group('should print', () {
         group('a usage description', () {
@@ -145,10 +236,7 @@ void main() {
             // Call isPublished.run()
             await runner.run(['is-published', '--input', d.path]);
 
-            expect(
-              messages.last,
-              contains('✓ Was published to pub.dev before.'),
-            );
+            expect(messages.last, contains('✓ Was published before.'));
           });
         });
       });

@@ -48,6 +48,14 @@ per registry, which is what the per-registry resume needs. `IsInRegistry` is
 true only when **every** registry has the package, and `missingTargets` names
 the ones that need a manual first publish.
 
+`IsPublished` asks each target via `latestVersionFor`, whose null is the only
+reliable "the registry does not know this package" answer. It used to derive
+that from `PublishedVersion.get` being `0.0.0`, which reported an npm-only
+hybrid sitting at its initial `0.0.0` as never published — and `gg do publish`
+then demanded `--ask-before-publishing` on every run and named pub.dev, a
+registry a `publish_to: none` package never touches. A package without any
+public registry still falls back to its git version tags.
+
 `SyncHybridVersions` writes the higher of the two manifest versions into both
 and regenerates the version files. Nothing kept them together before, so they
 drifted and a publish released two different versions of one artifact.
