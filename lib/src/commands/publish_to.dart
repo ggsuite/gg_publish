@@ -22,8 +22,8 @@ class PublishTo extends DirCommand<void> {
     required super.ggLog,
     super.name = 'publish-to',
     super.description = 'Publishes the package to the given directory.',
-    LanguageCatalog? catalog,
-  }) : _catalog = catalog;
+    this._catalog,
+  });
 
   /// The language catalog used to detect the manifest. Defaults to the bundled
   /// gg_lang catalog when null.

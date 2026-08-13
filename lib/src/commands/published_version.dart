@@ -35,10 +35,9 @@ class PublishedVersion extends DirCommand<Version> {
     required super.ggLog,
     FromGit? versionFromGit,
     http.Client? httpClient,
-    LanguageCatalog? catalog,
+    this._catalog,
     RegistryFactory? registryFactory,
-  }) : _catalog = catalog,
-       _registryFactory =
+  }) : _registryFactory =
            registryFactory ?? RegistryFactory(httpClient: httpClient),
        _versionFromGit = versionFromGit ?? FromGit(ggLog: ggLog),
        super(

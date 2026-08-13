@@ -155,9 +155,8 @@ void main() {
         pubDevWaiter = mockWaiter();
         npmWaiter = mockWaiter();
         await initPubspec();
-        File(
-          '${d.path}/package.json',
-        ).writeAsStringSync('{"name": "@scope/ts_pkg", "version": "1.2.3"}');
+        File('${d.path}/package.json')
+            .writeAsStringSync('{"name": "@scope/ts_pkg", "version": "1.2.3"}');
         waitUntilPublished = WaitUntilPublished(
           ggLog: ggLog,
           waiters: {

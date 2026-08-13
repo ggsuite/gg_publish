@@ -32,18 +32,15 @@ class WaitUntilPublished extends DirCommand<void> {
     super.name = 'wait-until-published',
     super.description = 'Wait until the version is on the registry',
     PublishTo? publishTo,
-    LanguageCatalog? catalog,
-    RegistryWaiter? waiter,
-    Map<PublishTarget, RegistryWaiter>? waiters,
+    this._catalog,
+    this._waiter,
+    this._waiters,
     NpmRegistryResolver? npmRegistryResolver,
     // pub.dev can take up to ~10 minutes to make a fresh upload visible —
     // the default leaves headroom beyond that.
     this.timeout = const Duration(minutes: 15),
     this.pollInterval = const Duration(seconds: 10),
   }) : _publishTo = publishTo ?? PublishTo(ggLog: ggLog),
-       _catalog = catalog,
-       _waiter = waiter,
-       _waiters = waiters,
        _npmRegistryResolver = npmRegistryResolver ?? NpmRegistryResolver();
 
   final PublishTo _publishTo;

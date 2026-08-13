@@ -19,9 +19,8 @@ class MergeMainIntoFeat extends DirCommand<void> {
   MergeMainIntoFeat({
     required super.ggLog,
     MainBranch? mainBranch,
-    GgProcessWrapper processWrapper = const GgProcessWrapper(),
+    this._processWrapper = const GgProcessWrapper(),
   }) : _mainBranch = mainBranch ?? MainBranch(ggLog: ggLog),
-       _processWrapper = processWrapper,
        super(
          name: 'merge-main-into-feat',
          description: 'Merge the remote main branch into this branch',

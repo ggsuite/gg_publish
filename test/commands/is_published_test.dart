@@ -76,9 +76,8 @@ void main() {
             'test/sample_package/pub_dev_404_response.json',
           ).readAsStringSync();
           final uri = Uri.parse('https://pub.dev/api/packages/test');
-          when(
-            () => httpClient.get(uri),
-          ).thenAnswer((_) async => http.Response(responseContent, 404));
+          when(() => httpClient.get(uri))
+              .thenAnswer((_) async => http.Response(responseContent, 404));
 
           // Check if the package is published
           final result = await isPublished.get(directory: d, ggLog: ggLog);
@@ -101,9 +100,8 @@ void main() {
             'test/sample_package/pub_dev_sample_response.json',
           ).readAsStringSync();
           final uri = Uri.parse('https://pub.dev/api/packages/test');
-          when(
-            () => httpClient.get(uri),
-          ).thenAnswer((_) async => http.Response(responseContent, 200));
+          when(() => httpClient.get(uri))
+              .thenAnswer((_) async => http.Response(responseContent, 200));
 
           // Call isPublished.get()
           final result = await isPublished.get(directory: d, ggLog: ggLog);
@@ -124,9 +122,8 @@ void main() {
           '${publishTo == null ? '' : 'publish_to: $publishTo\n'}',
         );
         if (packageJson) {
-          File(
-            '${d.path}/package.json',
-          ).writeAsStringSync('{"name": "@org/foo", "version": "0.0.0"}');
+          File('${d.path}/package.json')
+              .writeAsStringSync('{"name": "@org/foo", "version": "0.0.0"}');
         }
       }
 
@@ -226,9 +223,8 @@ void main() {
               'test/sample_package/pub_dev_sample_response.json',
             ).readAsStringSync();
             final uri = Uri.parse('https://pub.dev/api/packages/test');
-            when(
-              () => httpClient.get(uri),
-            ).thenAnswer((_) async => http.Response(responseContent, 200));
+            when(() => httpClient.get(uri))
+                .thenAnswer((_) async => http.Response(responseContent, 200));
 
             // Call isPublished.run()
             await runner.run(['is-published', '--input', d.path]);

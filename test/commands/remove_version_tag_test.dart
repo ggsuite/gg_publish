@@ -26,9 +26,9 @@ void main() {
   late RemoveVersionTag removeVersionTag;
 
   // ...........................................................................
-  void writePubspec(Directory d, String version) => File(
-    '${d.path}/pubspec.yaml',
-  ).writeAsStringSync('name: test\nversion: $version\n');
+  void writePubspec(Directory d, String version) =>
+      File('${d.path}/pubspec.yaml')
+          .writeAsStringSync('name: test\nversion: $version\n');
 
   // ...........................................................................
   Future<List<String>> localTags(Directory d) async {
@@ -187,9 +187,8 @@ void main() {
         test('read from package.json for a bridge project', () async {
           // A bridge (pubspec.yaml + package.json + tsconfig.json) is
           // published as TypeScript, i.e. package.json holds the version.
-          File(
-            '${local.path}/package.json',
-          ).writeAsStringSync('{"name": "ts", "version": "2.0.0"}');
+          File('${local.path}/package.json')
+              .writeAsStringSync('{"name": "ts", "version": "2.0.0"}');
           File('${local.path}/tsconfig.json').writeAsStringSync('{}');
           await addTags(local, ['1.0.0', '2.0.0']);
 

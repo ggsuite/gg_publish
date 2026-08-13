@@ -64,9 +64,8 @@ void main() {
       '${publishTo == null ? '' : 'publish_to: $publishTo\n'}',
     );
     if (packageJson) {
-      File(
-        '${d.path}/package.json',
-      ).writeAsStringSync('{"name": "@org/foo", "version": "1.0.0"}');
+      File('${d.path}/package.json')
+          .writeAsStringSync('{"name": "@org/foo", "version": "1.0.0"}');
     }
   }
 

@@ -55,9 +55,8 @@ void main() {
   // (here »publish_to: none« — the Dart side is never sent to pub.dev) and
   // the package.json carries the published TypeScript identity.
   void writeBridge({bool private = false}) {
-    File(
-      '${dir.path}/pubspec.yaml',
-    ).writeAsStringSync('name: bridge\nversion: 1.0.0\npublish_to: none\n');
+    File('${dir.path}/pubspec.yaml')
+        .writeAsStringSync('name: bridge\nversion: 1.0.0\npublish_to: none\n');
     writeTs(private: private);
   }
 
@@ -139,9 +138,8 @@ void main() {
     group('FromPubspec', () {
       test('reads the version from a bridge package.json', () async {
         writeBridge();
-        final version = await FromPubspec(
-          ggLog: ggLog,
-        ).fromDirectory(directory: dir);
+        final version = await FromPubspec(ggLog: ggLog)
+            .fromDirectory(directory: dir);
         expect(version.toString(), '2.0.0');
       });
     });

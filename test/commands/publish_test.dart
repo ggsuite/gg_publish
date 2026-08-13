@@ -36,9 +36,8 @@ void main() {
   // ...........................................................................
   void mockIsVersionPrepared(bool value) {
     when(() {
-      when(
-        () => isVersionPrepared.get(ggLog: ggLog, directory: d),
-      ).thenAnswer((_) => Future.value(value));
+      when(() => isVersionPrepared.get(ggLog: ggLog, directory: d))
+          .thenAnswer((_) => Future.value(value));
     });
   }
 
@@ -134,9 +133,8 @@ void main() {
     await initGit(d);
     await addAndCommitSampleFile(d);
     // A manifest so the publish command can be resolved for the project type.
-    File(
-      '${d.path}/pubspec.yaml',
-    ).writeAsStringSync('name: test\nversion: 1.0.0\n');
+    File('${d.path}/pubspec.yaml')
+        .writeAsStringSync('name: test\nversion: 1.0.0\n');
     process = GgFakeProcess();
     started = Completer<void>();
     isVersionPrepared = MockIsVersionPrepared();
@@ -297,9 +295,8 @@ void main() {
             catalog: LanguageCatalog.fromString(shellCatalogJson),
             publishedVersion: publishedVersion,
           );
-          when(
-            () => isVersionPrepared.get(ggLog: ggLog, directory: d),
-          ).thenAnswer((_) async => true);
+          when(() => isVersionPrepared.get(ggLog: ggLog, directory: d))
+              .thenAnswer((_) async => true);
           mockDryRun(runInShell: true);
           when(
             () => processWrapper.start(
@@ -510,9 +507,8 @@ void main() {
           ]);
           mockProcess(result: 0, force: false);
 
-          final future = publishWithAnswers([
-            '',
-          ]).exec(directory: d, ggLog: ggLog);
+          final future = publishWithAnswers([''])
+              .exec(directory: d, ggLog: ggLog);
           await untilStarted();
           process.exit(0);
           await future;
@@ -584,9 +580,8 @@ void main() {
           ).writeAsStringSync('{"name": "@org/ts", "version": "1.1.0-rc.1"}');
           File('${tsDir.path}/tsconfig.json').writeAsStringSync('{}');
 
-          when(
-            () => isVersionPrepared.get(ggLog: ggLog, directory: tsDir),
-          ).thenAnswer((_) async => true);
+          when(() => isVersionPrepared.get(ggLog: ggLog, directory: tsDir))
+              .thenAnswer((_) async => true);
           mockRegistryVersions([
             <Version>[],
             [Version.parse('1.1.0-rc.1')],
@@ -611,14 +606,12 @@ void main() {
           'shows a plain pnpm command for an unscoped stable npm package',
           () async {
             final tsDir = await Directory.systemTemp.createTemp();
-            File(
-              '${tsDir.path}/package.json',
-            ).writeAsStringSync('{"name": "ts", "version": "1.0.0"}');
+            File('${tsDir.path}/package.json')
+                .writeAsStringSync('{"name": "ts", "version": "1.0.0"}');
             File('${tsDir.path}/tsconfig.json').writeAsStringSync('{}');
 
-            when(
-              () => isVersionPrepared.get(ggLog: ggLog, directory: tsDir),
-            ).thenAnswer((_) async => true);
+            when(() => isVersionPrepared.get(ggLog: ggLog, directory: tsDir))
+                .thenAnswer((_) async => true);
             mockRegistryVersions([
               <Version>[],
               [Version(1, 0, 0)],
@@ -753,14 +746,12 @@ Package has 1 warning.''';
       group('for a TypeScript project (published interactively)', () {
         test('runs »npm publish« with inherited stdio', () async {
           final tsDir = await Directory.systemTemp.createTemp();
-          File(
-            '${tsDir.path}/package.json',
-          ).writeAsStringSync('{"name": "ts", "version": "1.0.0"}');
+          File('${tsDir.path}/package.json')
+              .writeAsStringSync('{"name": "ts", "version": "1.0.0"}');
           File('${tsDir.path}/tsconfig.json').writeAsStringSync('{}');
 
-          when(
-            () => isVersionPrepared.get(ggLog: ggLog, directory: tsDir),
-          ).thenAnswer((_) async => true);
+          when(() => isVersionPrepared.get(ggLog: ggLog, directory: tsDir))
+              .thenAnswer((_) async => true);
           when(
             () => processWrapper.start(
               'npm',
@@ -783,14 +774,12 @@ Package has 1 warning.''';
         test('adds »--tag rc« for a prerelease version', () async {
           // Without a dist-tag, npm would move `latest` onto the prerelease.
           final tsDir = await Directory.systemTemp.createTemp();
-          File(
-            '${tsDir.path}/package.json',
-          ).writeAsStringSync('{"name": "ts", "version": "1.1.0-rc.1"}');
+          File('${tsDir.path}/package.json')
+              .writeAsStringSync('{"name": "ts", "version": "1.1.0-rc.1"}');
           File('${tsDir.path}/tsconfig.json').writeAsStringSync('{}');
 
-          when(
-            () => isVersionPrepared.get(ggLog: ggLog, directory: tsDir),
-          ).thenAnswer((_) async => true);
+          when(() => isVersionPrepared.get(ggLog: ggLog, directory: tsDir))
+              .thenAnswer((_) async => true);
           when(
             () => processWrapper.start(
               'npm',
@@ -810,16 +799,14 @@ Package has 1 warning.''';
 
         test('runs »pnpm publish --no-git-checks« for pnpm', () async {
           final pnpmDir = await Directory.systemTemp.createTemp();
-          File(
-            '${pnpmDir.path}/package.json',
-          ).writeAsStringSync('{"name": "ts", "version": "1.0.0"}');
+          File('${pnpmDir.path}/package.json')
+              .writeAsStringSync('{"name": "ts", "version": "1.0.0"}');
           File('${pnpmDir.path}/tsconfig.json').writeAsStringSync('{}');
           // The pnpm lockfile makes the project a pnpm project.
           File('${pnpmDir.path}/pnpm-lock.yaml').writeAsStringSync('');
 
-          when(
-            () => isVersionPrepared.get(ggLog: ggLog, directory: pnpmDir),
-          ).thenAnswer((_) async => true);
+          when(() => isVersionPrepared.get(ggLog: ggLog, directory: pnpmDir))
+              .thenAnswer((_) async => true);
           when(
             () => processWrapper.start(
               'pnpm',
@@ -839,15 +826,13 @@ Package has 1 warning.''';
 
         test('throws when the interactive publish fails', () async {
           final pnpmDir = await Directory.systemTemp.createTemp();
-          File(
-            '${pnpmDir.path}/package.json',
-          ).writeAsStringSync('{"name": "ts", "version": "1.0.0"}');
+          File('${pnpmDir.path}/package.json')
+              .writeAsStringSync('{"name": "ts", "version": "1.0.0"}');
           File('${pnpmDir.path}/tsconfig.json').writeAsStringSync('{}');
           File('${pnpmDir.path}/pnpm-lock.yaml').writeAsStringSync('');
 
-          when(
-            () => isVersionPrepared.get(ggLog: ggLog, directory: pnpmDir),
-          ).thenAnswer((_) async => true);
+          when(() => isVersionPrepared.get(ggLog: ggLog, directory: pnpmDir))
+              .thenAnswer((_) async => true);
           when(
             () => processWrapper.start(
               'pnpm',
@@ -879,14 +864,12 @@ Package has 1 warning.''';
           File('${bridgeDir.path}/pubspec.yaml').writeAsStringSync(
             'name: bridge\nversion: 1.0.0\npublish_to: none\n',
           );
-          File(
-            '${bridgeDir.path}/package.json',
-          ).writeAsStringSync('{"name": "@org/bridge", "version": "1.0.0"}');
+          File('${bridgeDir.path}/package.json')
+              .writeAsStringSync('{"name": "@org/bridge", "version": "1.0.0"}');
           File('${bridgeDir.path}/tsconfig.json').writeAsStringSync('{}');
 
-          when(
-            () => isVersionPrepared.get(ggLog: ggLog, directory: bridgeDir),
-          ).thenAnswer((_) async => true);
+          when(() => isVersionPrepared.get(ggLog: ggLog, directory: bridgeDir))
+              .thenAnswer((_) async => true);
           when(
             () => processWrapper.start(
               'npm',
@@ -914,16 +897,13 @@ Package has 1 warning.''';
           h = await Directory.systemTemp.createTemp('gg_hybrid_publish_');
           npmProcess = GgFakeProcess();
           // No »publish_to«, no »private«: both registries are targets.
-          File(
-            '${h.path}/pubspec.yaml',
-          ).writeAsStringSync('name: hybrid\nversion: 1.0.0\n');
-          File(
-            '${h.path}/package.json',
-          ).writeAsStringSync('{"name": "@org/hybrid", "version": "1.0.0"}');
+          File('${h.path}/pubspec.yaml')
+              .writeAsStringSync('name: hybrid\nversion: 1.0.0\n');
+          File('${h.path}/package.json')
+              .writeAsStringSync('{"name": "@org/hybrid", "version": "1.0.0"}');
 
-          when(
-            () => isVersionPrepared.get(ggLog: ggLog, directory: h),
-          ).thenAnswer((_) async => true);
+          when(() => isVersionPrepared.get(ggLog: ggLog, directory: h))
+              .thenAnswer((_) async => true);
           when(
             () => processWrapper.run(
               'dart',
@@ -1055,9 +1035,8 @@ Package has 1 warning.''';
         );
         File('${tsDir.path}/tsconfig.json').writeAsStringSync('{}');
 
-        when(
-          () => isVersionPrepared.get(ggLog: ggLog, directory: tsDir),
-        ).thenAnswer((_) async => true);
+        when(() => isVersionPrepared.get(ggLog: ggLog, directory: tsDir))
+            .thenAnswer((_) async => true);
         // The package has never been published — the prompt appears, and the
         // user aborts with »q«.
         mockRegistryVersions([<Version>[]]);

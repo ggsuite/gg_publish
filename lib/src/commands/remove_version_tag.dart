@@ -33,10 +33,9 @@ class RemoveVersionTag extends DirCommand<bool> {
   RemoveVersionTag({
     required super.ggLog,
     GgProcessWrapper processWrapper = const GgProcessWrapper(),
-    LanguageCatalog? catalog,
+    this._catalog,
     HasRemote? hasRemote,
   }) : _processWrapper = processWrapper,
-       _catalog = catalog,
        _hasRemote =
            hasRemote ?? HasRemote(ggLog: ggLog, processWrapper: processWrapper),
        super(

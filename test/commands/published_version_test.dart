@@ -90,9 +90,8 @@ void main() {
             // A TypeScript project resolves its version via `npm view`.
             final tsDir = Directory('${d.parent.path}/ts_pkg')
               ..createSync(recursive: true);
-            File(
-              '${tsDir.path}/package.json',
-            ).writeAsStringSync('{"name": "ts_pkg", "version": "0.0.1"}');
+            File('${tsDir.path}/package.json')
+                .writeAsStringSync('{"name": "ts_pkg", "version": "0.0.1"}');
             File('${tsDir.path}/tsconfig.json').writeAsStringSync('{}');
 
             final wrapper = MockGgProcessWrapper();
@@ -440,9 +439,8 @@ void main() {
         initCommand();
 
         final uri = Uri.parse('https://pub.dev/api/packages/gg_check');
-        when(
-          () => client.get(uri),
-        ).thenAnswer((_) async => http.Response('', 404));
+        when(() => client.get(uri))
+            .thenAnswer((_) async => http.Response('', 404));
 
         final versions = await publishedVersion.registryVersions(directory: d);
 
@@ -553,9 +551,8 @@ void main() {
         wrapper = MockGgProcessWrapper();
         // The sample package is a Dart package named gg_check; adding a
         // package.json turns it into a hybrid.
-        File(
-          '${d.path}/package.json',
-        ).writeAsStringSync('{"name": "@org/gg-check", "version": "1.0.0"}');
+        File('${d.path}/package.json')
+            .writeAsStringSync('{"name": "@org/gg-check", "version": "1.0.0"}');
         hybrid = PublishedVersion(
           ggLog: messages.add,
           httpClient: client,
@@ -594,9 +591,8 @@ void main() {
           changeLog: '1.2.3',
           gitHead: '2.0.0',
         );
-        File(
-          '${d.path}/package.json',
-        ).writeAsStringSync('{"name": "@org/gg-check", "version": "1.0.0"}');
+        File('${d.path}/package.json')
+            .writeAsStringSync('{"name": "@org/gg-check", "version": "1.0.0"}');
         mockRegistries(pubDev: null, npm: null);
 
         expect(
@@ -698,9 +694,8 @@ void main() {
 
       test('throws when a manifest has no name', () async {
         mockRegistries(pubDev: ['1.0.0'], npm: ['1.0.0']);
-        File(
-          '${d.path}/package.json',
-        ).writeAsStringSync('{"version": "1.0.0"}');
+        File('${d.path}/package.json')
+            .writeAsStringSync('{"version": "1.0.0"}');
 
         expect(
           () => hybrid.registryVersionsFor(

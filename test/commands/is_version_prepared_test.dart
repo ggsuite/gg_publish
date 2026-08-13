@@ -94,9 +94,8 @@ void main() async {
           group('when versions are not the next increment', () {
             test('for packages published to pub.dev', () async {
               // Assume the published version is 2.0.0
-              when(
-                () => publishedVersion.get(ggLog: ggLog, directory: d),
-              ).thenAnswer((_) async => Version(2, 0, 0));
+              when(() => publishedVersion.get(ggLog: ggLog, directory: d))
+                  .thenAnswer((_) async => Version(2, 0, 0));
 
               // Assume the locally configured version is 3.0.0
               await addAndCommitVersions(
@@ -169,9 +168,8 @@ void main() async {
               group('for published packages', () {
                 test('published to pub.dev', () async {
                   // Assume the published version is 2.0.0
-                  when(
-                    () => publishedVersion.get(ggLog: ggLog, directory: d),
-                  ).thenAnswer((_) async => Version(2, 0, 0));
+                  when(() => publishedVersion.get(ggLog: ggLog, directory: d))
+                      .thenAnswer((_) async => Version(2, 0, 0));
 
                   for (final version in ['2.0.1', '2.1.0', '3.0.0']) {
                     await addAndCommitVersions(
@@ -192,9 +190,8 @@ void main() async {
 
                 test('with an rc prerelease of an allowed increment', () async {
                   // Assume the published version is 2.0.0
-                  when(
-                    () => publishedVersion.get(ggLog: ggLog, directory: d),
-                  ).thenAnswer((_) async => Version(2, 0, 0));
+                  when(() => publishedVersion.get(ggLog: ggLog, directory: d))
+                      .thenAnswer((_) async => Version(2, 0, 0));
 
                   for (final version in [
                     '2.0.1-rc.1',
@@ -223,9 +220,8 @@ void main() async {
                   // already a prerelease (e.g. a private git-tag package).
                   // pub_semver's nextX strips the prerelease, so the allowed
                   // base must be 2.1.0 (not 2.2.0/2.1.1).
-                  when(
-                    () => publishedVersion.get(ggLog: ggLog, directory: d),
-                  ).thenAnswer((_) async => Version.parse('2.1.0-rc.1'));
+                  when(() => publishedVersion.get(ggLog: ggLog, directory: d))
+                      .thenAnswer((_) async => Version.parse('2.1.0-rc.1'));
 
                   await addAndCommitVersions(
                     d,
@@ -245,9 +241,8 @@ void main() async {
                 test('with the stable release finishing an rc line', () async {
                   // After rc's, the stable X.Y.0 must be accepted when the
                   // published baseline is still the prerelease.
-                  when(
-                    () => publishedVersion.get(ggLog: ggLog, directory: d),
-                  ).thenAnswer((_) async => Version.parse('2.1.0-rc.2'));
+                  when(() => publishedVersion.get(ggLog: ggLog, directory: d))
+                      .thenAnswer((_) async => Version.parse('2.1.0-rc.2'));
 
                   await addAndCommitVersions(
                     d,
@@ -266,9 +261,8 @@ void main() async {
 
                 test('but not with other prerelease forms', () async {
                   // Assume the published version is 2.0.0
-                  when(
-                    () => publishedVersion.get(ggLog: ggLog, directory: d),
-                  ).thenAnswer((_) async => Version(2, 0, 0));
+                  when(() => publishedVersion.get(ggLog: ggLog, directory: d))
+                      .thenAnswer((_) async => Version(2, 0, 0));
 
                   // A non-rc prerelease and an rc of a wrong base version
                   // must both be rejected.
@@ -412,9 +406,8 @@ void main() async {
                 group('and treatUnpublishedAsOk is true', () {
                   test('via function param', () async {
                     // Assume the published version is 2.0.0
-                    when(
-                      () => publishedVersion.get(ggLog: ggLog, directory: d),
-                    ).thenAnswer((_) async => Version(2, 0, 0));
+                    when(() => publishedVersion.get(ggLog: ggLog, directory: d))
+                        .thenAnswer((_) async => Version(2, 0, 0));
 
                     // Assume the locally configured version is 3.0.0
                     await addAndCommitVersions(
@@ -442,9 +435,8 @@ void main() async {
 
                   test('via Constructor param', () async {
                     // Assume the published version is 2.0.0
-                    when(
-                      () => publishedVersion.get(ggLog: ggLog, directory: d),
-                    ).thenAnswer((_) async => Version(2, 0, 0));
+                    when(() => publishedVersion.get(ggLog: ggLog, directory: d))
+                        .thenAnswer((_) async => Version(2, 0, 0));
 
                     // Assume the locally configured version is 3.0.0
                     await addAndCommitVersions(
@@ -489,9 +481,8 @@ void main() async {
           bool private = false,
         }) async {
           final priv = private ? ',"private":true' : '';
-          await File(
-            join(d.path, 'package.json'),
-          ).writeAsString('{"name":"ts_pkg","version":"$version"$priv}');
+          await File(join(d.path, 'package.json'))
+              .writeAsString('{"name":"ts_pkg","version":"$version"$priv}');
           await File(join(d.path, 'tsconfig.json')).writeAsString('{}');
         }
 
@@ -505,9 +496,8 @@ void main() async {
           'returns true when package.json is the next npm increment',
           () async {
             // npm reports the published version as 2.0.0
-            when(
-              () => publishedVersion.get(ggLog: ggLog, directory: d),
-            ).thenAnswer((_) async => Version(2, 0, 0));
+            when(() => publishedVersion.get(ggLog: ggLog, directory: d))
+                .thenAnswer((_) async => Version(2, 0, 0));
 
             for (final version in ['2.0.1', '2.1.0', '3.0.0']) {
               await writeTsProject(version);
@@ -525,9 +515,8 @@ void main() async {
         test(
           'returns false when package.json is not the next npm increment',
           () async {
-            when(
-              () => publishedVersion.get(ggLog: ggLog, directory: d),
-            ).thenAnswer((_) async => Version(2, 0, 0));
+            when(() => publishedVersion.get(ggLog: ggLog, directory: d))
+                .thenAnswer((_) async => Version(2, 0, 0));
 
             await writeTsProject('4.0.0');
 
@@ -581,9 +570,8 @@ void main() async {
           // against the published one exactly as usual. (The version lookup
           // still queries pub.dev - the registry url comes from the language
           // catalog, not from the manifest.)
-          when(
-            () => publishedVersion.get(ggLog: ggLog, directory: d),
-          ).thenAnswer((_) async => Version(1, 0, 0));
+          when(() => publishedVersion.get(ggLog: ggLog, directory: d))
+              .thenAnswer((_) async => Version(1, 0, 0));
 
           expect(
             await isVersionPrepared.get(ggLog: ggLog, directory: d),

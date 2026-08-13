@@ -84,13 +84,12 @@ class MainBranch extends DirCommand<String> {
 }
 
 /// Signature for running a process.
-typedef ProcessRunner =
-    Future<ProcessResult> Function(
-      String executable,
-      List<String> arguments, {
-      String? workingDirectory,
-      bool runInShell,
-    });
+typedef ProcessRunner = Future<ProcessResult> Function(
+  String executable,
+  List<String> arguments, {
+  String? workingDirectory,
+  bool runInShell,
+});
 
 /// Mock implementation of [MainBranch].
 class MockMainBranch extends MockDirCommand<String> implements MainBranch {}

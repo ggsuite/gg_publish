@@ -21,9 +21,8 @@ void main() {
 
   // ...........................................................................
   void writePubspec(String version) {
-    File(
-      '${d.path}/pubspec.yaml',
-    ).writeAsStringSync('name: foo\nversion: $version\n');
+    File('${d.path}/pubspec.yaml')
+        .writeAsStringSync('name: foo\nversion: $version\n');
   }
 
   void writePackageJson(String version) {
@@ -32,16 +31,18 @@ void main() {
     );
   }
 
-  String pubspecVersion() => File('${d.path}/pubspec.yaml')
-      .readAsStringSync()
-      .split('\n')
-      .firstWhere((l) => l.startsWith('version:'))
-      .replaceFirst('version:', '')
-      .trim();
+  String pubspecVersion() =>
+      File('${d.path}/pubspec.yaml')
+          .readAsStringSync()
+          .split('\n')
+          .firstWhere((l) => l.startsWith('version:'))
+          .replaceFirst('version:', '')
+          .trim();
 
-  String packageJsonVersion() => RegExp(
-    r'"version":\s*"([^"]+)"',
-  ).firstMatch(File('${d.path}/package.json').readAsStringSync())!.group(1)!;
+  String packageJsonVersion() =>
+      RegExp(r'"version":\s*"([^"]+)"')
+          .firstMatch(File('${d.path}/package.json').readAsStringSync())!
+          .group(1)!;
 
   // ...........................................................................
   setUp(() async {

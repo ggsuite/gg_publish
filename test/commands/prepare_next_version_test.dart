@@ -129,9 +129,8 @@ void main() async {
           // Turn the fixture into a bridge: add package.json + tsconfig.json.
           // The published version is read from the npm side (package.json), so
           // it must carry a version too.
-          await File(
-            '${d.path}/package.json',
-          ).writeAsString('{"name": "@org/bridge", "version": "1.2.3"}');
+          await File('${d.path}/package.json')
+              .writeAsString('{"name": "@org/bridge", "version": "1.2.3"}');
           await File('${d.path}/tsconfig.json').writeAsString('{}');
           mockPublishedVersion();
 
@@ -142,9 +141,8 @@ void main() async {
           );
 
           // The published npm manifest is bumped …
-          final packageJson = await File(
-            '${d.path}/package.json',
-          ).readAsString();
+          final packageJson = await File('${d.path}/package.json')
+              .readAsString();
           expect(packageJson, contains('"version": "1.2.4"'));
 
           // … and the Dart side advances in lock-step.
@@ -193,9 +191,8 @@ void main() async {
         );
 
         test('for both languages of a bridge', () async {
-          await File(
-            '${d.path}/package.json',
-          ).writeAsString('{"name": "@org/bridge", "version": "1.2.3"}');
+          await File('${d.path}/package.json')
+              .writeAsString('{"name": "@org/bridge", "version": "1.2.3"}');
           await File('${d.path}/tsconfig.json').writeAsString('{}');
           mockPublishedVersion();
 
@@ -266,9 +263,8 @@ void main() async {
                   );
 
               // Check pubspec.yaml
-              final content = await File(
-                '${d.path}/pubspec.yaml',
-              ).readAsString();
+              final content = await File('${d.path}/pubspec.yaml')
+                  .readAsString();
               expect(content, contains('version: $expectedNextVersion'));
             });
           }
