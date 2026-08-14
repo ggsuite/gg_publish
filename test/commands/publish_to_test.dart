@@ -136,9 +136,8 @@ void main() {
     group('targets(directory)', () {
       test('answers per registry instead of with one label', () async {
         await initPubspec(publishTo: null);
-        File(
-          '${d.path}/package.json',
-        ).writeAsStringSync('{"name": "@org/foo", "version": "1.0.0"}');
+        File('${d.path}/package.json')
+            .writeAsStringSync('{"name": "@org/foo", "version": "1.0.0"}');
 
         expect(await publishTo.targets(d), <PublishTarget>{
           PublishTarget.pubDev,

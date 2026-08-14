@@ -134,9 +134,8 @@ void main() {
               'test/sample_package/pub_dev_sample_response.json',
             ).readAsStringSync();
             final uri = Uri.parse('https://pub.dev/api/packages/gg_check');
-            when(
-              () => httpClient.get(uri),
-            ).thenAnswer((_) async => http.Response(responseContent, 200));
+            when(() => httpClient.get(uri))
+                .thenAnswer((_) async => http.Response(responseContent, 200));
 
             // Call isPublished.get()
             await expectLater(
@@ -172,9 +171,8 @@ void main() {
             'test/sample_package/pub_dev_sample_response.json',
           ).readAsStringSync();
           final uri = Uri.parse('https://pub.dev/api/packages/test');
-          when(
-            () => httpClient.get(uri),
-          ).thenAnswer((_) async => http.Response(responseContent, 200));
+          when(() => httpClient.get(uri))
+              .thenAnswer((_) async => http.Response(responseContent, 200));
 
           // Call isPublished.get()
           final result = await isLatestStatePublished.get(
@@ -214,9 +212,8 @@ void main() {
               'test/sample_package/pub_dev_sample_response.json',
             ).readAsStringSync();
             final uri = Uri.parse('https://pub.dev/api/packages/test');
-            when(
-              () => httpClient.get(uri),
-            ).thenAnswer((_) async => http.Response(responseContent, 200));
+            when(() => httpClient.get(uri))
+                .thenAnswer((_) async => http.Response(responseContent, 200));
 
             // Call isPublished.run()
             await runner.run(['is-latest-state-published', '--input', d.path]);

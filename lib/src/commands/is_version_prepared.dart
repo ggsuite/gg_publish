@@ -24,12 +24,10 @@ class IsVersionPrepared extends DirCommand<bool> {
     required super.ggLog,
     PublishedVersion? publishedVersion,
     AllVersions? allVersions,
-    bool? treatUnpublishedAsOk,
-    LanguageCatalog? catalog,
-  }) : _treatUnpublishedAsOk = treatUnpublishedAsOk,
-       _publishedVersion = publishedVersion ?? PublishedVersion(ggLog: ggLog),
+    this._treatUnpublishedAsOk,
+    this._catalog,
+  }) : _publishedVersion = publishedVersion ?? PublishedVersion(ggLog: ggLog),
        _allVersions = allVersions ?? AllVersions(ggLog: ggLog),
-       _catalog = catalog,
        super(
          name: 'is-version-prepared',
          description: 'Manifest and CHANGELOG have same new version?',
@@ -179,9 +177,8 @@ class IsVersionPrepared extends DirCommand<bool> {
     // Publish to git?
     // Get publishedVersion from the latest git tag (works without a CHANGELOG).
     if ((publishToGit)) {
-      final latest = await FromGit(
-        ggLog: ggLog,
-      ).latest(directory: directory, ggLog: ggLog);
+      final latest = await FromGit(ggLog: ggLog)
+          .latest(directory: directory, ggLog: ggLog);
       publishedVersion = latest ?? Version(0, 0, 0);
     }
 
