@@ -188,6 +188,37 @@ void main() async {
                   }
                 });
 
+                test('with a build number in pubspec.yaml', () async {
+                  // The build number is not part of the increment: it is
+                  // carried over and counted up by PrepareNextVersion.
+                  final cases = {
+                    '2.0.0': ['2.0.1+156', '2.1.0+156'],
+                    '2.0.0+155': ['2.0.1+157', '3.0.0+157'],
+                  };
+
+                  for (final MapEntry(key: published, value: versions)
+                      in cases.entries) {
+                    when(() => publishedVersion.get(ggLog: ggLog, directory: d))
+                        .thenAnswer((_) async => Version.parse(published));
+
+                    for (final version in versions) {
+                      await addAndCommitVersions(
+                        d,
+                        pubspec: version,
+                        changeLog: version,
+                        gitHead: version,
+                      );
+
+                      final result = await isVersionPrepared.get(
+                        ggLog: ggLog,
+                        directory: d,
+                      );
+                      expect(result, isTrue);
+                      expect(messages.isEmpty, isTrue);
+                    }
+                  }
+                });
+
                 test('with an rc prerelease of an allowed increment', () async {
                   // Assume the published version is 2.0.0
                   when(() => publishedVersion.get(ggLog: ggLog, directory: d))

@@ -189,8 +189,12 @@ class PrepareNextVersion extends DirCommand<void> {
       increment: increment,
     );
 
+    // The build number lives in the local manifest, not in the registry:
+    // a manifest version »1.2.4+155« must become »1.2.5+156«, never »1.2.5«.
+    final current = await _localVersion(directory: directory);
+
     if (channel == ReleaseChannel.stable) {
-      return next;
+      return withNextBuildNumber(target: next, current: current);
     }
 
     // rc channel: append the next free rc number for the target version.
@@ -199,7 +203,11 @@ class PrepareNextVersion extends DirCommand<void> {
       ggLog: ggLog,
     );
 
-    return nextRcVersion(target: next, publishedVersions: allPublishedVersions);
+    final rc = nextRcVersion(
+      target: next,
+      publishedVersions: allPublishedVersions,
+    );
+    return withNextBuildNumber(target: rc, current: current);
   }
 
   // ...........................................................................
@@ -301,6 +309,28 @@ class PrepareNextVersion extends DirCommand<void> {
     }
 
     return manifest;
+  }
+
+  // ...........................................................................
+  /// The version currently written in the manifest, or null when the project
+  /// has no manifest or the manifest carries no version.
+  Future<Version?> _localVersion({required Directory directory}) async {
+    if (checkProjectType(directory) == ProjectType.none) {
+      return null;
+    }
+
+    final catalog = _catalog ?? await LanguageCatalog.load();
+    final manifest = Manifest.detect(
+      directory,
+      catalog,
+      treatBridgeAsTypeScript: true,
+    );
+
+    try {
+      return await manifest.readVersion();
+    } on ManifestException {
+      return null;
+    }
   }
 
   // ...........................................................................
