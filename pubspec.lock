@@ -324,9 +324,10 @@ packages:
   gg_version:
     dependency: "direct main"
     description:
-      path: "../gg_version"
-      relative: true
-    source: path
+      name: gg_version
+      sha256: ab486538f8b26222bccb0cd33891e89cbc838eda2a62958a69a135c47310ab37
+      url: "https://pub.dev"
+    source: hosted
     version: "5.4.0"
   glob:
     dependency: transitive

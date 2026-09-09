@@ -125,6 +125,25 @@ void main() async {
           expect(content, contains('version: 1.2.4'));
         });
 
+        test(
+          'into pubspec.yaml, keeping and counting up the build number',
+          () async {
+            mockPublishedVersion();
+            await addPubspecFileWithoutCommitting(d, version: '1.2.3+155');
+
+            // Execute command
+            await prepareNextVersion.apply(
+              ggLog: ggLog,
+              directory: d,
+              increment: VersionIncrement.patch,
+            );
+
+            // Check pubspec.yaml
+            final content = await File('${d.path}/pubspec.yaml').readAsString();
+            expect(content, contains('version: 1.2.4+156'));
+          },
+        );
+
         test('into both manifests of a bridge, in lock-step', () async {
           // Turn the fixture into a bridge: add package.json + tsconfig.json.
           // The published version is read from the npm side (package.json), so
@@ -333,6 +352,48 @@ void main() async {
         expect(nextVersion, Version(1, 2, 4));
       });
 
+      group('with a build number in pubspec.yaml', () {
+        test('should keep the build number and count it up', () async {
+          mockPublishedVersion();
+          await addPubspecFileWithoutCommitting(d, version: '1.2.3+155');
+
+          final nextVersion = await prepareNextVersion.nextVersion(
+            ggLog: ggLog,
+            directory: d,
+            increment: VersionIncrement.patch,
+          );
+
+          expect(nextVersion, Version.parse('1.2.4+156'));
+        });
+
+        test('should keep the build number of an already prepared '
+            'pubspec.yaml', () async {
+          mockPublishedVersion();
+          await addPubspecFileWithoutCommitting(d, version: '1.2.4+156');
+
+          final nextVersion = await prepareNextVersion.nextVersion(
+            ggLog: ggLog,
+            directory: d,
+            increment: VersionIncrement.patch,
+          );
+
+          expect(nextVersion, Version.parse('1.2.4+156'));
+        });
+      });
+
+      test('should ignore a pubspec.yaml without version', () async {
+        mockPublishedVersion();
+        await addPubspecFileWithoutCommitting(d, version: null);
+
+        final nextVersion = await prepareNextVersion.nextVersion(
+          ggLog: ggLog,
+          directory: d,
+          increment: VersionIncrement.patch,
+        );
+
+        expect(nextVersion, Version(1, 2, 4));
+      });
+
       group('with channel == ReleaseChannel.rc', () {
         void mockAllVersions(List<Version> versions) {
           when(
@@ -355,6 +416,21 @@ void main() async {
           );
 
           expect(nextVersion, Version.parse('1.3.0-rc.1'));
+        });
+
+        test('keeps the build number of pubspec.yaml', () async {
+          mockPublishedVersion();
+          mockAllVersions([Version(1, 2, 3)]);
+          await addPubspecFileWithoutCommitting(d, version: '1.2.3+155');
+
+          final nextVersion = await prepareNextVersion.nextVersion(
+            ggLog: ggLog,
+            directory: d,
+            increment: VersionIncrement.minor,
+            channel: ReleaseChannel.rc,
+          );
+
+          expect(nextVersion, Version.parse('1.3.0-rc.1+156'));
         });
 
         test('increments the highest existing rc number', () async {

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Keep the build number of pubspec.yaml on publish and count it up: 1.2.4+155 becomes 1.2.5+156
+
 ## 4.5.0 - 2026-09-02
 
 ### Changed

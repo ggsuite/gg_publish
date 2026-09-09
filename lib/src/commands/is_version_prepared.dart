@@ -187,8 +187,12 @@ class IsVersionPrepared extends DirCommand<bool> {
     // when the published version is itself a prerelease (nextX strips the
     // prerelease suffix instead of bumping the number) — otherwise a second rc
     // of such a version would be wrongly rejected here.
-    final l = localVersion;
-    final p = publishedVersion;
+    //
+    // The build number is not part of the increment: a manifest carrying
+    // »1.2.5+156« is prepared when »1.2.5« is — pub_semver's »==« would
+    // otherwise reject it because it compares the build number as well.
+    final l = withoutBuildNumber(localVersion);
+    final p = withoutBuildNumber(publishedVersion);
 
     final nextPatch = p.nextPatch;
     final nextMinor = p.nextMinor;

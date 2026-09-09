@@ -19,6 +19,7 @@ export 'src/commands/sync_hybrid_versions.dart';
 export 'src/commands/wait_until_published.dart';
 export 'src/commands/is_version_prepared.dart';
 export 'src/commands/prepare_next_version.dart';
+export 'src/tools/version_build_number.dart';
 export 'src/commands/published_version.dart';
 export 'src/commands/is_feature_branch.dart';
 export 'src/commands/is_main_branch.dart';
