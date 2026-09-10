@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.7.0 - 2026-09-11
+
+### Changed
+
+- `MainBranch` returns the declared default branch of the repository when it has one
+
 ## 4.6.0 - 2026-09-09
 
 ### Changed

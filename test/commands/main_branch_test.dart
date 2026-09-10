@@ -65,6 +65,39 @@ void main() {
         },
       );
 
+      test('should return the branch the remote declares as default, '
+          'even when a local main exists', () async {
+        final (local, remote) = await initLocalAndRemoteGit();
+        addTearDown(() {
+          local.deleteSync(recursive: true);
+          remote.deleteSync(recursive: true);
+        });
+
+        Future<void> git(List<String> args) async {
+          final result = await Process.run(
+            'git',
+            args,
+            workingDirectory: local.path,
+            runInShell: true,
+          );
+          if (result.exitCode != 0) {
+            throw Exception('git ${args.join(' ')} failed: ${result.stderr}');
+          }
+        }
+
+        await createBranch(local, 'develop');
+        await git(['push', '--set-upstream', 'origin', 'develop']);
+        await git(['remote', 'set-head', 'origin', 'develop']);
+        await createBranch(local, 'feature/test-branch');
+
+        final result = await mainBranch.get(
+          directory: local,
+          ggLog: messages.add,
+        );
+
+        expect(result, 'develop');
+      });
+
       test('should throw when neither main nor master exists', () async {
         await Process.run(
           'git',
