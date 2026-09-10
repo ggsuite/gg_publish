@@ -7,6 +7,7 @@
 import 'dart:io';
 
 import 'package:gg_args/gg_args.dart';
+import 'package:gg_git/gg_git.dart' as gg_git;
 import 'package:gg_log/gg_log.dart';
 import 'package:gg_console_colors/gg_console_colors.dart';
 import 'package:gg_process/gg_process.dart';
@@ -14,14 +15,21 @@ import 'package:gg_process/gg_process.dart';
 /// Returns the name of the repository's main branch.
 class MainBranch extends DirCommand<String> {
   /// Creates the command instance.
-  MainBranch({required super.ggLog, ProcessRunner? processRunner})
-    : _processRunner = processRunner ?? ggRunProcess,
-      super(
-        name: 'main-branch',
-        description: 'Return the name of the main branch',
-      );
+  MainBranch({
+    required super.ggLog,
+    ProcessRunner? processRunner,
+    gg_git.DefaultBranch? defaultBranch,
+  }) : _processRunner = processRunner ?? ggRunProcess,
+       _defaultBranch = defaultBranch ?? gg_git.DefaultBranch(ggLog: ggLog),
+       super(
+         name: 'main-branch',
+         description: 'Return the name of the main branch',
+       );
 
   final ProcessRunner _processRunner;
+
+  /// Resolves the default branch the remote declares (`origin/HEAD`).
+  final gg_git.DefaultBranch _defaultBranch;
 
   @override
   Future<String> exec({
@@ -35,12 +43,24 @@ class MainBranch extends DirCommand<String> {
   }
 
   /// Returns the repository main branch name for [directory].
+  ///
+  /// The branch the remote declares as its default (`origin/HEAD`) wins —
+  /// a repository whose default branch is `develop` merges into and releases
+  /// from `develop`. Only a repository that declares nothing is guessed:
+  /// `main` when it exists locally, else `master`.
   @override
   Future<String> get({
     required GgLog ggLog,
     required Directory directory,
   }) async {
     await check(directory: directory);
+
+    final declared = await _defaultBranch.declaredDefaultBranch(
+      directory: directory,
+    );
+    if (declared != null) {
+      return declared;
+    }
 
     final branches = await _readLocalBranches(directory: directory);
 
