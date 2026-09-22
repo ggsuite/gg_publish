@@ -75,3 +75,19 @@ Tests live under `test/` mirroring `lib/src/`. `test/sample_package/` is a fixtu
 ## Lint Rules of Note
 
 `analysis_options.yaml` enforces (beyond recommended): `lines_longer_than_80_chars`, `prefer_single_quotes`, `require_trailing_commas`, `public_member_api_docs`, `always_declare_return_types` (as error), plus strict language modes. New public members need dartdoc comments.
+
+<!-- helix:claude_md:start -->
+
+# gg workflow
+
+This repo is developed ticket by ticket with the `gg` CLI. Follow the
+development guide, it tells you when to ask the user and which command
+comes next:
+
+@doc/guides/for-ai/ai-dev-guide.md
+
+The steps are also available as skills: `/gg-ticket`, `/gg-commit`,
+`/gg-push`, `/gg-publish`, `/gg-cleanup`. `/gg` lists them and says which
+one comes next.
+
+<!-- helix:claude_md:end -->
