@@ -24,10 +24,12 @@ class IsVersionPrepared extends DirCommand<bool> {
     required super.ggLog,
     PublishedVersion? publishedVersion,
     AllVersions? allVersions,
+    RemoteTags? remoteTags,
     this._treatUnpublishedAsOk,
     this._catalog,
   }) : _publishedVersion = publishedVersion ?? PublishedVersion(ggLog: ggLog),
        _allVersions = allVersions ?? AllVersions(ggLog: ggLog),
+       _remoteTags = remoteTags ?? RemoteTags(ggLog: ggLog),
        super(
          name: 'is-version-prepared',
          description: 'Manifest and CHANGELOG have same new version?',
@@ -172,6 +174,15 @@ class IsVersionPrepared extends DirCommand<bool> {
           rethrow;
         }
       }
+
+      // PrepareNextVersion counts on from a version tagged on origin — the
+      // same baseline has to apply here, or the upload refuses what the
+      // version bump chose.
+      publishedVersion = await _remoteTags.baseline(
+        directory: directory,
+        ggLog: ggLog,
+        publishedVersion: publishedVersion,
+      );
     }
 
     // Publish to git?
@@ -235,6 +246,7 @@ class IsVersionPrepared extends DirCommand<bool> {
 
   final PublishedVersion _publishedVersion;
   final AllVersions _allVersions;
+  final RemoteTags _remoteTags;
   final bool? _treatUnpublishedAsOk;
 
   /// The language catalog used to resolve the manifest for non-Dart project

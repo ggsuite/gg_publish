@@ -13,6 +13,9 @@ import 'package:gg_version/gg_version.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
+
+import '../test_helpers.dart';
+
 import 'package:gg_console_colors/gg_console_colors.dart';
 
 void main() async {
@@ -21,6 +24,7 @@ void main() async {
   late Directory d;
   late PrepareNextVersion prepareNextVersion;
   late PublishedVersion publishedVersion;
+  late MockRemoteTags remoteTags;
   late CommandRunner<void> runner;
 
   // ...........................................................................
@@ -45,9 +49,23 @@ void main() async {
 
     messages.clear();
     publishedVersion = MockPublishedVersion();
+    remoteTags = MockRemoteTags();
+    registerFallbackValue(Version(0, 0, 0));
+    // No tags on origin: the published version stays the baseline.
+    when(
+      () => remoteTags.baseline(
+        directory: any(named: 'directory'),
+        ggLog: any(named: 'ggLog'),
+        publishedVersion: any(named: 'publishedVersion'),
+      ),
+    ).thenAnswer(
+      (invocation) async =>
+          invocation.namedArguments[#publishedVersion] as Version,
+    );
     prepareNextVersion = PrepareNextVersion(
       ggLog: ggLog,
       publishedVersion: publishedVersion,
+      remoteTags: remoteTags,
     );
     runner = CommandRunner<void>('test', 'test')
       ..addCommand(prepareNextVersion);
@@ -555,6 +573,118 @@ void main() async {
 
         final content = await File('${d.path}/pubspec.yaml').readAsString();
         expect(content, contains('version: 1.2.4-rc.1'));
+      });
+    });
+
+    group('with version tags on origin', () {
+      late Directory local;
+      late Directory remote;
+      late PrepareNextVersion command;
+
+      // .......................................................................
+      Future<void> tagOnOrigin(List<String> tags) async {
+        await addTags(local, tags);
+        await pushTags(local);
+
+        // The tags are only on origin, as in a clone that never fetched them.
+        for (final tag in tags) {
+          await Process.run('git', [
+            'tag',
+            '-d',
+            tag,
+          ], workingDirectory: local.path);
+        }
+      }
+
+      // .......................................................................
+      Future<Version> next({
+        required String manifest,
+        VersionIncrement increment = VersionIncrement.patch,
+        ReleaseChannel channel = ReleaseChannel.stable,
+      }) async {
+        await File('${local.path}/pubspec.yaml')
+            .writeAsString('name: test\nversion: $manifest\n');
+
+        return command.nextVersion(
+          directory: local,
+          ggLog: ggLog,
+          increment: increment,
+          channel: channel,
+          publishedVersion: Version(0, 0, 145),
+          allPublishedVersions: [Version(0, 0, 145)],
+        );
+      }
+
+      // .......................................................................
+      setUp(() async {
+        (local, remote) = await initLocalAndRemoteGit();
+        command = PrepareNextVersion(
+          ggLog: ggLog,
+          publishedVersion: publishedVersion,
+        );
+      });
+
+      tearDown(() async {
+        await local.delete(recursive: true);
+        await remote.delete(recursive: true);
+      });
+
+      // .......................................................................
+      test('should count on from a tag that is not published', () async {
+        // The registry knows 0.0.145, origin already has a tag 0.0.146 that
+        // somebody else set — releasing 0.0.146 would have to delete it.
+        await tagOnOrigin(['0.0.145', '0.0.146']);
+
+        expect(await next(manifest: '0.0.145'), Version(0, 0, 147));
+        expect(
+          messages.map(rmC),
+          contains(
+            'Origin has the tag 0.0.146, but 0.0.145 is the latest published '
+            'version. Counting on from 0.0.146.',
+          ),
+        );
+      });
+
+      test('should count on from the highest tag, even across a gap', () async {
+        // Tagging 0.0.147 would fail: it must be greater than 0.0.148.
+        await tagOnOrigin(['0.0.146', '0.0.148']);
+
+        expect(await next(manifest: '0.0.145'), Version(0, 0, 149));
+      });
+
+      test('should keep the chosen increment', () async {
+        await tagOnOrigin(['0.1.0']);
+
+        expect(
+          await next(manifest: '0.0.145', increment: VersionIncrement.minor),
+          Version(0, 2, 0),
+        );
+      });
+
+      test('should count on from a tag the manifest already carries', () async {
+        // Merged in from main, e.g. — the tag is still somebody else's.
+        await tagOnOrigin(['0.0.146']);
+
+        expect(
+          await next(manifest: '0.0.146+7'),
+          Version(0, 0, 147, build: '8'),
+        );
+      });
+
+      test('should count an rc on from the tag as well', () async {
+        await tagOnOrigin(['0.0.146']);
+
+        expect(
+          await next(manifest: '0.0.145', channel: ReleaseChannel.rc),
+          Version(0, 0, 147, pre: 'rc.1'),
+        );
+      });
+
+      test('should ignore tags up to the published version', () async {
+        await tagOnOrigin(['0.0.100', '0.0.145', 'v9.9.9', 'release']);
+
+        expect(await next(manifest: '0.0.145'), Version(0, 0, 146));
+        expect(messages, isEmpty);
       });
     });
 

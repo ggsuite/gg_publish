@@ -25,7 +25,7 @@ Tests that hit the network / pub.dev require internet (see `check.yaml: needsInt
 
 Entry point `bin/gg_publish.dart` wires a `GgCommandRunner` (from `gg_args`) to the root `GgPublish` command. All functionality is exposed as subcommands registered in `lib/src/gg_publish.dart`:
 
-- Query commands: `is_in_registry`, `is_published`, `is_latest_state_published`, `is_upgraded`, `is_version_prepared`, `is_feature_branch`, `is_main_branch`, `is_on_pub_dev`, `published_version`, `main_branch`
+- Query commands: `remote_tags`, `is_in_registry`, `is_published`, `is_latest_state_published`, `is_upgraded`, `is_version_prepared`, `is_feature_branch`, `is_main_branch`, `is_on_pub_dev`, `published_version`, `main_branch`
 - Action commands: `publish`, `publish_to`, `prepare_next_version`, `merge_main_into_feat`
 
 ### Hybrid packages publish to two registries
@@ -59,6 +59,23 @@ public registry still falls back to its git version tags.
 `SyncHybridVersions` writes the higher of the two manifest versions into both
 and regenerates the version files. Nothing kept them together before, so they
 drifted and a publish released two different versions of one artifact.
+
+**A version tagged on origin counts as spent.** `RemoteTags.baseline` returns
+the higher of the published version and the highest version tag on origin
+(`git ls-remote --tags`, with gg_git's `GitRetry`), and both
+`PrepareNextVersion` and `IsVersionPrepared` count from it: registry 0.0.145
+plus a tag 0.0.146 somebody set without publishing gives 0.0.147 for a patch,
+also for an rc. Only one rule works: `PrepareNextVersion` alone once skipped
+the tagged version, and then `IsVersionPrepared` rejected the result during the
+upload, after the merge. Counting from the highest tag also keeps gg_version's
+`AddVersionTag` happy, which refuses any tag not greater than the latest one.
+Before, the bump chose the tagged version and `RemoveVersionTag` tried to
+delete the foreign tag, which Azure DevOps refuses without »Force push«. There
+is no exception for a tag of the manifest's own version: gg tags only after the
+upload, so its own tag always names a registry version. `RemoveVersionTag.tagOnOrigin`
+answers read-only whether origin has the tag of the manifest version (the
+publish flow asks it before the merge). Without a git repo or a remote,
+`RemoteTags` finds nothing.
 
 `publish` requires at least one version of the package to be on its registry already: a package that was never published (checked via `PublishedVersion.registryVersions` / `IsInRegistry`) has to be published manually by the user — the command prints the shell commands (blue), waits for confirmation on stdin, re-checks the registry and continues; the automated upload is skipped when the user published the current version manually. Packages without a public registry (`publish_to: none`, `private: true`) are not checked.
 
