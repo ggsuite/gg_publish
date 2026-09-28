@@ -14,6 +14,9 @@ import 'package:gg_process/gg_process.dart';
 import 'package:gg_publish/gg_publish.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
+
+import '../test_helpers.dart';
+
 import 'package:gg_console_colors/gg_console_colors.dart';
 
 void main() {
@@ -58,19 +61,6 @@ void main() {
         .where((e) => e.isNotEmpty)
         .map((line) => line.split(RegExp(r'\s+')).last)
         .toList();
-  }
-
-  // ...........................................................................
-  Future<void> pushTags(Directory d) async {
-    final result = await Process.run('git', [
-      'push',
-      'origin',
-      '--tags',
-    ], workingDirectory: d.path);
-
-    if (result.exitCode != 0) {
-      throw Exception('Could not push the tags: ${result.stderr}');
-    }
   }
 
   // ...........................................................................
@@ -304,7 +294,6 @@ void main() {
             'ls-remote',
             '--tags',
             'origin',
-            'refs/tags/1.0.0',
           ], ProcessResult(0, 1, '', 'Ooops'));
 
           await expectLater(
@@ -326,7 +315,6 @@ void main() {
             'ls-remote',
             '--tags',
             'origin',
-            'refs/tags/1.0.0',
           ], ProcessResult(0, 0, 'abc123\trefs/tags/1.0.0\n', ''));
           mockGit([
             'push',
@@ -345,6 +333,7 @@ void main() {
               ),
             ),
           );
+          expect(messages.map(rmC).join('\n'), contains('»Force push«'));
         });
 
         test('when the directory does not exist', () async {
@@ -353,6 +342,42 @@ void main() {
             throwsA(isA<ArgumentError>()),
           );
         });
+      });
+    });
+
+    // .........................................................................
+    group('tagOnOrigin(directory, ggLog)', () {
+      test('should return the version when origin has its tag', () async {
+        await addTag(local, '1.0.0');
+        await pushTags(local);
+
+        expect(
+          await removeVersionTag.tagOnOrigin(directory: local, ggLog: ggLog),
+          '1.0.0',
+        );
+        // Nothing is deleted.
+        expect(await remoteTags(local), contains('refs/tags/1.0.0'));
+      });
+
+      test('should return null when only other tags exist', () async {
+        await addTags(local, ['0.9.0', '1.0.0']);
+        await pushTags(local);
+        await addTag(local, '1.0.0-local');
+        writePubspec(local, '1.1.0');
+
+        expect(
+          await removeVersionTag.tagOnOrigin(directory: local, ggLog: ggLog),
+          isNull,
+        );
+      });
+
+      test('should return null without a manifest', () async {
+        File('${local.path}/pubspec.yaml').deleteSync();
+
+        expect(
+          await removeVersionTag.tagOnOrigin(directory: local, ggLog: ggLog),
+          isNull,
+        );
       });
     });
 

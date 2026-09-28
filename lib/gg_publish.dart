@@ -14,6 +14,7 @@ export 'src/commands/is_latest_state_published.dart';
 export 'src/commands/is_upgraded.dart';
 export 'src/commands/publish.dart';
 export 'src/commands/publish_to.dart';
+export 'src/commands/remote_tags.dart';
 export 'src/commands/remove_version_tag.dart';
 export 'src/commands/sync_hybrid_versions.dart';
 export 'src/commands/wait_until_published.dart';

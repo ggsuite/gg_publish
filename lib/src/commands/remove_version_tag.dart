@@ -13,6 +13,8 @@ import 'package:gg_log/gg_log.dart';
 import 'package:gg_process/gg_process.dart';
 import 'package:gg_console_colors/gg_console_colors.dart';
 
+import 'remote_tags.dart';
+
 // #############################################################################
 /// Removes the git tag of the version that is about to be published — locally
 /// as well as on the remote.
@@ -35,9 +37,15 @@ class RemoveVersionTag extends DirCommand<bool> {
     GgProcessWrapper processWrapper = const GgProcessWrapper(),
     this._catalog,
     HasRemote? hasRemote,
+    RemoteTags? remoteTags,
   }) : _processWrapper = processWrapper,
-       _hasRemote =
-           hasRemote ?? HasRemote(ggLog: ggLog, processWrapper: processWrapper),
+       _remoteTags =
+           remoteTags ??
+           RemoteTags(
+             ggLog: ggLog,
+             processWrapper: processWrapper,
+             hasRemote: hasRemote,
+           ),
        super(
          name: 'remove-version-tag',
          description: 'Remove the version tag locally and on origin',
@@ -80,12 +88,35 @@ class RemoveVersionTag extends DirCommand<bool> {
     return true;
   }
 
+  // ...........................................................................
+  /// Returns the version to be published when origin already has a tag of
+  /// it, otherwise null. Deletes nothing: the publish flow asks this before
+  /// the merge, where a tag must not be removed on a guess — it may be
+  /// somebody else's.
+  Future<String?> tagOnOrigin({
+    required Directory directory,
+    required GgLog ggLog,
+  }) async {
+    await check(directory: directory);
+
+    final version = await _versionToBePublished(directory);
+    if (version == null) {
+      return null;
+    }
+
+    final remoteTags = await _remoteTags.get(
+      directory: directory,
+      ggLog: ggLog,
+    );
+    return remoteTags.contains(version) ? version : null;
+  }
+
   // ######################
   // Private
   // ######################
 
   final GgProcessWrapper _processWrapper;
-  final HasRemote _hasRemote;
+  final RemoteTags _remoteTags;
 
   /// The language catalog used to resolve the manifest. Defaults to the
   /// bundled gg_lang catalog when null.
@@ -170,41 +201,15 @@ class RemoveVersionTag extends DirCommand<bool> {
     String version,
     GgLog ggLog,
   ) async {
-    // A repo without a remote has no remote tag to remove.
-    if (!await _hasRemote.get(directory: directory, ggLog: ggLog)) {
+    final remoteTags = await _remoteTags.get(
+      directory: directory,
+      ggLog: ggLog,
+    );
+    if (!remoteTags.contains(version)) {
       return false;
     }
 
     final ref = 'refs/tags/$version';
-
-    final remoteTags = await _processWrapper.run('git', [
-      'ls-remote',
-      '--tags',
-      'origin',
-      ref,
-    ], workingDirectory: directory.path);
-
-    if (remoteTags.exitCode != 0) {
-      ggLog(
-        [
-          cDetail('✗ Failed to list the remote tags of ${dirName(directory)}'),
-          cError('${remoteTags.stderr}'),
-        ].join('\n'),
-      );
-      throw Exception(cDetail('Failed to list the remote tags.'));
-    }
-
-    // Each line is "<hash>\t<ref>". An annotated tag adds a second line for
-    // the dereferenced commit ("<ref>^{}"), so compare the refs exactly.
-    final refs = (remoteTags.stdout as String)
-        .split(RegExp(r'\r?\n'))
-        .map((line) => line.trim())
-        .where((line) => line.isNotEmpty)
-        .map((line) => line.split(RegExp(r'\s+')).last);
-
-    if (!refs.contains(ref)) {
-      return false;
-    }
 
     // Delete the full ref, so a branch of the same name is never touched.
     final result = await _processWrapper.run('git', [
@@ -219,6 +224,11 @@ class RemoveVersionTag extends DirCommand<bool> {
         [
           cDetail('✗ Failed to remove the remote tag $version'),
           cError('${result.stderr}'),
+          cDetail(
+            'The tag has to go before $version can be released. Ask someone '
+            'who may delete tags on origin to remove it (Azure DevOps: Git '
+            'permission »Force push«), then resume the publish.',
+          ),
         ].join('\n'),
       );
       throw Exception(cDetail('Failed to remove the remote tag.'));

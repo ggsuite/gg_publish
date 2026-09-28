@@ -35,3 +35,17 @@ Future<void> copyDirectory(Directory source, Directory destination) async {
     }
   }
 }
+
+// .............................................................................
+/// Pushes all tags of [d] to origin.
+Future<void> pushTags(Directory d) async {
+  final result = await Process.run('git', [
+    'push',
+    'origin',
+    '--tags',
+  ], workingDirectory: d.path);
+
+  if (result.exitCode != 0) {
+    throw Exception('Could not push the tags: ${result.stderr}');
+  }
+}

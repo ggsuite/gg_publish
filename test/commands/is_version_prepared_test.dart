@@ -18,6 +18,8 @@ import 'package:gg_log/gg_log.dart';
 import 'package:gg_status_printer/gg_status_printer.dart';
 import 'package:test/test.dart';
 
+import '../test_helpers.dart';
+
 void main() async {
   // ...........................................................................
   late Directory d;
@@ -55,6 +57,45 @@ void main() async {
 
   // ...........................................................................
   group('IsVersionPrepared', () {
+    group('with a version tag on origin that is not published', () {
+      late Directory local;
+      late Directory remote;
+
+      setUp(() async {
+        (local, remote) = await initLocalAndRemoteGit();
+        when(() => publishedVersion.get(ggLog: ggLog, directory: local))
+            .thenAnswer((_) async => Version(0, 0, 145));
+
+        // Somebody tagged 0.0.146 without publishing it.
+        await addTag(local, '0.0.146');
+        await pushTags(local);
+      });
+
+      tearDown(() {
+        local.deleteSync(recursive: true);
+        remote.deleteSync(recursive: true);
+      });
+
+      Future<bool> prepared(String version) async {
+        await addAndCommitVersions(
+          local,
+          pubspec: version,
+          changeLog: version,
+          gitHead: null,
+        );
+        return isVersionPrepared.get(ggLog: ggLog, directory: local);
+      }
+
+      test('accepts the increment PrepareNextVersion chose', () async {
+        expect(await prepared('0.0.147'), isTrue);
+      });
+
+      test('rejects the tagged version', () async {
+        expect(await prepared('0.0.146'), isFalse);
+        expect(messages.join('\n'), contains('- 0.0.147'));
+      });
+    });
+
     group('get(directory, ggLog)', () {
       group('should succeed', () {
         group('and return true', () {

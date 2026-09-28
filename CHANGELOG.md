@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Count the next version on from the highest version tag on origin and refuse to merge over a tag of the prepared version
+
 ## 4.7.1 - 2026-09-22
 
 ### Changed

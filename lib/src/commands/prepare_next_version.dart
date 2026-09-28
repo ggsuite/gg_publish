@@ -47,7 +47,9 @@ class PrepareNextVersion extends DirCommand<void> {
     PublishedVersion? publishedVersion,
     LanguageCatalog? catalog,
     WriteVersionFile? writeVersionFile,
+    RemoteTags? remoteTags,
   }) : _publishedVersion = publishedVersion ?? PublishedVersion(ggLog: ggLog),
+       _remoteTags = remoteTags ?? RemoteTags(ggLog: ggLog),
        _catalog = catalog,
        _writeVersionFile =
            writeVersionFile ?? WriteVersionFile(ggLog: ggLog, catalog: catalog),
@@ -183,6 +185,13 @@ class PrepareNextVersion extends DirCommand<void> {
       ggLog: ggLog,
     );
 
+    // A version tagged on origin is spent, even if no registry has it.
+    publishedVersion = await _remoteTags.baseline(
+      directory: directory,
+      ggLog: ggLog,
+      publishedVersion: publishedVersion,
+    );
+
     // Calculate the next version based on the increment
     final next = calculateNextVersion(
       publishedVersion: publishedVersion,
@@ -281,6 +290,9 @@ class PrepareNextVersion extends DirCommand<void> {
 
   // ...........................................................................
   final WriteVersionFile _writeVersionFile;
+
+  // ...........................................................................
+  final RemoteTags _remoteTags;
 
   // ...........................................................................
   /// Detects the manifest, ensures it exists and carries a version, and
