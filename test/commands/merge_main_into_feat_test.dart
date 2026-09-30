@@ -6,6 +6,7 @@
 
 import 'dart:io';
 
+import 'package:gg_git/gg_git.dart' show GitRetry;
 import 'package:gg_git/gg_git_test_helpers.dart';
 import 'package:gg_process/gg_process.dart';
 import 'package:gg_publish/gg_publish.dart';
@@ -31,6 +32,7 @@ void main() {
       ggLog: ggLog,
       mainBranch: mainBranch,
       processWrapper: processWrapper,
+      gitRetry: GitRetry.example,
     );
   }
 
@@ -146,6 +148,51 @@ void main() {
             workingDirectory: d.path,
           ),
         ).called(1);
+      });
+
+      test('should retry a fetch the remote dropped', () async {
+        var calls = 0;
+        when(
+          () => processWrapper.run(
+            'git',
+            ['fetch', 'origin'],
+            runInShell: true,
+            workingDirectory: d.path,
+          ),
+        ).thenAnswer(
+          (_) async => ++calls == 1
+              ? ProcessResult(
+                  1,
+                  128,
+                  '',
+                  'Connection to github.com closed by remote host.',
+                )
+              : ProcessResult(0, 0, '', ''),
+        );
+
+        when(
+          () => mainBranch.get(
+            directory: d,
+            ggLog: any(named: 'ggLog'),
+          ),
+        ).thenAnswer((_) async => 'main');
+
+        when(
+          () => processWrapper.run(
+            'git',
+            ['merge', 'origin/main'],
+            runInShell: true,
+            workingDirectory: d.path,
+          ),
+        ).thenAnswer((_) async => ProcessResult(0, 0, '', ''));
+
+        await command.get(directory: d, ggLog: ggLog);
+
+        expect(calls, 2);
+        expect(
+          messages.join('\n'),
+          contains('git fetch origin failed with a transient network error'),
+        );
       });
 
       test('should throw when git fetch fails', () async {

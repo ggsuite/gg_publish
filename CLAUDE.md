@@ -77,6 +77,13 @@ answers read-only whether origin has the tag of the manifest version (the
 publish flow asks it before the merge). Without a git repo or a remote,
 `RemoteTags` finds nothing.
 
+**Git network commands are retried.** `RemoteTags` (`git ls-remote --tags`),
+`RemoveVersionTag` (deleting the tag on origin) and `MergeMainIntoFeat`
+(`git fetch origin`) run through gg_git's `GitRetry`, so a connection the
+remote drops (GitHub's SSH throttling, a 5xx) no longer ends the publish.
+A rejected push or missing permission is never retried. Tests inject
+`GitRetry.example`, which retries without waiting.
+
 `publish` requires at least one version of the package to be on its registry already: a package that was never published (checked via `PublishedVersion.registryVersions` / `IsInRegistry`) has to be published manually by the user — the command prints the shell commands (blue), waits for confirmation on stdin, re-checks the registry and continues; the automated upload is skipped when the user published the current version manually. Packages without a public registry (`publish_to: none`, `private: true`) are not checked.
 
 Each command lives in its own file under `lib/src/commands/` and extends `DirCommand<T>` from `gg_args`. Commands follow a consistent shape: a constructor that accepts injectable collaborators (e.g. `GgProcessWrapper`, other command instances, `readLineFromStdIn`) for testability, an `exec` override that delegates to a `get` method holding the real logic, and a `ggLog` sink for output. When adding or modifying a command, preserve this injection pattern — tests rely on substituting `GgProcessWrapper`, stdin readers, and sibling commands with mocks/fakes (`mocktail`).

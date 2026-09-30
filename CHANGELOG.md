@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.9.0 - 2026-09-30
+
+### Removed
+
+- Retry the remaining git network commands on transient transport errors: RemoveVersionTag's remote tag removal and MergeMainIntoFeat's fetch run through gg_git's GitRetry
+
 ## 4.8.0 - 2026-09-28
 
 ### Changed
