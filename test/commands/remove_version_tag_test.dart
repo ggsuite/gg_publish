@@ -244,6 +244,7 @@ void main() {
             processWrapper: processWrapper,
             hasRemote: hasRemote,
             catalog: catalog,
+            gitRetry: GitRetry.example,
           );
         });
 
@@ -334,6 +335,35 @@ void main() {
             ),
           );
           expect(messages.map(rmC).join('\n'), contains('»Force push«'));
+        });
+
+        test('only after retrying a removal the remote dropped', () async {
+          mockGit(['tag', '--list', '1.0.0'], ProcessResult(0, 0, '', ''));
+          hasRemote.mockGet(result: true, ggLog: ggLog);
+          mockGit([
+            'ls-remote',
+            '--tags',
+            'origin',
+          ], ProcessResult(0, 0, 'abc123\trefs/tags/1.0.0\n', ''));
+          const delete = ['push', 'origin', '--delete', 'refs/tags/1.0.0'];
+          var calls = 0;
+          when(
+            () =>
+                processWrapper.run('git', delete, workingDirectory: local.path),
+          ).thenAnswer(
+            (_) async => ++calls == 1
+                ? ProcessResult(
+                    0,
+                    128,
+                    '',
+                    'Connection to github.com closed by remote host.',
+                  )
+                : ProcessResult(0, 0, '', ''),
+          );
+
+          // The second attempt succeeds, so nothing is thrown
+          expect(await command.get(directory: local, ggLog: ggLog), isTrue);
+          expect(calls, 2);
         });
 
         test('when the directory does not exist', () async {

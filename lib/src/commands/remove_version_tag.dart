@@ -38,13 +38,16 @@ class RemoveVersionTag extends DirCommand<bool> {
     this._catalog,
     HasRemote? hasRemote,
     RemoteTags? remoteTags,
+    GitRetry gitRetry = const GitRetry(),
   }) : _processWrapper = processWrapper,
+       _gitRetry = gitRetry,
        _remoteTags =
            remoteTags ??
            RemoteTags(
              ggLog: ggLog,
              processWrapper: processWrapper,
              hasRemote: hasRemote,
+             gitRetry: gitRetry,
            ),
        super(
          name: 'remove-version-tag',
@@ -116,6 +119,7 @@ class RemoveVersionTag extends DirCommand<bool> {
   // ######################
 
   final GgProcessWrapper _processWrapper;
+  final GitRetry _gitRetry;
   final RemoteTags _remoteTags;
 
   /// The language catalog used to resolve the manifest. Defaults to the
@@ -212,12 +216,16 @@ class RemoveVersionTag extends DirCommand<bool> {
     final ref = 'refs/tags/$version';
 
     // Delete the full ref, so a branch of the same name is never touched.
-    final result = await _processWrapper.run('git', [
-      'push',
-      'origin',
-      '--delete',
-      ref,
-    ], workingDirectory: directory.path);
+    final result = await _gitRetry.run(
+      () => _processWrapper.run('git', [
+        'push',
+        'origin',
+        '--delete',
+        ref,
+      ], workingDirectory: directory.path),
+      ggLog: ggLog,
+      description: 'git push origin --delete $ref',
+    );
 
     if (result.exitCode != 0) {
       ggLog(

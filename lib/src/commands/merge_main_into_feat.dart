@@ -7,6 +7,7 @@
 import 'dart:io';
 
 import 'package:gg_args/gg_args.dart';
+import 'package:gg_git/gg_git.dart';
 import 'package:gg_log/gg_log.dart';
 import 'package:gg_process/gg_process.dart';
 import 'package:gg_publish/gg_publish.dart';
@@ -20,6 +21,7 @@ class MergeMainIntoFeat extends DirCommand<void> {
     required super.ggLog,
     MainBranch? mainBranch,
     this._processWrapper = const GgProcessWrapper(),
+    this._gitRetry = const GitRetry(),
   }) : _mainBranch = mainBranch ?? MainBranch(ggLog: ggLog),
        super(
          name: 'merge-main-into-feat',
@@ -28,6 +30,7 @@ class MergeMainIntoFeat extends DirCommand<void> {
 
   final MainBranch _mainBranch;
   final GgProcessWrapper _processWrapper;
+  final GitRetry _gitRetry;
 
   @override
   Future<void> exec({
@@ -53,6 +56,7 @@ class MergeMainIntoFeat extends DirCommand<void> {
       arguments: const ['fetch', 'origin'],
       actionDescription: 'fetch from origin',
       ggLog: ggLog,
+      network: true,
     );
 
     final mainBranchName = await _mainBranch.get(
@@ -68,19 +72,29 @@ class MergeMainIntoFeat extends DirCommand<void> {
     );
   }
 
-  /// Runs a git command and throws when the command fails.
+  /// Runs a git command and throws when the command fails. A [network]
+  /// command is retried when the transport drops.
   Future<void> _runGitCommand({
     required Directory directory,
     required List<String> arguments,
     required String actionDescription,
     required GgLog ggLog,
+    bool network = false,
   }) async {
-    final result = await _processWrapper.run(
+    Future<ProcessResult> run() => _processWrapper.run(
       'git',
       arguments,
       runInShell: true,
       workingDirectory: directory.path,
     );
+
+    final result = network
+        ? await _gitRetry.run(
+            run,
+            ggLog: ggLog,
+            description: 'git ${arguments.join(' ')}',
+          )
+        : await run();
 
     if (result.exitCode != 0) {
       final stderr = result.stderr.toString().trim();
