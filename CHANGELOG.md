@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.9.1 - 2026-10-06
+
+### Changed
+
+- Upgrade dependencies
+
 ## 4.9.0 - 2026-09-30
 
 ### Removed
