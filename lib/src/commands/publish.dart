@@ -383,7 +383,7 @@ class Publish extends DirCommand<void> {
     // let the package manager drive its own OTP / browser-login flow directly
     // against the terminal.
     final publish = detectTypeScriptPackageManager(directory).publishCommand;
-    await _publishInteractive(directory, publish.executable, <String>[
+    await _publishInteractive(directory, ggLog, publish.executable, <String>[
       ...publish.args,
       ...await _npmDistTagArgs(directory),
     ]);
@@ -557,8 +557,13 @@ class Publish extends DirCommand<void> {
   /// package manager can prompt for a 2FA one-time password or open its
   /// browser login itself. gg does not capture the output in this mode — the
   /// tool writes straight to the terminal — so only the exit code is inspected.
+  ///
+  /// A failure is diagnosed afterwards (see [_npmFailureReason]), because
+  /// »Publishing failed.« alone leaves the user guessing — the package
+  /// manager's own explanation scrolled by in a stream gg cannot read.
   Future<void> _publishInteractive(
     Directory directory,
+    GgLog ggLog,
     String executable,
     List<String> args,
   ) async {
@@ -571,15 +576,101 @@ class Publish extends DirCommand<void> {
     );
 
     final exitCode = await process.exitCode;
-    if (exitCode != 0) {
+    if (exitCode == 0) return;
+
+    final command = '$executable ${args.join(' ')}';
+    ggLog(cError('✗ »$command« failed with exit code $exitCode'));
+
+    // The exit code is not the truth about the upload — a lifecycle script
+    // running after it (»postpublish«) fails the command although npm already
+    // has the version. Reporting that as a failed publish makes the user
+    // repeat an upload the registry then rejects.
+    final version = await _version(directory, PublishTarget.npm);
+    if (await _isOnNpm(directory, version)) {
       ggLog(
-        cError(
-          '✗ »$executable ${args.join(' ')}« failed with exit code '
-          '$exitCode',
+        cWarn(
+          '$version is on npm nevertheless — the upload went through, only '
+          '»$command« reported an error afterwards. Continuing.',
         ),
       );
-      throw Exception(cDetail('Publishing failed.'));
+      return;
     }
+
+    final reason = await _npmFailureReason(directory, executable, args);
+    throw Exception(cDetail('Publishing failed. $reason'));
+  }
+
+  // ...........................................................................
+  /// Whether npm already lists [version] of the package in [directory].
+  /// An unreachable registry answers no — the failure then stands.
+  Future<bool> _isOnNpm(Directory directory, Version version) async {
+    try {
+      final versions = await _publishedVersion.registryVersionsFor(
+        target: PublishTarget.npm,
+        directory: directory,
+      );
+      return versions?.contains(version) ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // ...........................................................................
+  /// Explains why the interactive publish [executable] [args] failed.
+  ///
+  /// The package manager printed its reason straight to the terminal, so gg
+  /// re-runs the same command with `--dry-run` — captured, and without
+  /// touching the registry. When the dry run fails too, the package itself is
+  /// the problem (a failing `prepublishOnly`/`prepack` script, a broken
+  /// manifest) and its output says why. When it passes, the package is fine
+  /// and the registry refused the upload; the causes left are the ones only
+  /// the registry can report.
+  Future<String> _npmFailureReason(
+    Directory directory,
+    String executable,
+    List<String> args,
+  ) async {
+    final dryRun = <String>[...args, '--dry-run'];
+    final dryRunCommand = '$executable ${dryRun.join(' ')}';
+
+    ProcessResult? result;
+    try {
+      result = await _processWrapper.run(
+        executable,
+        dryRun,
+        workingDirectory: directory.path,
+        runInShell: true,
+      );
+    } catch (_) {
+      result = null;
+    }
+
+    if (result != null && result.exitCode != 0) {
+      final output = _lastLines('${result.stdout}\n${result.stderr}', 20);
+      return [
+        'The package cannot be packed — »$dryRunCommand« fails as well:',
+        if (output.isNotEmpty) output,
+      ].join('\n');
+    }
+
+    final verdict = result == null
+        ? 'The registry most likely refused the upload'
+        : 'The package itself is fine (»$dryRunCommand« passes), so the '
+              'registry refused the upload';
+    return '$verdict. Common causes: a '
+        'missing or wrong 2FA one-time password, an expired login '
+        '(»$executable login«), missing publish rights for the package, or a '
+        'version that already exists. The output of »$executable« above '
+        'names the exact cause.';
+  }
+
+  // ...........................................................................
+  /// The last [count] lines of [text] — a failing build can print hundreds,
+  /// and the cause sits at the end.
+  static String _lastLines(String text, int count) {
+    final lines = text.trim().split('\n');
+    final start = lines.length > count ? lines.length - count : 0;
+    return lines.sublist(start).join('\n');
   }
 
   // ...........................................................................

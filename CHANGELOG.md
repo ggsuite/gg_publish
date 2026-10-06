@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Upgrade_dependencies
+
+## 4.10.0 - 2026-10-06
+
+### Changed
+
+- Explain why an npm upload failed
+
 ## 4.9.1 - 2026-10-06
 
 ### Changed

@@ -824,34 +824,162 @@ Package has 1 warning.''';
           await pnpmDir.delete(recursive: true);
         });
 
-        test('throws when the interactive publish fails', () async {
-          final pnpmDir = await Directory.systemTemp.createTemp();
-          File('${pnpmDir.path}/package.json')
-              .writeAsStringSync('{"name": "ts", "version": "1.0.0"}');
-          File('${pnpmDir.path}/tsconfig.json').writeAsStringSync('{}');
-          File('${pnpmDir.path}/pnpm-lock.yaml').writeAsStringSync('');
+        group('when the interactive publish fails', () {
+          late Directory pnpmDir;
 
-          when(() => isVersionPrepared.get(ggLog: ggLog, directory: pnpmDir))
-              .thenAnswer((_) async => true);
-          when(
-            () => processWrapper.start(
-              'pnpm',
-              ['publish', '--no-git-checks'],
-              workingDirectory: pnpmDir.path,
-              runInShell: true,
-              mode: ProcessStartMode.inheritStdio,
-            ),
-          ).thenAnswer((_) => Future.value(process));
+          setUp(() async {
+            pnpmDir = await Directory.systemTemp.createTemp();
+            File('${pnpmDir.path}/package.json')
+                .writeAsStringSync('{"name": "ts", "version": "1.0.0"}');
+            File('${pnpmDir.path}/tsconfig.json').writeAsStringSync('{}');
+            File('${pnpmDir.path}/pnpm-lock.yaml').writeAsStringSync('');
 
-          String? exceptionMessage;
-          final future = publish
-              .exec(directory: pnpmDir, ggLog: ggLog)
-              .onError((error, _) => exceptionMessage = rmC(error.toString()));
-          process.exit(1);
-          await future;
+            when(() => isVersionPrepared.get(ggLog: ggLog, directory: pnpmDir))
+                .thenAnswer((_) async => true);
+            when(
+              () => processWrapper.start(
+                'pnpm',
+                ['publish', '--no-git-checks'],
+                workingDirectory: pnpmDir.path,
+                runInShell: true,
+                mode: ProcessStartMode.inheritStdio,
+              ),
+            ).thenAnswer((_) => Future.value(process));
+          });
 
-          expect(exceptionMessage, contains('Publishing failed.'));
-          await pnpmDir.delete(recursive: true);
+          tearDown(() async {
+            await pnpmDir.delete(recursive: true);
+          });
+
+          void mockPnpmDryRun({int exitCode = 0, String stderr = ''}) {
+            when(
+              () => processWrapper.run(
+                'pnpm',
+                ['publish', '--no-git-checks', '--dry-run'],
+                workingDirectory: pnpmDir.path,
+                runInShell: true,
+              ),
+            ).thenAnswer((_) async => ProcessResult(0, exitCode, '', stderr));
+          }
+
+          Future<String?> run() async {
+            String? exceptionMessage;
+            final future = publish
+                .exec(directory: pnpmDir, ggLog: ggLog)
+                .onError(
+                  (error, _) => exceptionMessage = rmC(error.toString()),
+                );
+            process.exit(1);
+            await future;
+            return exceptionMessage;
+          }
+
+          test(
+            'names the registry as the cause when the dry run passes',
+            () async {
+              mockPnpmDryRun();
+
+              final message = await run();
+
+              expect(message, contains('Publishing failed.'));
+              expect(
+                message,
+                contains(
+                  '»pnpm publish --no-git-checks --dry-run« passes), so the '
+                  'registry refused the upload',
+                ),
+              );
+              expect(message, contains('2FA one-time password'));
+              expect(
+                rmC(messages.join('\n')),
+                contains(
+                  '✗ »pnpm publish --no-git-checks« failed with exit code 1',
+                ),
+              );
+            },
+          );
+
+          test('shows the end of the dry run output when it fails', () async {
+            final lines = [for (var i = 1; i <= 30; i++) 'line $i'];
+            mockPnpmDryRun(
+              exitCode: 1,
+              stderr: '${lines.join('\n')}\nERR! prepublishOnly failed',
+            );
+
+            final message = await run();
+
+            expect(message, contains('Publishing failed.'));
+            expect(message, contains('The package cannot be packed'));
+            expect(message, contains('ERR! prepublishOnly failed'));
+            expect(message, contains('line 30'));
+            expect(message, isNot(contains('line 5\n')));
+          });
+
+          test('stays generic when the dry run cannot be started', () async {
+            when(
+              () => processWrapper.run(
+                'pnpm',
+                any(),
+                workingDirectory: pnpmDir.path,
+                runInShell: true,
+              ),
+            ).thenThrow(const ProcessException('pnpm', []));
+
+            final message = await run();
+
+            expect(
+              message,
+              contains(
+                'Publishing failed. The registry most likely refused the '
+                'upload. Common causes:',
+              ),
+            );
+            expect(message, isNot(contains('passes')));
+          });
+
+          test('continues when npm has the version anyway', () async {
+            // A failing »postpublish« script fails the command after the
+            // upload. Reporting a failed publish would make the user repeat
+            // an upload npm then rejects.
+            mockRegistryVersions([
+              [Version(0, 9, 0)],
+              [Version(0, 9, 0), Version(1, 0, 0)],
+            ]);
+
+            final message = await run();
+
+            expect(message, isNull);
+            expect(
+              rmC(messages.join('\n')),
+              contains('1.0.0 is on npm nevertheless'),
+            );
+            verifyNever(
+              () => processWrapper.run(
+                'pnpm',
+                any(),
+                workingDirectory: pnpmDir.path,
+                runInShell: true,
+              ),
+            );
+          });
+
+          test('keeps the failure when npm cannot be asked', () async {
+            var call = 0;
+            when(
+              () => publishedVersion.registryVersionsFor(
+                target: any(named: 'target'),
+                directory: any(named: 'directory'),
+              ),
+            ).thenAnswer((_) async {
+              if (call++ == 0) return [Version(0, 9, 0)];
+              throw Exception('offline');
+            });
+            mockPnpmDryRun();
+
+            final message = await run();
+
+            expect(message, contains('the registry refused the upload'));
+          });
         });
       });
 
