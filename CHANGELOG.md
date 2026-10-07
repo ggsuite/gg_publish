@@ -5,6 +5,7 @@
 ### Changed
 
 - Upgrade_dependencies
+- Hint to set the pub.dev publisher after a manual first publish
 
 ## 4.10.0 - 2026-10-06
 

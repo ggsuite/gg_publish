@@ -255,6 +255,18 @@ class Publish extends DirCommand<void> {
     ggLog(blue('  cd ${directory.absolute.path}'));
     ggLog(blue('  ${await _manualPublishCommand(directory, target)}'));
 
+    // A manual first publish lands on the user's personal pub.dev account —
+    // the package has to be moved to its organization by hand.
+    if (target == PublishTarget.pubDev) {
+      ggLog(
+        yellow(
+          'Afterwards set the publisher to the right organization: open '
+          'https://pub.dev/packages/$name/admin and use '
+          '»Transfer to publisher«.',
+        ),
+      );
+    }
+
     while (true) {
       ggLog(yellow('Press ⏎ once the package is published, »q« + ⏎ to abort.'));
       final answer = (_readLineFromStdIn() ?? '').trim().toLowerCase();

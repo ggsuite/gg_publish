@@ -483,6 +483,14 @@ void main() {
           );
           expect(log, contains('cd ${d.absolute.path}'));
           expect(log, contains('dart pub publish'));
+          expect(
+            log,
+            contains(
+              'Afterwards set the publisher to the right organization: open '
+              'https://pub.dev/packages/test/admin and use '
+              '»Transfer to publisher«.',
+            ),
+          );
           expect(log, contains('»test« is now available on pub.dev'));
 
           // The user published 1.0.0 - the current version - manually, so
@@ -598,6 +606,7 @@ void main() {
               '--tag rc',
             ),
           );
+          expect(log, isNot(contains('Transfer to publisher')));
 
           await tsDir.delete(recursive: true);
         });
