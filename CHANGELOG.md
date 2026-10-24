@@ -5,8 +5,7 @@
 ### Changed
 
 - Check the colored dry run report also under NO_COLOR
-
-The tests of »--dry-run« turn the colors on, as other gg tests do
+- Upgrade the dependencies
 
 ## 4.10.2 - 2026-10-16
 
