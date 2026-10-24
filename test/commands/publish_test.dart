@@ -640,6 +640,11 @@ void main() {
       });
 
       group('with »--dry-run«', () {
+        // Colors on, so the comparisons see every escape sequence — with
+        // NO_COLOR a color function returns the plain text.
+        setUp(() => ggColorsEnabled = true);
+        tearDown(() => ggColorsEnabled = null);
+
         const warning = '''
 Package validation found the following potential issue:
 * 2 checked-in files are ignored by a `.gitignore`.

@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Add the blog post of ticket gg-1
+
+### Changed
+
+- Check the colored dry run report also under NO_COLOR
+- Upgrade the dependencies
+
 ## 4.10.2 - 2026-10-16
 
 ## 4.10.1 - 2026-10-07
