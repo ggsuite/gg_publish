@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Add the blog post of ticket gg-1
+
 ### Changed
 
 - Check the colored dry run report also under NO_COLOR
