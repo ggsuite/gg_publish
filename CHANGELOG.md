@@ -1,14 +1,10 @@
 # Changelog
 
-## Unreleased
+## 4.10.4 - 2026-11-14
 
 ### Added
 
 - Add the blog post and index.jsonc
-
-Add the blog post of the change
-Add index.jsonc
-Tighten the dependencies
 
 ### Changed
 
