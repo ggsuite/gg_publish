@@ -1,0 +1,50 @@
+// @license
+// Copyright (c) ggsuite
+//
+// Use of this source code is governed by terms that can be
+// found in the LICENSE file in the root of this package.
+
+{
+  // The package name, as declared in pubspec.yaml / package.json.
+  "name": "gg_publish",
+
+  // 1-2 sentence summary about this repo.
+  "summary": "Tools and checks for publishing Dart, Flutter and npm packages: what a registry holds, preparing the next version, the upload to pub.dev and npm, waiting until a registry shows a version.",
+
+  // 1-3 bullet points: the problem space.
+  "domain": [
+    "registry state: PublishedVersion, IsPublished, IsInRegistry, IsOnPubDev, IsLatestStatePublished, WaitUntilPublished, PublishTo",
+    "release steps: PrepareNextVersion, IsVersionPrepared, Publish, SyncHybridVersions, RemoteTags, RemoveVersionTag",
+    "branches and upgrades: MainBranch, IsMainBranch, IsFeatureBranch, MergeMainIntoFeat, IsUpgraded",
+  ],
+
+  // The repos this one depends on and the repos depending on it.
+  // Keep the reason or the API behind each entry, not just the name.
+  "interfaces": {
+    // "<repo-a>": "why / API"
+    "uses": {
+      "gg_version": "versions of manifest, changelog and git tags",
+      "gg_git": "git state, branches, tags",
+      "gg_lang": "project type, manifests, publish targets",
+      "gg_process": "GgProcessWrapper of pub, npm and git",
+      "gg_is_flutter": "flutter or dart",
+      "gg_args": "DirCommand base of the commands",
+      "gg_status_printer": "progress output",
+      "gg_console_colors": "colored output",
+      "gg_log": "GgLog",
+    },
+
+    // "<repo-b>": "why / API"
+    "usedBy": {
+      "gg_one_core": "PublishTo, PublishedVersion, IsPublished, IsUpgraded, IsFeatureBranch in the checks",
+      "gg_one_commit": "IsUpgraded, IsFeatureBranch, IsMainBranch",
+      "gg_one_do_publish": "PrepareNextVersion, WaitUntilPublished, SyncHybridVersions, RemoveVersionTag, MainBranch",
+      "gg_one_merge": "MainBranch",
+      "gg_multi_core": "PublishedVersion, IsFeatureBranch",
+      "gg_multi_commit": "MainBranch, IsFeatureBranch",
+      "gg_multi_do_publish": "PublishedVersion, IsInRegistry",
+      "gg_multi_maintain": "IsPublished",
+      "gg_localize_refs": "IsOnPubDev",
+    },
+  },
+}

@@ -1,5 +1,15 @@
 # Changelog
 
+## 4.10.4 - 2026-11-14
+
+### Added
+
+- Add the blog post and index.jsonc
+
+### Changed
+
+- Await capturePrint in the tests
+
 ## 4.10.3 - 2026-11-06
 
 ## 4.10.2 - 2026-10-16
