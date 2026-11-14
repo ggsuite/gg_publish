@@ -188,7 +188,10 @@ void main() {
       group('should print', () {
         group('a usage description', () {
           test('when called with --help', () async {
-            capturePrint(ggLog: ggLog, code: () => runner.run(['--help']));
+            await capturePrint(
+              ggLog: ggLog,
+              code: () => runner.run(['--help']),
+            );
 
             expect(messages.last, contains('Available commands:'));
             expect(messages.last, contains(isLatestStatePublished.name));

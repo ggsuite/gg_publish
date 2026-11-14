@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Await capturePrint in the tests
+
 ## 4.10.3 - 2026-11-06
 
 ## 4.10.2 - 2026-10-16
