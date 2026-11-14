@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Added
+
+- Add the blog post and index.jsonc
+
+Add the blog post of the change
+Add index.jsonc
+Tighten the dependencies
+
 ### Changed
 
 - Await capturePrint in the tests
