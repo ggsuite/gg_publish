@@ -103,7 +103,4 @@ Tests live under `test/` mirroring `lib/src/`. `test/sample_package/` is a fixtu
 `analysis_options.yaml` enforces (beyond recommended): `lines_longer_than_80_chars`, `prefer_single_quotes`, `require_trailing_commas`, `public_member_api_docs`, `always_declare_return_types` (as error), plus strict language modes. New public members need dartdoc comments.
 
 <!-- helix:claude_md:start -->
-
-@.claude/CLAUDE_dna_gg.md
-
 <!-- helix:claude_md:end -->
