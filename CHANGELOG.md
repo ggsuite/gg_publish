@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Upgrade the SDK, the dependencies and the DNA
+
 ## 4.10.4 - 2026-11-14
 
 ### Added
