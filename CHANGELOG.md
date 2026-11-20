@@ -5,6 +5,7 @@
 ### Changed
 
 - Upgrade the SDK, the dependencies and the DNA
+- Stay within major versions on dependency upgrades
 
 ## 4.10.4 - 2026-11-14
 
